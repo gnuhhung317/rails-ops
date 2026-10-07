@@ -1,0 +1,680 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: *.md
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+superpowers/
+  plans/
+    2026-10-06-compressorguard-vertical-slice.md
+    2026-10-07-backend-semantic-cleanup-and-freeze.md
+    2026-10-08-master-context-compilation.md
+docs.xml
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="superpowers/plans/2026-10-06-compressorguard-vertical-slice.md">
+# CompressorGuard: Vertical Slice Backend & Domain API Implementation Plan (v2.1)
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Hiện thực hóa **Vertical Slice Backend v2.1** cho CompressorGuard kết nối trực tiếp với engine hiện tại (`ReplayEngine`, `DecisionEngine`, `EvidenceFusionEngine`, `detectors`). Toàn bộ luồng nghiệp vụ 90 giây (**Phát hiện sớm 33h 52m $\rightarrow$ Bằng chứng nhiệt động lực $\rightarrow$ Kích hoạt Safe Mode $\rightarrow$ Rẽ nhánh luồng dữ liệu sau bảo trì $\rightarrow$ Kiểm chứng phục hồi 5 cửa sổ đánh giá liên tiếp $\rightarrow$ Đóng sự cố**) được điều phối bằng dữ liệu thực 100%, không bịa telemetry, và expose qua API chuẩn mực tách biệt giữa Product API và Demo Controls. **Không viết mã UI/HTML/CSS.**
+
+**Architecture:**
+- **Domain Policy Layer:** `RecoveryCriteria` đóng gói tiêu chuẩn nghiệm thu phục hồi thành chính sách miền nghiệp vụ có nguồn gốc (provenance) rõ ràng.
+- **Recovery Verification Layer:** `RecoveryVerifier` kiểm tra từng cửa sổ dữ liệu thực tế trong chế độ `LOADED`. Bất kỳ mẫu vi phạm nào cũng lập tức reset số cửa sổ liên tiếp về 0.
+- **Orchestration Layer:** `IncidentLifecycleManager` điều phối luồng phát dữ liệu (`degradation` vs `post-maintenance recovery`), quản lý máy trạng thái tường minh (`DETECTED` $\rightarrow$ `INVESTIGATING` $\rightarrow$ `MITIGATING` $\rightarrow$ `VERIFYING_RECOVERY` $\rightarrow$ `RESOLVED`). Không hardcode bất kỳ con số nào thuộc về engine.
+- **Interface Layer (FastAPI):** Tách bạch rõ 4 Product Domain Endpoints (`/api/incident`, `/api/evidence`, `/api/action/safe-mode`, `/api/recovery`) và các Simulation Controls (`/demo/reset`, `/demo/tick`, `/demo/jump`), có xử lý lỗi HTTP 409 Conflict cho chuyển đổi trạng thái phi pháp và HTTP 400 cho milestone không hợp lệ.
+
+**Tech Stack:** Python 3.12, FastAPI, Uvicorn, Pandas, Scikit-learn, pytest.
+
+---
+
+## File Structure & Responsibilities
+
+```text
+d:/Code/Projects/self-projects/iot-hackathon/
+├── docs/
+│   ├── PRODUCT_UX_SPEC.md              # [UPDATED v2.1] Product thesis, cognitive hierarchy & API contract
+│   └── superpowers/plans/
+│       └── 2026-10-06-compressorguard-vertical-slice.md # [THIS FILE v2.1]
+├── src/
+│   ├── domain/
+│   │   ├── enums.py                    # [EXISTING] IncidentLifecycleState, AssetHealthState...
+│   │   └── models.py                   # [EXISTING] TelemetryPoint, EvidenceState, Decision...
+│   ├── engine/
+│   │   ├── recovery.py                 # [NEW] RecoveryCriteria (Policy) + RecoveryVerifier
+│   │   ├── lifecycle.py                # [NEW] IncidentLifecycleManager (Orchestration & Stream branching)
+│   │   └── ...                         # [EXISTING] detectors, fusion, decision, replay
+│   └── api/
+│       ├── __init__.py                 # [NEW]
+│       ├── schemas.py                  # [NEW] Pydantic DTOs for Product API & Demo responses
+│       ├── routes_product.py           # [NEW] 4 Product Endpoints (/api/incident, /evidence, /action, /recovery)
+│       ├── routes_demo.py              # [NEW] Demo Controls (/demo/reset, /demo/tick, /demo/jump)
+│       └── app.py                      # [NEW] FastAPI factory mounting routes
+└── tests/
+    ├── test_recovery_verifier.py       # [NEW] Unit test for RecoveryVerifier (with near-success reset test)
+    ├── test_lifecycle_orchestrator.py  # [NEW] Orchestration test with exact state transitions & branching
+    ├── test_deterministic_replay.py   # [NEW] Two-run deterministic replay comparison test
+    └── test_api_vertical_slice.py      # [NEW] End-to-end API test covering happy path and HTTP 409/400 errors
+```
+</file>
+
+<file path="superpowers/plans/2026-10-07-backend-semantic-cleanup-and-freeze.md">
+# Backend Semantic Cleanup & Vertical Slice Freeze Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Clean up the 3 remaining semantic mismatches in the backend vertical slice (unify observation terminology across domain models, evaluator, detector, schemas, and tests; derive 33h52m lead-time dynamically from detection and verified LPS milestone timestamps; include temporal persistence as 4th signal in evidence pack) and freeze the backend domain & API contract before proceeding to UX review.
+
+**Architecture:** Enforce the strict domain rule: **No cycle, window, or sample in any public domain model or API contract**. All contracts standardize on **observations**. `RecoveryStatus` in `src/domain/models.py` is updated to `consecutive_healthy_observations` and `target_healthy_observations`. Lead-time is dynamically derived in `IncidentLifecycleManager` from the detection timestamp and verified LPS milestone timestamp. Legacy aliases are strictly internal-only and forbidden from API schemas, responses, provenance dictionaries, and UX specifications.
+
+**Tech Stack:** Python 3.12, FastAPI, Pydantic v2, Pandas, Scikit-learn, pytest.
+
+---
+
+## File Structure & Responsibilities
+
+- **Modify:** `src/domain/models.py`
+  - In `RecoveryStatus`: rename `consecutive_healthy_cycles` -> `consecutive_healthy_observations`, `target_healthy_cycles` -> `target_healthy_observations`.
+- **Modify:** `src/engine/recovery.py`
+  - Rename `target_healthy_windows` -> `target_healthy_observations`, `consecutive_healthy_windows` -> `consecutive_healthy_observations`, `is_window_healthy` -> `is_observation_healthy`.
+  - Refine policy documentation: state clearly that `RecoveryCriteria` is a deterministic domain acceptance policy for MetroPT-3 post-maintenance validation, without overclaiming external provenance metadata.
+  - Internal-only properties (`consecutive_healthy_windows`, `target_healthy_windows`) remain strictly internal.
+- **Modify:** `src/engine/detectors.py`
+  - In `TemporalStepDetector`: constructor takes `required_observations: int = 3`, `baseline_observations: int = 5`.
+  - Internal-only fallback: `required_cycles`, `baseline_cycles` mapped internally.
+  - Provenance dictionary MUST strictly emit observation keys: `"required_observations"`, `"baseline_observations"`, `"recent_observations"` (no cycle/window keys).
+- **Modify:** `src/api/schemas.py`
+  - In `PersistenceInfo`: strictly `confirmed: bool`, `recent_observations: int`, `required_observations: int`.
+  - In `RecoveryResponse`: strictly `consecutive_healthy_observations: int`, `target_healthy_observations: int`.
+  - In `EvidenceSignalItem`: supports `TEMPORAL_STEP_CONFIRMED` mapping (`observed_value=step_diff`, `baseline_value=0.0`, `unit="bar_diff"`, `sigma_deviation=0.0`).
+- **Modify:** `src/engine/lifecycle.py`
+  - In `get_incident_payload()`: derive `lead_time_minutes`, `lead_time_formatted = f"{lead_hours}h {lead_mins:02d}m"`, and ISO timestamps dynamically from detection timestamp (`actual_detection_dt`) and verified LPS milestone timestamp (`pd.to_datetime(self.milestones["lps_reactive_1942"])`). Derive `summary` from `active_incident.summary` or `current_decision.reason`.
+  - In `get_evidence_payload()`: include `TEMPORAL_STEP_CONFIRMED` as the 4th signal in `evidence_pack` (code `TEMPORAL_STEP_CONFIRMED`, signal name `"Temporal Persistence Tracking"`, observed_value `sig.observed_value`, baseline_value `0.0`, unit `"bar_diff"`, sigma_deviation `0.0`, status `"CONFIRMED"`, is_primary `False`), while also providing `persistence` with `{ confirmed, recent_observations, required_observations }`.
+  - In `get_recovery_payload()`: output `consecutive_healthy_observations` and `target_healthy_observations`.
+- **Modify:** `tests/test_golden_path.py`
+  - Update `RecoveryStatus` attributes in `run_golden_path_simulation` to `consecutive_healthy_observations` and `target_healthy_observations`.
+- **Modify:** `tests/test_recovery_verifier.py`
+  - Update all assertions and attribute names to `consecutive_healthy_observations`, `target_healthy_observations`, `is_observation_healthy`.
+- **Modify:** `tests/test_lifecycle_orchestrator.py`
+  - Update recovery payload assertions and lead time dynamic verification.
+- **Modify:** `tests/test_api_vertical_slice.py`
+  - Update assertions for `recent_observations`, `consecutive_healthy_observations`, and presence of all 4 signals (including `TEMPORAL_STEP_CONFIRMED`) in `evidence_pack`.
+- **Modify:** `tests/test_deterministic_replay.py`
+  - Clarify docstring and assertion message to "Two-run deterministic replay".
+- **Modify:** `docs/PRODUCT_UX_SPEC.md`
+  - Update API JSON examples and terminology to match the frozen contract.
+
+---
+
+### Task 1: Unify Observation Terminology in Domain & Detector Models
+
+**Files:**
+- Modify: `src/domain/models.py`
+- Modify: `src/engine/recovery.py`
+- Modify: `src/engine/detectors.py`
+- Modify: `src/api/schemas.py`
+- Modify: `tests/test_golden_path.py`
+- Test: `tests/test_recovery_verifier.py`
+
+- [x] **Step 1: Update `src/domain/models.py`**
+
+Refactor `RecoveryStatus` to use observation terminology:
+```python
+class RecoveryStatus(BaseModel):
+    asset_id: str = "APU-COMP-01"
+    is_recovering: bool = False
+    consecutive_healthy_observations: int = 0
+    target_healthy_observations: int = 5
+    is_verified: bool = False
+    verification_reason: str = ""
+```
+Also update `tests/test_golden_path.py` (lines 126, 128, 130) where `recovery_status.consecutive_healthy_cycles` and `recovery_status.target_healthy_cycles` are used to use `consecutive_healthy_observations` and `target_healthy_observations`.
+
+- [x] **Step 2: Update `tests/test_recovery_verifier.py` with observation terminology**
+
+```python
+from datetime import datetime
+import pytest
+
+from src.domain.enums import OperatingRegime
+from src.domain.models import TelemetryPoint
+from src.engine.recovery import (
+    RecoveryCriteria,
+    RecoveryEvaluationResult,
+    RecoveryVerifier,
+)
+...
+```
+
+- [x] **Step 3: Update `src/engine/recovery.py`**
+
+Refactor `RecoveryCriteria`, `RecoveryEvaluationResult`, `RecoveryVerifier` to use `observations`. Remove overclaiming about provenance registries; clearly state it is a domain validation policy. Internal property aliases (`consecutive_healthy_windows`, `target_healthy_windows`) remain internal-only.
+
+- [x] **Step 4: Update `src/engine/detectors.py`**
+
+Update `TemporalStepDetector`:
+```python
+class TemporalStepDetector(BaseDetector):
+    def __init__(
+        self,
+        step_threshold: float = 0.5,
+        required_observations: int = 3,
+        baseline_observations: int = 5,
+        allowed_regime_gaps: int = 0,
+        # Internal-only legacy parameter fallback
+        required_cycles: Optional[int] = None,
+        baseline_cycles: Optional[int] = None,
+    ):
+...
+```
+In provenance, record strictly observation keys:
+`"required_observations": self.required_observations, "baseline_observations": self.baseline_observations, "recent_observations": len(recent)`
+
+- [x] **Step 5: Update `src/api/schemas.py`**
+
+Update `PersistenceInfo`:
+```python
+class PersistenceInfo(BaseModel):
+    confirmed: bool
+    recent_observations: int
+    required_observations: int
+```
+Update `RecoveryResponse`:
+```python
+class RecoveryResponse(BaseModel):
+    incident_id: str
+    is_recovering: bool
+    is_verified: bool
+    consecutive_healthy_observations: int
+    target_healthy_observations: int
+    latest_telemetry: LatestTelemetry
+    criteria: RecoveryCriteriaInfo
+```
+
+- [x] **Step 6: Run `pytest tests/test_recovery_verifier.py -v` to confirm it passes**
+
+Expected: 5 passed. (Verified: 5 passed in 0.33s).
+
+---
+
+### Task 2: Dynamic Lead Time & Summary Derivation in Lifecycle Manager
+
+**Files:**
+- Modify: `src/engine/lifecycle.py`
+- Test: `tests/test_lifecycle_orchestrator.py`
+
+- [x] **Step 1: Write test in `tests/test_lifecycle_orchestrator.py` asserting dynamic calculation**
+
+Verify that `get_incident_payload()` derives `lead_time_minutes` and `lead_time_formatted` from the actual detection timestamp and the verified LPS milestone timestamp.
+
+- [x] **Step 2: Run test to verify failure / mismatch**
+
+Run: `pytest tests/test_lifecycle_orchestrator.py -v`
+
+- [x] **Step 3: Implement dynamic calculation in `src/engine/lifecycle.py`**
+
+In `get_incident_payload(self)`:
+```python
+    actual_lps_dt = pd.to_datetime(self.milestones["lps_reactive_1942"])
+    if self.active_incident and self.active_incident.created_at:
+        actual_detection_dt = self.active_incident.created_at
+    else:
+        actual_detection_dt = pd.to_datetime(self.milestones["onset_0950"])
+
+    delta = actual_lps_dt - actual_detection_dt
+    lead_time_minutes = max(0, int(round(delta.total_seconds() / 60.0)))
+    lead_hours = lead_time_minutes // 60
+    lead_mins = lead_time_minutes % 60
+    lead_time_formatted = f"{lead_hours}h {lead_mins:02d}m"
+```
+
+- [x] **Step 4: Run `pytest tests/test_lifecycle_orchestrator.py -v`**
+
+Expected: PASS. (Verified: 3 passed in 7.41s).
+
+---
+
+### Task 3: Include Temporal Signal in `evidence_pack` & Align Recovery Payload
+
+**Files:**
+- Modify: `src/engine/lifecycle.py`
+- Modify: `tests/test_lifecycle_orchestrator.py`
+- Modify: `tests/test_api_vertical_slice.py`
+
+- [x] **Step 1: Write test assertions in `tests/test_lifecycle_orchestrator.py` and `tests/test_api_vertical_slice.py`**
+
+Assert that:
+1. `ev_payload["evidence_pack"]` contains 4 signals: Discharge Valve Pressure, Compressor Oil Temperature, Temporal Persistence Tracking, Multivariate Isolation Forest.
+2. `TEMPORAL_STEP_CONFIRMED` maps strictly to:
+   - `observed_value`: `sig.observed_value` (the `step_diff`)
+   - `baseline_value`: `0.0`
+   - `unit`: `"bar_diff"`
+   - `sigma_deviation`: `0.0`
+   - `status`: `"CONFIRMED"`
+   - `is_primary`: `False`
+3. `ev_payload["persistence"]` has keys `confirmed`, `recent_observations`, `required_observations`.
+4. `rec_payload` has `consecutive_healthy_observations` and `target_healthy_observations`.
+
+- [x] **Step 2: Run test to verify failure**
+
+Run: `pytest tests/test_lifecycle_orchestrator.py tests/test_api_vertical_slice.py -v`  
+Expected: FAIL on missing temporal signal and observation field names.
+
+- [x] **Step 3: Implement in `src/engine/lifecycle.py`**
+
+In `get_evidence_payload()`:
+Append `TEMPORAL_STEP_CONFIRMED` to `evidence_pack` and serialize observation fields in `persistence`.
+In `get_recovery_payload()`:
+Output `consecutive_healthy_observations` and `target_healthy_observations`.
+
+- [x] **Step 4: Run test to verify passes**
+
+Run: `pytest tests/test_lifecycle_orchestrator.py tests/test_api_vertical_slice.py -v`  
+Expected: PASS. (Verified: 3 passed in 10.12s).
+
+---
+
+### Task 4: Replay Determinism Clarification & Full Test Suite Audit
+
+**Files:**
+- Modify: `tests/test_deterministic_replay.py`
+- Run: Full test suite
+
+- [x] **Step 1: Update docstrings & assertion in `tests/test_deterministic_replay.py`**
+
+Change:
+`"Two-run deterministic replay must produce identical simulation outputs across reset cycles"` (Verified: passed in 8.82s).
+
+- [x] **Step 2: Run full test suite across entire repository**
+
+Run: `pytest tests -v`  
+Expected: All tests in `tests/` pass with 0 failures and 0 errors (24 tests expected in the current suite).  
+Result: **24 passed in 118.99s (0 failures, 0 errors)**.
+
+---
+
+### Task 5: Freeze Contract & Update Specification Documentation
+
+**Files:**
+- Modify: `docs/PRODUCT_UX_SPEC.md`
+
+- [x] **Step 1: Synchronize `docs/PRODUCT_UX_SPEC.md`**
+
+1. Section 1 & Section 4: replace "windows" with "observations" (`consecutive_healthy_observations`, `target_healthy_observations`).
+2. Section 5.1:
+   - `GET /api/incident`: document dynamic lead time formula derived from detection timestamp and verified LPS milestone ($T_{\text{LPS}} - T_{\text{detection}} = 33\text{h } 52\text{m}$).
+   - `GET /api/evidence`: show `evidence_pack` containing all 4 signals (`PRESSURE_SEVERE`, `THERMAL_STRESS_SEVERE`, `TEMPORAL_STEP_CONFIRMED`, `ML_CORROBORATED`), and `persistence` block with `recent_observations` and `required_observations`.
+   - `GET /api/recovery`: show `consecutive_healthy_observations` and `target_healthy_observations`.
+3. Mark status: **Backend Vertical Slice Contract: FROZEN (v2.2)**. Ready for UX Spec Stress-Test.
+
+- [ ] **Step 2: Commit changes**
+
+Run:
+```bash
+git add src/ tests/ docs/
+git commit -m "fix(backend): harmonize observation semantics, derive dynamic lead-time, and freeze contract"
+```
+</file>
+
+<file path="superpowers/plans/2026-10-08-master-context-compilation.md">
+# Master Context Compilation Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Trích xuất và tổng hợp toàn bộ tri thức dự án từ hội thoại đối sánh hackathon (`7d83d7ab-bacd-4905-bb22-054ce9d029ee`), dữ liệu vật lý MetroPT-3, Master Spec, Product/UX Spec, và mã nguồn Vertical Slice Backend v2.1 thành một tài liệu duy nhất `d:/Code/Projects/self-projects/iot-hackathon/master_context.md`, có khả năng cập nhật/append dần, giúp bất kỳ AI agent nào đọc xong cũng hiểu trọn vẹn 100% ngữ cảnh để tiếp tục triển khai.
+
+**Architecture:** Thiết kế tài liệu theo cấu trúc phân tầng nhận thức (Cognitive Hierarchy) gồm 7 phần cốt lõi: (1) Executive Identity & Core Promise, (2) Strategic Hackathon Post-Mortem & Mental Model, (3) Physical Ground Truth & Telemetry Dossier, (4) Product Thesis & 90s Golden Experience Spec, (5) Backend Domain Architecture & Vertical Slice v2.1, (6) Master Spec Technology Blueprint (MongoDB & Datadog), (7) Phased Execution Roadmap & Rules of Engagement. Tài liệu được định dạng Markdown chuẩn, có neo liên kết dữ liệu thực tế và schema hợp đồng API bất biến.
+
+**Tech Stack:** Markdown, Python 3.12 (để kiểm tra tính toàn vẹn và trích xuất số liệu chính xác), MetroPT-3 dataset, FastAPI, MongoDB Time Series, Datadog.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Vị trí và định dạng tệp:** Tệp tổng hợp sẽ được đặt tại `d:/Code/Projects/self-projects/iot-hackathon/master_context.md`. Tệp được thiết kế ở dạng **Modular & Appendable Markdown** — các phần đã đóng băng (như Ground Truth vật lý, Backend Vertical Slice v2.1, Post-Mortem so sánh) được cố định rõ ràng, và có các placeholder có cấu trúc để append tiếp khi hoàn thành tích hợp MongoDB, Datadog và Frontend UI.
+
+> [!NOTE]
+> **Mục tiêu tương thích đa AI:** Tài liệu được viết bằng tiếng Việt và tiếng Anh kết hợp chuẩn mực kỹ thuật (giữ nguyên các thuật ngữ domain, schema JSON, metric vật lý, prompt/command) để cả Claude, GPT-4o, hay Gemini khi nạp vào context đều nắm bắt được đầy đủ mà không bị "semantic loss".
+
+---
+
+## Proposed Changes & File Mapping
+
+```text
+d:/Code/Projects/self-projects/iot-hackathon/
+├── master_context.md                                   # [NEW] Single-source-of-truth Master Context cho toàn bộ dự án
+└── docs/superpowers/plans/
+    └── 2026-10-08-master-context-compilation.md        # [NEW] Bản kế hoạch writing-plans này
+```
+
+---
+
+## Cấu Trúc Chi Tiết Của `master_context.md` Sẽ Được Xây Dựng
+
+1. **Phần 1: Executive Summary & Project North Star**
+   - Tên dự án: **CompressorGuard — Real-time Compressor Operations & Incident Response System**.
+   - Cuộc thi: MUGVN Hackathon 2026 (MongoDB + Datadog).
+   - Core Promise: **Detect earlier → Prove why → Act safely → Verify recovery.**
+   - Persona: Fleet Operations Specialist (Lisbon Metro APU).
+   - 3 Killer Claims: 33h 52m Lead Time; Bằng chứng nhiệt động lực học có cấu trúc > Anomaly Score; Closed-loop Physical Recovery Verification từ dữ liệu thật.
+   - Strict Anti-Scope (những thứ cấm làm để tránh loãng).
+
+2. **Phần 2: Hackathon Strategy & Comparative Post-Mortem (`hackathon/` vs `iot-hackathon/`)**
+   - Đúc kết từ hội thoại: *Tại sao ThreatLens AI SOC Copilot gây ấn tượng mạnh?* (Surface-first, Narrative-driven, Ingest $\rightarrow$ Correlation $\rightarrow$ Investigation $\rightarrow$ Action).
+   - Đúc kết từ `iot-hackathon/`: Sức nặng kỹ thuật cao nhưng ban đầu mắc bẫy "Engine is smart, trust me".
+   - Định luật cốt lõi: **Feature $\neq$ Capability $\neq$ Product $\neq$ Demo $\neq$ Engineering**.
+   - 5 Cổng đánh giá của Giám khảo: G1 Business (20s) $\rightarrow$ G2 Detection (Proof) $\rightarrow$ G3 Investigation (Why) $\rightarrow$ G4 Response (Action) $\rightarrow$ G5 Technology (Fit).
+   - Chiến lược chiến thắng: Không làm dự án "nhiều công nghệ nhất", làm dự án kể được câu chuyện vận hành khép kín trong 90 giây.
+
+3. **Phần 3: Physical Domain & Ground Truth Dataset (MetroPT-3)**
+   - Hồ sơ tập dữ liệu UCI MetroPT-3 (1.5M rows @ 1Hz, 208MB CSV).
+   - Thiết bị: Air Production Unit (APU) tàu điện ngầm Lisbon.
+   - Danh mục cảm biến và ý nghĩa vật lý (`TP2`, `TP3`, `H1`, `DV_pressure`, `Oil_temp`, `Motor_current`, các van khí).
+   - Các chế độ vận hành: `LOADED`, `UNLOADED`, `STANDBY`/`OFF`.
+   - Mốc sự cố vàng 05-06/06/2020:
+     - Onset vật lý: 05/06/2020 09:50:39 (`DV_pressure` nhảy vọt $+23.75\sigma$, `Oil_temp` trôi dạt $+5.71\sigma$).
+     - Còi cơ học truyền thống: 06/06/2020 19:42:19 (`LPS = 1`).
+     - Lead Time thực chứng: **33 giờ 52 phút** (2032 phút).
+     - Phân đoạn hồi phục sau bảo trì: 08/06/2020 16:05:00+ (áp suất về $-0.016\text{ bar}$, nhiệt độ dầu $< 67^\circ\text{C}$).
+
+4. **Phần 4: Product Thesis & 90-Second Golden Experience Spec**
+   - Nguyên lý: *"Spec the experience, not the interface"*.
+   - Tiến trình 5 câu hỏi nhận thức của Giám khảo trong 90 giây:
+     - 00-15s: Who am I?
+     - 15-35s: What happened & How early?
+     - 35-55s: Why trust?
+     - 55-75s: What can I do?
+     - 75-90s: Did it work?
+   - 4 Tầng phân cấp thông tin (Progressive Disclosure): Tier 1 (Peripheral Awareness), Tier 2 (Factual Decision Basis), Tier 3 (On-Demand Trust Verification), Tier 4 (Background Substance).
+   - Storyboard chi tiết từng giây và layout wireframe của Incident Command Console.
+
+5. **Phần 5: Backend Domain Architecture & Vertical Slice v2.1 (Đã hoàn thiện & kiểm chứng)**
+   - 8 Invariants bất biến của hệ thống.
+   - Tách biệt rõ ràng các tầng trách nhiệm:
+     - Detectors (5 thuật toán vật lý + thống kê + Isolation Forest).
+     - Evidence Fusion (`EvidenceState` đa tín hiệu).
+     - Decision Engine (Ma trận quyết định tất định).
+     - Domain Recovery Policy (`RecoveryCriteria` & `RecoveryVerifier` với quy tắc reset sau suýt thành công).
+     - Lifecycle Orchestration (`IncidentLifecycleManager` điều phối replay cursor & máy trạng thái tường minh).
+   - Hợp đồng REST API đóng băng:
+     - Product Endpoints: `GET /api/incident`, `GET /api/evidence`, `POST /api/action/safe-mode`, `GET /api/recovery`.
+     - Demo Controls: `POST /demo/reset`, `POST /demo/tick`, `POST /demo/jump`.
+     - Error handling: HTTP 409 Conflict cho chuyển đổi trạng thái phi pháp; HTTP 400 Bad Request cho milestone sai.
+   - Kết quả kiểm thử: 12/12 test cases passed, tính tất định 100% giữa 2 lần chạy.
+
+6. **Phần 6: Master Spec Technology Blueprint (MongoDB & Datadog Integration)**
+   - Yêu cầu bắt buộc MongoDB:
+     - Time Series collection: `measurements` (timeField: `timestamp`, metaField: `metadata`).
+     - Aggregation Pipeline: `$setWindowFields` tính rolling baseline, delta, sigma.
+     - Document Collections: `incidents`, `evidence_records`, `assets`.
+     - TTL & Lifecycle: `expireAfterSeconds`.
+     - Biện minh "Why MongoDB?": Khả năng hợp nhất dữ liệu chuỗi thời gian vận hành và trạng thái sự cố có cấu trúc.
+   - Yêu cầu bắt buộc Datadog:
+     - Custom metrics qua DogStatsD: `compressorguard.dv_pressure`, `oil_temp`, `anomaly_score`.
+     - APM & Tracing: `dd-trace` gắn vào FastAPI endpoints.
+     - Log Management: JSON structured logs tương quan với Trace ID.
+     - Dashboards & Monitors cho sự cố và độ trễ.
+   - Vector Search (P1) & RCA Synthesis (P2).
+
+7. **Phần 7: Strategic Roadmap & Hướng Dẫn Dành Cho AI Agent Tiếp Theo**
+   - Trạng thái hiện tại: Vertical Slice Backend v2.1 đã hoàn thành 100%.
+   - Nhiệm vụ kế tiếp theo thứ tự ưu tiên:
+     1. Tích hợp MongoDB Time Series & Aggregation Pipeline ($setWindowFields).
+     2. Tích hợp Datadog Observability (Metrics, Logs, Traces, Monitors).
+     3. Xây dựng giao diện Frontend Incident Command Console (tuân thủ nghiêm ngặt PRODUCT_UX_SPEC.md).
+     4. Demo Hardening & Pitch Deck rehearsal (kịch bản trình diễn 1 lệnh không lỗi).
+   - Bộ quy tắc ứng xử (Rules of Engagement) cho AI tiếp theo: Không vi phạm 8 invariants; Không bịa telemetry; Không phá vỡ hợp đồng API đã đóng băng.
+
+---
+
+## Task-by-Task Implementation Plan
+
+### Task 1: Khởi tạo khung tài liệu `master_context.md` và viết Phần 1 (Executive Summary) & Phần 2 (Hackathon Strategy & Comparative Post-Mortem)
+
+Trích xuất toàn bộ phân tích chiều sâu từ hội thoại `7d83d7ab-bacd-4905-bb22-054ce9d029ee`, báo cáo 30KB (`step_102_full_report.md`), và các phản hồi chiến lược của User về so sánh 2 project.
+
+**Files:**
+- Create: `d:/Code/Projects/self-projects/iot-hackathon/master_context.md`
+
+- [ ] **Step 1: Viết Phần 1 - Executive Identity, Core Promise, 3 Killer Claims, Anti-Scope**
+- [ ] **Step 2: Viết Phần 2 - So sánh đối đầu ThreatLens vs CompressorGuard, Phân biệt Feature/Capability/Product/Demo/Engineering, 5 Cổng đánh giá Giám khảo**
+- [ ] **Step 3: Kiểm tra tính mạch lạc và độ súc tích của Phần 1 & 2**
+
+---
+
+### Task 2: Soạn thảo Phần 3 - Physical Domain & Ground Truth Dataset (MetroPT-3)
+
+Tổng hợp toàn bộ thông số kỹ thuật cảm biến, các chế độ vận hành (LOADED/UNLOADED), mốc sự cố vàng Onset (05/06 09:50:39), LPS cơ học (06/06 19:42:19), Lead Time 33h 52m, và phân đoạn hồi phục 08/06 16:05:00 từ `findings.md` và `data-feasibility.md`.
+
+**Files:**
+- Modify: `d:/Code/Projects/self-projects/iot-hackathon/master_context.md`
+
+- [ ] **Step 1: Tổng hợp bảng đặc tả 15 sensor và phân loại van/áp suất/nhiệt độ/dòng điện**
+- [ ] **Step 2: Đặc tả chi tiết cơ chế suy thoái vật lý (Discharge valve leak $\rightarrow$ áp suất tăng $\rightarrow$ nhiệt độ tăng $\rightarrow$ sập áp toàn hệ thống)**
+- [ ] **Step 3: Ghi nhận chính xác số liệu đối chứng tại các mốc thời gian Golden Path**
+
+---
+
+### Task 3: Soạn thảo Phần 4 - Product Thesis & 90-Second Golden Experience Spec
+
+Chuyển tải nguyên vẹn tinh thần "Spec the experience, not the interface", tiến trình nhận thức 5 câu hỏi của Giám khảo, 4 tầng thông tin (Tiers 1-4), và Layout Wireframe của Incident Command Console từ `docs/PRODUCT_UX_SPEC.md` và `docs/product-thesis-and-golden-experience.md`.
+
+**Files:**
+- Modify: `d:/Code/Projects/self-projects/iot-hackathon/master_context.md`
+
+- [ ] **Step 1: Trình bày bảng Cognitive Progression 90 giây theo từng mốc thời gian**
+- [ ] **Step 2: Chi tiết hóa 4 Tiers phân cấp thông tin và dữ liệu hiển thị tương ứng**
+- [ ] **Step 3: Vẽ diagram ASCII Layout Console và luồng tương tác người dùng**
+
+---
+
+### Task 4: Soạn thảo Phần 5 - Backend Domain Architecture & Vertical Slice v2.1
+
+Ghi nhận toàn bộ hiện trạng kỹ thuật đã kiểm chứng: 8 Invariants, kiến trúc các tầng (`detectors`, `fusion`, `decision`, `recovery`, `lifecycle`), hợp đồng REST API đóng băng kèm mẫu JSON payload thực tế và xử lý lỗi HTTP 409/400.
+
+**Files:**
+- Modify: `d:/Code/Projects/self-projects/iot-hackathon/master_context.md`
+
+- [ ] **Step 1: Liệt kê chi tiết 8 Invariants bất biến đã được thẩm định trong codebase**
+- [ ] **Step 2: Vẽ sơ đồ kiến trúc các tầng domain và luồng dữ liệu ReplayEngine $\rightarrow$ Detectors $\rightarrow$ Fusion $\rightarrow$ Decision $\rightarrow$ Lifecycle $\rightarrow$ RecoveryVerifier**
+- [ ] **Step 3: Ghi đầy đủ API Contract cho 4 Product endpoints và 3 Demo endpoints kèm ví dụ JSON chính xác**
+
+---
+
+### Task 5: Soạn thảo Phần 6 - Master Spec Technology Blueprint (MongoDB & Datadog)
+
+Trích xuất và cấu trúc hóa các yêu cầu bắt buộc của MUGVN Hackathon từ `master-spec.md`: Mô hình Time Series Collection, Aggregation Pipeline (`$setWindowFields`), TTL, chiến lược Datadog (Metrics, Logs, APM, Monitors), và luận điểm biện minh "Why MongoDB?".
+
+**Files:**
+- Modify: `d:/Code/Projects/self-projects/iot-hackathon/master_context.md`
+
+- [ ] **Step 1: Đặc tả kiến trúc MongoDB Time Series, schema tài liệu, và pipeline `$setWindowFields`**
+- [ ] **Step 2: Đặc tả kiến trúc Datadog (DogStatsD, APM tracing, Structured logging, Dashboard)**
+- [ ] **Step 3: Đưa ra câu trả lời chuẩn mực cho câu hỏi bảo vệ: "Why MongoDB?", "Why AI?"**
+
+---
+
+### Task 6: Soạn thảo Phần 7 - Strategic Roadmap, Guidelines & Tự động kiểm tra tính toàn vẹn
+
+Định hình lộ trình thực thi tiếp theo cho các AI agent khác, thiết lập các quy tắc bất khả xâm phạm (Rules of Engagement), và chạy script kiểm tra tính đầy đủ của tài liệu.
+
+**Files:**
+- Modify: `d:/Code/Projects/self-projects/iot-hackathon/master_context.md`
+- Copy plan: `d:/Code/Projects/self-projects/iot-hackathon/docs/superpowers/plans/2026-10-08-master-context-compilation.md`
+
+- [ ] **Step 1: Viết lộ trình các bước tiếp theo (MongoDB $\rightarrow$ Datadog $\rightarrow$ UI Console $\rightarrow$ Demo Polish)**
+- [ ] **Step 2: Thiết lập bảng Hướng dẫn nhận thức & Rules of Engagement cho AI kế tiếp**
+- [ ] **Step 3: Lưu bản kế hoạch writing-plans vào thư mục `docs/superpowers/plans/`**
+- [ ] **Step 4: Chạy kiểm tra kích thước, số lượng từ và tính đầy đủ của các neo dữ liệu trong `master_context.md`**
+
+---
+
+## Verification Plan
+
+### Automated Verification
+```bash
+python -c "
+import os
+path = r'd:\Code\Projects\self-projects\iot-hackathon\master_context.md'
+assert os.path.exists(path), 'File master_context.md does not exist!'
+size = os.path.getsize(path)
+print(f'master_context.md exists, size: {size} bytes')
+assert size > 25000, f'File size {size} is too small for a comprehensive master context!'
+with open(path, 'r', encoding='utf-8') as f:
+    content = f.read()
+for kw in ['33h 52m', 'MetroPT-3', 'ThreatLens', 'CompressorGuard', 'RecoveryCriteria', 'GET /api/incident', 'setWindowFields', 'Datadog']:
+    assert kw in content, f'Missing keyword: {kw}'
+print('All critical domain checkpoints verified successfully.')
+"
+```
+
+### Manual Review
+- Đảm bảo tài liệu đọc liền mạch, tổ chức markdown trực quan với headers, code blocks, JSON schemas, Mermaid diagram.
+- Xác nhận rằng một AI độc lập khi đọc tệp này sẽ có đủ toàn bộ tri thức mà không cần đọc lại các file lẻ tẻ.
+</file>
+
+<file path="docs.xml">
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: *.md
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+superpowers/
+  plans/
+    2026-10-06-compressorguard-vertical-slice.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="superpowers/plans/2026-10-06-compressorguard-vertical-slice.md">
+# CompressorGuard: Vertical Slice Backend & Domain API Implementation Plan (v2.1)
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Hiện thực hóa **Vertical Slice Backend v2.1** cho CompressorGuard kết nối trực tiếp với engine hiện tại (`ReplayEngine`, `DecisionEngine`, `EvidenceFusionEngine`, `detectors`). Toàn bộ luồng nghiệp vụ 90 giây (**Phát hiện sớm 33h 52m $\rightarrow$ Bằng chứng nhiệt động lực $\rightarrow$ Kích hoạt Safe Mode $\rightarrow$ Rẽ nhánh luồng dữ liệu sau bảo trì $\rightarrow$ Kiểm chứng phục hồi 5 cửa sổ đánh giá liên tiếp $\rightarrow$ Đóng sự cố**) được điều phối bằng dữ liệu thực 100%, không bịa telemetry, và expose qua API chuẩn mực tách biệt giữa Product API và Demo Controls. **Không viết mã UI/HTML/CSS.**
+
+**Architecture:**
+- **Domain Policy Layer:** `RecoveryCriteria` đóng gói tiêu chuẩn nghiệm thu phục hồi thành chính sách miền nghiệp vụ có nguồn gốc (provenance) rõ ràng.
+- **Recovery Verification Layer:** `RecoveryVerifier` kiểm tra từng cửa sổ dữ liệu thực tế trong chế độ `LOADED`. Bất kỳ mẫu vi phạm nào cũng lập tức reset số cửa sổ liên tiếp về 0.
+- **Orchestration Layer:** `IncidentLifecycleManager` điều phối luồng phát dữ liệu (`degradation` vs `post-maintenance recovery`), quản lý máy trạng thái tường minh (`DETECTED` $\rightarrow$ `INVESTIGATING` $\rightarrow$ `MITIGATING` $\rightarrow$ `VERIFYING_RECOVERY` $\rightarrow$ `RESOLVED`). Không hardcode bất kỳ con số nào thuộc về engine.
+- **Interface Layer (FastAPI):** Tách bạch rõ 4 Product Domain Endpoints (`/api/incident`, `/api/evidence`, `/api/action/safe-mode`, `/api/recovery`) và các Simulation Controls (`/demo/reset`, `/demo/tick`, `/demo/jump`), có xử lý lỗi HTTP 409 Conflict cho chuyển đổi trạng thái phi pháp và HTTP 400 cho milestone không hợp lệ.
+
+**Tech Stack:** Python 3.12, FastAPI, Uvicorn, Pandas, Scikit-learn, pytest.
+
+---
+
+## File Structure & Responsibilities
+
+```text
+d:/Code/Projects/self-projects/iot-hackathon/
+├── docs/
+│   ├── PRODUCT_UX_SPEC.md              # [UPDATED v2.1] Product thesis, cognitive hierarchy & API contract
+│   └── superpowers/plans/
+│       └── 2026-10-06-compressorguard-vertical-slice.md # [THIS FILE v2.1]
+├── src/
+│   ├── domain/
+│   │   ├── enums.py                    # [EXISTING] IncidentLifecycleState, AssetHealthState...
+│   │   └── models.py                   # [EXISTING] TelemetryPoint, EvidenceState, Decision...
+│   ├── engine/
+│   │   ├── recovery.py                 # [NEW] RecoveryCriteria (Policy) + RecoveryVerifier
+│   │   ├── lifecycle.py                # [NEW] IncidentLifecycleManager (Orchestration & Stream branching)
+│   │   └── ...                         # [EXISTING] detectors, fusion, decision, replay
+│   └── api/
+│       ├── __init__.py                 # [NEW]
+│       ├── schemas.py                  # [NEW] Pydantic DTOs for Product API & Demo responses
+│       ├── routes_product.py           # [NEW] 4 Product Endpoints (/api/incident, /evidence, /action, /recovery)
+│       ├── routes_demo.py              # [NEW] Demo Controls (/demo/reset, /demo/tick, /demo/jump)
+│       └── app.py                      # [NEW] FastAPI factory mounting routes
+└── tests/
+    ├── test_recovery_verifier.py       # [NEW] Unit test for RecoveryVerifier (with near-success reset test)
+    ├── test_lifecycle_orchestrator.py  # [NEW] Orchestration test with exact state transitions & branching
+    ├── test_deterministic_replay.py   # [NEW] Two-run deterministic replay comparison test
+    └── test_api_vertical_slice.py      # [NEW] End-to-end API test covering happy path and HTTP 409/400 errors
+```
+</file>
+
+</files>
+</file>
+
+</files>

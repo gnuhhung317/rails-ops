@@ -1,0 +1,99 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: *.md
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+superpowers/
+  plans/
+    2026-10-06-compressorguard-vertical-slice.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="superpowers/plans/2026-10-06-compressorguard-vertical-slice.md">
+# CompressorGuard: Vertical Slice Backend & Domain API Implementation Plan (v2.1)
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Hiện thực hóa **Vertical Slice Backend v2.1** cho CompressorGuard kết nối trực tiếp với engine hiện tại (`ReplayEngine`, `DecisionEngine`, `EvidenceFusionEngine`, `detectors`). Toàn bộ luồng nghiệp vụ 90 giây (**Phát hiện sớm 33h 52m $\rightarrow$ Bằng chứng nhiệt động lực $\rightarrow$ Kích hoạt Safe Mode $\rightarrow$ Rẽ nhánh luồng dữ liệu sau bảo trì $\rightarrow$ Kiểm chứng phục hồi 5 cửa sổ đánh giá liên tiếp $\rightarrow$ Đóng sự cố**) được điều phối bằng dữ liệu thực 100%, không bịa telemetry, và expose qua API chuẩn mực tách biệt giữa Product API và Demo Controls. **Không viết mã UI/HTML/CSS.**
+
+**Architecture:**
+- **Domain Policy Layer:** `RecoveryCriteria` đóng gói tiêu chuẩn nghiệm thu phục hồi thành chính sách miền nghiệp vụ có nguồn gốc (provenance) rõ ràng.
+- **Recovery Verification Layer:** `RecoveryVerifier` kiểm tra từng cửa sổ dữ liệu thực tế trong chế độ `LOADED`. Bất kỳ mẫu vi phạm nào cũng lập tức reset số cửa sổ liên tiếp về 0.
+- **Orchestration Layer:** `IncidentLifecycleManager` điều phối luồng phát dữ liệu (`degradation` vs `post-maintenance recovery`), quản lý máy trạng thái tường minh (`DETECTED` $\rightarrow$ `INVESTIGATING` $\rightarrow$ `MITIGATING` $\rightarrow$ `VERIFYING_RECOVERY` $\rightarrow$ `RESOLVED`). Không hardcode bất kỳ con số nào thuộc về engine.
+- **Interface Layer (FastAPI):** Tách bạch rõ 4 Product Domain Endpoints (`/api/incident`, `/api/evidence`, `/api/action/safe-mode`, `/api/recovery`) và các Simulation Controls (`/demo/reset`, `/demo/tick`, `/demo/jump`), có xử lý lỗi HTTP 409 Conflict cho chuyển đổi trạng thái phi pháp và HTTP 400 cho milestone không hợp lệ.
+
+**Tech Stack:** Python 3.12, FastAPI, Uvicorn, Pandas, Scikit-learn, pytest.
+
+---
+
+## File Structure & Responsibilities
+
+```text
+d:/Code/Projects/self-projects/iot-hackathon/
+├── docs/
+│   ├── PRODUCT_UX_SPEC.md              # [UPDATED v2.1] Product thesis, cognitive hierarchy & API contract
+│   └── superpowers/plans/
+│       └── 2026-10-06-compressorguard-vertical-slice.md # [THIS FILE v2.1]
+├── src/
+│   ├── domain/
+│   │   ├── enums.py                    # [EXISTING] IncidentLifecycleState, AssetHealthState...
+│   │   └── models.py                   # [EXISTING] TelemetryPoint, EvidenceState, Decision...
+│   ├── engine/
+│   │   ├── recovery.py                 # [NEW] RecoveryCriteria (Policy) + RecoveryVerifier
+│   │   ├── lifecycle.py                # [NEW] IncidentLifecycleManager (Orchestration & Stream branching)
+│   │   └── ...                         # [EXISTING] detectors, fusion, decision, replay
+│   └── api/
+│       ├── __init__.py                 # [NEW]
+│       ├── schemas.py                  # [NEW] Pydantic DTOs for Product API & Demo responses
+│       ├── routes_product.py           # [NEW] 4 Product Endpoints (/api/incident, /evidence, /action, /recovery)
+│       ├── routes_demo.py              # [NEW] Demo Controls (/demo/reset, /demo/tick, /demo/jump)
+│       └── app.py                      # [NEW] FastAPI factory mounting routes
+└── tests/
+    ├── test_recovery_verifier.py       # [NEW] Unit test for RecoveryVerifier (with near-success reset test)
+    ├── test_lifecycle_orchestrator.py  # [NEW] Orchestration test with exact state transitions & branching
+    ├── test_deterministic_replay.py   # [NEW] Two-run deterministic replay comparison test
+    └── test_api_vertical_slice.py      # [NEW] End-to-end API test covering happy path and HTTP 409/400 errors
+```
+</file>
+
+</files>
