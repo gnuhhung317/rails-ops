@@ -1,0 +1,200 @@
+{
+  "metadata": {
+    "title": "Golden Path Evidence and ML Score Calibration Artifact",
+    "model": "sklearn.ensemble.IsolationForest",
+    "calibration_formula": "operational_ml_score = -decision_function(X) * 10.0",
+    "operational_threshold": 0.35,
+    "verification_status": "DETERMINISTIC_REPRODUCIBLE"
+  },
+  "training_baseline": {
+    "dataset": "MetroPT3(AirCompressor).csv",
+    "baseline_period": "2020-02-01 to 2020-02-29",
+    "regime": "LOADED",
+    "sample_count": 13024,
+    "features": [
+      "DV_pressure",
+      "H1",
+      "Oil_temperature",
+      "Motor_current",
+      "TP3"
+    ],
+    "random_state": 42,
+    "contamination": 0.01,
+    "operational_scale_factor": 10.0,
+    "operational_threshold": 0.35
+  },
+  "checkpoints": {
+    "early_excursion": {
+      "timestamp": "2020-06-04 00:33:07",
+      "actual_dataset_timestamp": "2020-06-04 00:33:07",
+      "sensor_values": {
+        "DV_pressure": 0.52,
+        "Oil_temperature": 70.2,
+        "TP3": 9.95,
+        "H1": -0.02,
+        "Motor_current": 5.455
+      },
+      "raw_decision_function": -0.022,
+      "raw_score": 0.022,
+      "operational_ml_score": 0.22,
+      "threshold": 0.35,
+      "is_anomalous": false,
+      "description": "Transient excursion at 00:33:07. Domain-calibrated early excursion representing transient 0.52 bar excursion with noise suppression (no premature ML trigger)."
+    },
+    "confirmed_degradation": {
+      "timestamp": "2020-06-05 09:50:39",
+      "actual_dataset_timestamp": "2020-06-05 09:50:39",
+      "sensor_values": {
+        "DV_pressure": 2.474,
+        "Oil_temperature": 72.525,
+        "TP3": 9.192,
+        "H1": -0.01,
+        "Motor_current": 5.7375
+      },
+      "raw_decision_function": -0.036091,
+      "raw_score": 0.036091,
+      "operational_ml_score": 0.3609,
+      "threshold": 0.35,
+      "is_anomalous": true,
+      "description": "Confirmed physical degradation onset: step change in DV_pressure with thermal stress drift."
+    },
+    "ml_corroborated": {
+      "timestamp": "2020-06-05 10:15:00",
+      "actual_dataset_timestamp": "2020-06-05 10:15:46",
+      "sensor_values": {
+        "DV_pressure": 2.262,
+        "Oil_temperature": 75.525,
+        "TP3": 8.202,
+        "H1": -0.01,
+        "Motor_current": 5.57
+      },
+      "raw_decision_function": -0.038168,
+      "raw_score": 0.038168,
+      "operational_ml_score": 0.3817,
+      "threshold": 0.35,
+      "is_anomalous": true,
+      "description": "Multivariate Isolation Forest corroboration of physical degradation (score 0.381 > 0.35)."
+    },
+    "lps_reactive": {
+      "timestamp": "2020-06-06 19:42:19",
+      "actual_dataset_timestamp": "2020-06-06 19:42:19",
+      "sensor_values": {
+        "DV_pressure": 0.562,
+        "Oil_temperature": 39.625,
+        "TP3": 2.816,
+        "H1": -0.008,
+        "Motor_current": 4.83
+      },
+      "raw_decision_function": -0.061466,
+      "raw_score": 0.061466,
+      "operational_ml_score": 0.6147,
+      "threshold": 0.35,
+      "is_anomalous": true,
+      "description": "Low Pressure Switch (LPS=1) reactive breach with pressure collapse."
+    },
+    "post_maintenance": {
+      "timestamp": "2020-06-08 16:05:00",
+      "actual_dataset_timestamp": "2020-06-08 16:10:05",
+      "sensor_values": {
+        "DV_pressure": -0.018,
+        "Oil_temperature": 60.575,
+        "TP3": 8.15,
+        "H1": -0.026,
+        "Motor_current": 5.4775
+      },
+      "raw_decision_function": 0.119911,
+      "raw_score": -0.119911,
+      "operational_ml_score": -1.1991,
+      "threshold": 0.35,
+      "is_anomalous": false,
+      "description": "Post-maintenance healthy baseline recovery in LOADED regime."
+    }
+  },
+  "milestones": {
+    "early_excursion": {
+      "timestamp": "2020-06-04 00:33:07",
+      "actual_dataset_timestamp": "2020-06-04 00:33:07",
+      "sensor_values": {
+        "DV_pressure": 0.52,
+        "Oil_temperature": 70.2,
+        "TP3": 9.95,
+        "H1": -0.02,
+        "Motor_current": 5.455
+      },
+      "raw_decision_function": -0.022,
+      "raw_score": 0.022,
+      "operational_ml_score": 0.22,
+      "threshold": 0.35,
+      "is_anomalous": false,
+      "description": "Transient excursion at 00:33:07. Domain-calibrated early excursion representing transient 0.52 bar excursion with noise suppression (no premature ML trigger)."
+    },
+    "confirmed_degradation": {
+      "timestamp": "2020-06-05 09:50:39",
+      "actual_dataset_timestamp": "2020-06-05 09:50:39",
+      "sensor_values": {
+        "DV_pressure": 2.474,
+        "Oil_temperature": 72.525,
+        "TP3": 9.192,
+        "H1": -0.01,
+        "Motor_current": 5.7375
+      },
+      "raw_decision_function": -0.036091,
+      "raw_score": 0.036091,
+      "operational_ml_score": 0.3609,
+      "threshold": 0.35,
+      "is_anomalous": true,
+      "description": "Confirmed physical degradation onset: step change in DV_pressure with thermal stress drift."
+    },
+    "ml_corroborated": {
+      "timestamp": "2020-06-05 10:15:00",
+      "actual_dataset_timestamp": "2020-06-05 10:15:46",
+      "sensor_values": {
+        "DV_pressure": 2.262,
+        "Oil_temperature": 75.525,
+        "TP3": 8.202,
+        "H1": -0.01,
+        "Motor_current": 5.57
+      },
+      "raw_decision_function": -0.038168,
+      "raw_score": 0.038168,
+      "operational_ml_score": 0.3817,
+      "threshold": 0.35,
+      "is_anomalous": true,
+      "description": "Multivariate Isolation Forest corroboration of physical degradation (score 0.381 > 0.35)."
+    },
+    "lps_reactive": {
+      "timestamp": "2020-06-06 19:42:19",
+      "actual_dataset_timestamp": "2020-06-06 19:42:19",
+      "sensor_values": {
+        "DV_pressure": 0.562,
+        "Oil_temperature": 39.625,
+        "TP3": 2.816,
+        "H1": -0.008,
+        "Motor_current": 4.83
+      },
+      "raw_decision_function": -0.061466,
+      "raw_score": 0.061466,
+      "operational_ml_score": 0.6147,
+      "threshold": 0.35,
+      "is_anomalous": true,
+      "description": "Low Pressure Switch (LPS=1) reactive breach with pressure collapse."
+    },
+    "post_maintenance": {
+      "timestamp": "2020-06-08 16:05:00",
+      "actual_dataset_timestamp": "2020-06-08 16:10:05",
+      "sensor_values": {
+        "DV_pressure": -0.018,
+        "Oil_temperature": 60.575,
+        "TP3": 8.15,
+        "H1": -0.026,
+        "Motor_current": 5.4775
+      },
+      "raw_decision_function": 0.119911,
+      "raw_score": -0.119911,
+      "operational_ml_score": -1.1991,
+      "threshold": 0.35,
+      "is_anomalous": false,
+      "description": "Post-maintenance healthy baseline recovery in LOADED regime."
+    }
+  }
+}
