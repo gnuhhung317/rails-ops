@@ -108,3 +108,61 @@ class JumpResponse(BaseModel):
     status: str = "JUMP_OK"
     milestone: str
     lifecycle_state: str
+
+
+# --- Operations & Case Governance Schemas ---
+class OperationsSummaryInfo(BaseModel):
+    monitored_assets_count: int = 1
+    active_cases_count: int = 0
+    assets_observing_count: int = 0
+    scenario_name: str = "Failure #3 — Air Leak"
+    simulation_mode: str = "LIVE_SIMULATION"
+    confirmed_intervention_window: Optional[str] = None
+
+
+class OperationsResponse(BaseModel):
+    fleet: dict
+    train: dict
+    subsystem: dict
+    asset: dict
+    operations_summary: OperationsSummaryInfo
+    active_case: Optional[dict] = None
+
+
+class CaseEventItem(BaseModel):
+    event_id: str
+    event_time: str
+    event_type: str
+    phase: str
+    title: str
+    detail: str
+    actor: str
+    source: str
+    provenance: dict = {}
+
+
+class CaseCloseRequest(BaseModel):
+    operator_id: str = "DISPATCHER-0941"
+    notes: Optional[str] = ""
+
+
+class CaseCloseResponse(BaseModel):
+    status: str
+    operator_id: str
+    notes: str
+    lifecycle_state: str
+    asset_health: str
+
+
+class ValidationReferenceResponse(BaseModel):
+    scenario_id: str
+    scenario_name: str
+    dataset_source: str
+    historical_period: str
+    reported_failure_mode: str
+    reported_failure_start: str
+    conventional_lps_breach: str
+    online_detector_confirmation: str
+    confirmed_intervention_window_minutes: int
+    confirmed_intervention_window_formatted: str
+    maintenance_summary: str
