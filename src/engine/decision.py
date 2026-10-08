@@ -67,17 +67,28 @@ class DecisionEngine(BaseDecisionEngine):
             )
 
         # 2. Multivariate ML Corroboration (High Confidence Evidence Pack: Pressure > 2.0 + Oil > 74C + ML > 0.35)
+        # INVARIANT: ML CANNOT CREATE A CASE. ML only corroborates an existing active case or confirmed degradation.
         if has_severe_pressure and has_severe_thermal and has_ml:
-            action = IncidentAction.UPDATE_INVESTIGATING if has_active_incident else IncidentAction.CREATE
-            return Decision(
-                asset_health=AssetHealthState.CRITICAL,
-                incident_action=action,
-                operational_confidence=OperationalConfidence.HIGH,
-                recommended_action=IncidentAction.EXECUTE_MITIGATION,
-                ui_action="Strong Evidence Pack Assembled",
-                reason="Multi-detector physical signals confirmed and corroborated by multivariate Isolation Forest. Safe Mode recommended.",
-                evidence_state=evidence_state
-            )
+            if has_active_incident:
+                return Decision(
+                    asset_health=AssetHealthState.CRITICAL,
+                    incident_action=IncidentAction.UPDATE_INVESTIGATING,
+                    operational_confidence=OperationalConfidence.HIGH,
+                    recommended_action=IncidentAction.EXECUTE_MITIGATION,
+                    ui_action="Multivariate Corroboration Confirmed",
+                    reason="Physical step degradation corroborated by multivariate Isolation Forest (5 LOADED features). Safe Mode recommended.",
+                    evidence_state=evidence_state
+                )
+            elif confirmed_degradation:
+                return Decision(
+                    asset_health=AssetHealthState.CRITICAL,
+                    incident_action=IncidentAction.CREATE,
+                    operational_confidence=OperationalConfidence.HIGH,
+                    recommended_action=IncidentAction.EXECUTE_MITIGATION,
+                    ui_action="Confirmed Degradation with ML Corroboration",
+                    reason="Confirmed severe step degradation corroborated by Isolation Forest.",
+                    evidence_state=evidence_state
+                )
 
         # 3. Confirmed Degradation (Physical Step + Thermal Drift, or ongoing active severe state)
         if confirmed_degradation or (has_active_incident and has_severe_pressure and has_any_thermal):

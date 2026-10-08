@@ -43,7 +43,13 @@ class PressureAnomalyDetector(BaseDetector):
                 observed_value=round(val, 4),
                 baseline_value=LOADED_DV_MEAN,
                 sigma_deviation=round(sigma, 2),
-                provenance={"sensor": "DV_pressure", "unit": "bar", "regime": latest.regime.value}
+                provenance={
+                    "sensor": "DV_pressure",
+                    "unit": "bar",
+                    "regime": latest.regime.value,
+                    "detector_class": "PressureAnomalyDetector",
+                    "method": "Loaded-regime baseline (sigma > 20.0)",
+                }
             )
         elif val > 1.0:
             return DetectorResult(
@@ -54,7 +60,13 @@ class PressureAnomalyDetector(BaseDetector):
                 observed_value=round(val, 4),
                 baseline_value=LOADED_DV_MEAN,
                 sigma_deviation=round(sigma, 2),
-                provenance={"sensor": "DV_pressure", "unit": "bar", "regime": latest.regime.value}
+                provenance={
+                    "sensor": "DV_pressure",
+                    "unit": "bar",
+                    "regime": latest.regime.value,
+                    "detector_class": "PressureAnomalyDetector",
+                    "method": "Loaded-regime baseline (sigma > 10.0)",
+                }
             )
         elif val > 0.5:
             return DetectorResult(
@@ -65,7 +77,13 @@ class PressureAnomalyDetector(BaseDetector):
                 observed_value=round(val, 4),
                 baseline_value=LOADED_DV_MEAN,
                 sigma_deviation=round(sigma, 2),
-                provenance={"sensor": "DV_pressure", "unit": "bar", "regime": latest.regime.value}
+                provenance={
+                    "sensor": "DV_pressure",
+                    "unit": "bar",
+                    "regime": latest.regime.value,
+                    "detector_class": "PressureAnomalyDetector",
+                    "method": "Loaded-regime baseline (sigma > 5.0)",
+                }
             )
         
         return DetectorResult(
@@ -105,7 +123,13 @@ class ThermalStressDetector(BaseDetector):
                 observed_value=round(val, 2),
                 baseline_value=LOADED_OIL_MEAN,
                 sigma_deviation=round(sigma, 2),
-                provenance={"sensor": "Oil_temperature", "unit": "C", "regime": latest.regime.value}
+                provenance={
+                    "sensor": "Oil_temperature",
+                    "unit": "°C",
+                    "regime": latest.regime.value,
+                    "detector_class": "ThermalStressDetector",
+                    "method": "Loaded-regime thermal drift (sigma > 5.0)",
+                }
             )
         elif val > 70.0:
             return DetectorResult(
@@ -116,7 +140,13 @@ class ThermalStressDetector(BaseDetector):
                 observed_value=round(val, 2),
                 baseline_value=LOADED_OIL_MEAN,
                 sigma_deviation=round(sigma, 2),
-                provenance={"sensor": "Oil_temperature", "unit": "C", "regime": latest.regime.value}
+                provenance={
+                    "sensor": "Oil_temperature",
+                    "unit": "°C",
+                    "regime": latest.regime.value,
+                    "detector_class": "ThermalStressDetector",
+                    "method": "Loaded-regime thermal drift (sigma > 4.0)",
+                }
             )
 
         return DetectorResult(
@@ -241,6 +271,8 @@ class TemporalStepDetector(BaseDetector):
                     "allowed_regime_gaps": self.allowed_regime_gaps,
                     "max_observation_gap_seconds": self.max_observation_gap_seconds,
                     "is_temporally_contiguous": True,
+                    "detector_class": "TemporalStepDetector",
+                    "method": f"{self.required_observations}-consecutive LOADED observation confirmation",
                 }
             )
 
@@ -253,6 +285,10 @@ class TemporalStepDetector(BaseDetector):
             baseline_value=0.0,
             sigma_deviation=0.0
         )
+
+
+# Backward-compatible and semantic alias
+TemporalPersistenceTracker = TemporalStepDetector
 
 
 class RegimeAwareStatDetector(BaseDetector):
@@ -340,7 +376,16 @@ class IsolationForestDetector(BaseDetector):
                 observed_value=round(float(score), 4),
                 baseline_value=self.score_threshold,
                 sigma_deviation=0.0,
-                provenance={"algorithm": "IsolationForest", "score": round(float(score), 4), "threshold": self.score_threshold}
+                provenance={
+                    "algorithm": "IsolationForest",
+                    "detector_class": "IsolationForestDetector",
+                    "method": "Isolation Forest (5 features, LOADED baseline)",
+                    "feature_names": ["DV_pressure", "H1", "Oil_temperature", "Motor_current", "TP3"],
+                    "feature_count": 5,
+                    "role": "Independent Corroboration",
+                    "score": round(float(score), 4),
+                    "threshold": self.score_threshold,
+                }
             )
 
         return DetectorResult(
