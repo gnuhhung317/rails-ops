@@ -183,3 +183,50 @@ def test_decision_reactive_lps():
     assert decision.asset_health == AssetHealthState.CRITICAL
     assert decision.incident_action == IncidentAction.UPDATE_INVESTIGATING
     assert decision.operational_confidence == OperationalConfidence.CRITICAL_REACTIVE
+
+
+def test_decision_resolved_and_failed_not_treated_as_active_incident():
+    engine = DecisionEngine()
+    state = EvidenceState(
+        asset_id="APU-COMP-01",
+        timestamp=datetime.now(),
+        regime=OperatingRegime.LOADED,
+        signals=[
+            DetectorResult(
+                detector_id="pressure_anomaly",
+                evidence_code=EvidenceCode.PRESSURE_SEVERE,
+                status=DetectorStatus.TRIGGERED,
+                severity=Severity.HIGH,
+                observed_value=2.5,
+            ),
+            DetectorResult(
+                detector_id="thermal_stress",
+                evidence_code=EvidenceCode.THERMAL_STRESS_ELEVATED,
+                status=DetectorStatus.TRIGGERED,
+                severity=Severity.MEDIUM,
+            ),
+            DetectorResult(
+                detector_id="temporal_persistence",
+                evidence_code=EvidenceCode.TEMPORAL_STEP_CONFIRMED,
+                status=DetectorStatus.CONFIRMED,
+                severity=Severity.HIGH,
+            ),
+        ]
+    )
+    # Context with RESOLVED lifecycle state must NOT be treated as active incident
+    ctx_resolved = IncidentContext(
+        active_incident_id="APU-INC-20200605-01",
+        lifecycle_state=IncidentLifecycleState.RESOLVED
+    )
+    dec_resolved = engine.evaluate(state, incident_context=ctx_resolved)
+    # Since previous incident is RESOLVED, a new confirmed degradation must trigger CREATE
+    assert dec_resolved.incident_action == IncidentAction.CREATE
+
+    # Context with FAILED lifecycle state must also NOT be treated as active incident
+    ctx_failed = IncidentContext(
+        active_incident_id="APU-INC-20200605-01",
+        lifecycle_state=IncidentLifecycleState.FAILED
+    )
+    dec_failed = engine.evaluate(state, incident_context=ctx_failed)
+    assert dec_failed.incident_action == IncidentAction.CREATE
+

@@ -10,6 +10,13 @@ from src.domain.enums import (
 )
 from src.domain.models import EvidenceState, Decision, IncidentContext
 
+ACTIVE_INCIDENT_STATES = {
+    IncidentLifecycleState.DETECTED,
+    IncidentLifecycleState.INVESTIGATING,
+    IncidentLifecycleState.MITIGATING,
+    IncidentLifecycleState.VERIFYING_RECOVERY,
+}
+
 class DecisionEngine(BaseDecisionEngine):
     def evaluate(
         self,
@@ -20,7 +27,7 @@ class DecisionEngine(BaseDecisionEngine):
         has_active_incident = (
             incident_context is not None
             and incident_context.active_incident_id is not None
-            and incident_context.lifecycle_state != IncidentLifecycleState.NONE
+            and incident_context.lifecycle_state in ACTIVE_INCIDENT_STATES
         )
 
         # Extract semantic facts (evidence codes) from EvidenceState signals
