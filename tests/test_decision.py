@@ -26,6 +26,7 @@ def test_decision_healthy():
     assert decision.asset_health == AssetHealthState.HEALTHY
     assert decision.incident_action == IncidentAction.NONE
     assert decision.operational_confidence == OperationalConfidence.NONE
+    assert decision.recommended_action == IncidentAction.NONE
 
 def test_decision_early_warning():
     engine = DecisionEngine()
@@ -49,6 +50,7 @@ def test_decision_early_warning():
     assert decision.asset_health == AssetHealthState.DEGRADING
     assert decision.incident_action == IncidentAction.NONE
     assert decision.operational_confidence == OperationalConfidence.LOW
+    assert decision.recommended_action == IncidentAction.NONE
 
 def test_decision_incident_created_no_prior_incident():
     engine = DecisionEngine()
@@ -84,6 +86,7 @@ def test_decision_incident_created_no_prior_incident():
     assert decision.asset_health == AssetHealthState.CRITICAL
     assert decision.incident_action == IncidentAction.CREATE
     assert decision.operational_confidence == OperationalConfidence.MEDIUM
+    assert decision.recommended_action == IncidentAction.NONE
 
 def test_decision_incident_tracking_with_active_incident():
     engine = DecisionEngine()
@@ -121,6 +124,7 @@ def test_decision_incident_tracking_with_active_incident():
     # Incident already active -> do not duplicate CREATE
     assert decision.incident_action == IncidentAction.NONE
     assert decision.operational_confidence == OperationalConfidence.MEDIUM
+    assert decision.recommended_action == IncidentAction.NONE
 
 def test_decision_high_confidence_investigating_with_ml():
     engine = DecisionEngine()
@@ -159,6 +163,7 @@ def test_decision_high_confidence_investigating_with_ml():
     assert decision.asset_health == AssetHealthState.CRITICAL
     assert decision.incident_action == IncidentAction.UPDATE_INVESTIGATING
     assert decision.operational_confidence == OperationalConfidence.HIGH
+    assert decision.recommended_action == IncidentAction.EXECUTE_MITIGATION
 
 def test_decision_reactive_lps():
     engine = DecisionEngine()
@@ -183,6 +188,7 @@ def test_decision_reactive_lps():
     assert decision.asset_health == AssetHealthState.CRITICAL
     assert decision.incident_action == IncidentAction.UPDATE_INVESTIGATING
     assert decision.operational_confidence == OperationalConfidence.CRITICAL_REACTIVE
+    assert decision.recommended_action == IncidentAction.EXECUTE_MITIGATION
 
 
 @pytest.mark.parametrize("lifecycle_state", [

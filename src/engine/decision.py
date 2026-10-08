@@ -60,6 +60,7 @@ class DecisionEngine(BaseDecisionEngine):
                 asset_health=AssetHealthState.CRITICAL,
                 incident_action=action,
                 operational_confidence=OperationalConfidence.CRITICAL_REACTIVE,
+                recommended_action=IncidentAction.EXECUTE_MITIGATION,
                 ui_action="Reactive Baseline Alert Active",
                 reason="Low Pressure Switch (LPS=1) reactive threshold breached. Line pressure < 7.0 bar.",
                 evidence_state=evidence_state
@@ -72,6 +73,7 @@ class DecisionEngine(BaseDecisionEngine):
                 asset_health=AssetHealthState.CRITICAL,
                 incident_action=action,
                 operational_confidence=OperationalConfidence.HIGH,
+                recommended_action=IncidentAction.EXECUTE_MITIGATION,
                 ui_action="Strong Evidence Pack Assembled",
                 reason="Multi-detector physical signals confirmed and corroborated by multivariate Isolation Forest. Safe Mode recommended.",
                 evidence_state=evidence_state

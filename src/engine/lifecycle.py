@@ -140,6 +140,14 @@ class IncidentLifecycleManager:
                 f"Action safe-mode is not permitted when incident is in state {self.lifecycle_state.value}."
             )
 
+        if (
+            self.current_decision is None
+            or self.current_decision.recommended_action != IncidentAction.EXECUTE_MITIGATION
+        ):
+            raise InvalidStateTransitionError(
+                "Action safe-mode rejected: DecisionEngine has not recommended mitigation for current evidence."
+            )
+
         self.lifecycle_state = IncidentLifecycleState.MITIGATING
         if self.active_incident:
             self.active_incident.lifecycle_state = IncidentLifecycleState.MITIGATING

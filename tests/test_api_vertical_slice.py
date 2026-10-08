@@ -31,6 +31,12 @@ def test_api_vertical_slice_golden_path():
     assert inc_data["lead_time"]["lead_time_minutes"] == 2032
     assert "summary" in inc_data
 
+    # Attempt safe-mode before ML corroboration -> 409 Conflict
+    sm_onset_resp = client.post("/api/action/safe-mode")
+    assert sm_onset_resp.status_code == 409
+    sm_onset_data = sm_onset_resp.json()
+    assert sm_onset_data.get("error") == "INVALID_STATE_TRANSITION"
+
     # 3. GET /api/evidence -> regime == "LOADED", contains PRESSURE_SEVERE with sigma_deviation > 20.0.
     ev_resp = client.get("/api/evidence")
     assert ev_resp.status_code == 200

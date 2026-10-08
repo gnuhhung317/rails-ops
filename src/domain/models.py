@@ -57,6 +57,7 @@ class Decision(BaseModel):
     asset_health: AssetHealthState
     incident_action: IncidentAction
     operational_confidence: OperationalConfidence
+    recommended_action: IncidentAction = IncidentAction.NONE
     ui_action: str
     reason: str
     evidence_state: EvidenceState

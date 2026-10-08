@@ -1,5 +1,10 @@
 import pytest
-from src.domain.enums import IncidentLifecycleState, AssetHealthState, EvidenceCode
+from src.domain.enums import (
+    IncidentLifecycleState,
+    AssetHealthState,
+    EvidenceCode,
+    IncidentAction,
+)
 from src.engine.lifecycle import IncidentLifecycleManager, InvalidStateTransitionError
 
 
@@ -139,3 +144,15 @@ def test_trigger_safe_mode_in_initial_state_none_raises_error():
     assert manager.lifecycle_state == IncidentLifecycleState.NONE
     with pytest.raises(InvalidStateTransitionError):
         manager.trigger_safe_mode()
+
+
+def test_safe_mode_rejected_when_not_recommended_by_decision_engine():
+    manager = IncidentLifecycleManager()
+    manager.reset()
+    manager.jump_to_milestone("onset_0950")
+    assert manager.lifecycle_state == IncidentLifecycleState.DETECTED
+    # Decision at onset does not recommend mitigation yet
+    assert manager.current_decision.recommended_action != IncidentAction.EXECUTE_MITIGATION
+    with pytest.raises(InvalidStateTransitionError, match="not recommended mitigation"):
+        manager.trigger_safe_mode()
+
