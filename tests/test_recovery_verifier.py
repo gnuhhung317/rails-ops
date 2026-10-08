@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Optional
 import pytest
 
 from src.domain.enums import OperatingRegime
@@ -9,11 +10,34 @@ from src.engine.recovery import (
     RecoveryVerifier,
 )
 
+_base_timestamp = datetime(2020, 6, 8, 16, 5, 0)
+_timestamp_step = 0
 
-def _make_point(dv_pressure: float, oil_temp: float, regime: OperatingRegime) -> TelemetryPoint:
+
+@pytest.fixture(autouse=True)
+def _reset_timestamp_step():
+    global _timestamp_step
+    _timestamp_step = 0
+
+
+def _make_point(
+    dv_pressure: float,
+    oil_temp: float,
+    regime: OperatingRegime,
+    timestamp: Optional[datetime] = None,
+    ts: Optional[datetime] = None,
+) -> TelemetryPoint:
+    actual_ts = timestamp or ts
+    global _timestamp_step
+    if actual_ts is None:
+        point_ts = _base_timestamp + timedelta(seconds=10 * _timestamp_step)
+        _timestamp_step += 1
+    else:
+        point_ts = actual_ts
+
     return TelemetryPoint(
         asset_id="APU-COMP-01",
-        timestamp=datetime(2020, 6, 8, 16, 5, 0),
+        timestamp=point_ts,
         tp2_bar=0.0,
         tp3_bar=9.5,
         h1_bar=9.5,
@@ -39,17 +63,20 @@ def test_recovery_criteria_policy_initialization():
     assert criteria.dv_pressure_max == 0.05
     assert criteria.oil_temp_max == 67.0
     assert criteria.required_regime == OperatingRegime.LOADED
+    assert criteria.max_observation_gap_seconds == 30.0
 
     custom = RecoveryCriteria(
         target_healthy_observations=3,
         dv_pressure_max=0.1,
         oil_temp_max=65.0,
         required_regime=OperatingRegime.OFF_LOAD,
+        max_observation_gap_seconds=15.0,
     )
     assert custom.target_healthy_observations == 3
     assert custom.dv_pressure_max == 0.1
     assert custom.oil_temp_max == 65.0
     assert custom.required_regime == OperatingRegime.OFF_LOAD
+    assert custom.max_observation_gap_seconds == 15.0
 
 
 def test_recovery_near_success_reset_invariant():

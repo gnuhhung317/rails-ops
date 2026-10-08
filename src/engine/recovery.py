@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, Field
 
@@ -19,6 +20,7 @@ class RecoveryCriteria(BaseModel):
     dv_pressure_max: float = Field(default=0.05, gt=0.0)
     oil_temp_max: float = Field(default=67.0, gt=0.0)
     required_regime: OperatingRegime = OperatingRegime.LOADED
+    max_observation_gap_seconds: float = Field(default=30.0, gt=0.0)
 
     # Internal-only legacy alias
     @property
@@ -67,6 +69,7 @@ class RecoveryVerifier:
         self.criteria: RecoveryCriteria = criteria or RecoveryCriteria()
         self.consecutive_healthy_observations: int = 0
         self.is_verified: bool = False
+        self.last_healthy_timestamp: Optional[datetime] = None
 
     # Internal-only legacy alias
     @property
@@ -81,6 +84,7 @@ class RecoveryVerifier:
         """Resets the consecutive healthy observation counter and verification status."""
         self.consecutive_healthy_observations = 0
         self.is_verified = False
+        self.last_healthy_timestamp = None
 
     def evaluate(self, point: TelemetryPoint) -> RecoveryEvaluationResult:
         """
@@ -106,7 +110,17 @@ class RecoveryVerifier:
         is_healthy = pressure_ok and temp_ok
 
         if is_healthy:
-            self.consecutive_healthy_observations += 1
+            if self.last_healthy_timestamp is not None:
+                gap = (point.timestamp - self.last_healthy_timestamp).total_seconds()
+                if gap > self.criteria.max_observation_gap_seconds:
+                    self.consecutive_healthy_observations = 1
+                else:
+                    self.consecutive_healthy_observations += 1
+            else:
+                self.consecutive_healthy_observations = 1
+
+            self.last_healthy_timestamp = point.timestamp
+
             if self.consecutive_healthy_observations >= self.criteria.target_healthy_observations:
                 self.is_verified = True
                 reason = (
@@ -122,6 +136,7 @@ class RecoveryVerifier:
             # Immediate reset on any breach in required regime
             self.consecutive_healthy_observations = 0
             self.is_verified = False
+            self.last_healthy_timestamp = None
             violations = []
             if not pressure_ok:
                 violations.append(
