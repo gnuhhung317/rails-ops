@@ -138,6 +138,7 @@ class TemporalStepDetector(BaseDetector):
         required_observations: int = 3,
         baseline_observations: int = 5,
         allowed_regime_gaps: int = 0,
+        max_observation_gap_seconds: float = 30.0,
         required_cycles: Optional[int] = None,
         baseline_cycles: Optional[int] = None,
     ):
@@ -149,6 +150,7 @@ class TemporalStepDetector(BaseDetector):
             baseline_cycles if baseline_cycles is not None else baseline_observations
         )
         self.allowed_regime_gaps = allowed_regime_gaps
+        self.max_observation_gap_seconds = max_observation_gap_seconds
 
     # Internal-only legacy properties
     @property
@@ -173,9 +175,16 @@ class TemporalStepDetector(BaseDetector):
 
         loaded_pts = []
         gaps = 0
+        last_seen_ts = latest.timestamp
         for p in reversed(window):
+            # Enforce time gap continuity
+            time_gap = (last_seen_ts - p.timestamp).total_seconds()
+            if loaded_pts and (time_gap <= 0.0 or time_gap > self.max_observation_gap_seconds):
+                # Gap broken or retrograde/duplicate
+                break
             if p.regime == OperatingRegime.LOADED:
                 loaded_pts.append(p)
+                last_seen_ts = p.timestamp
             else:
                 gaps += 1
                 if gaps > self.allowed_regime_gaps:
@@ -189,6 +198,17 @@ class TemporalStepDetector(BaseDetector):
 
         recent = loaded_pts[-self.required_observations:]
         past = loaded_pts[-total_required:-self.required_observations]
+
+        # Verify temporal continuity of recent observations
+        for i in range(len(recent) - 1):
+            gap = (recent[i + 1].timestamp - recent[i].timestamp).total_seconds()
+            if gap <= 0.0 or gap > self.max_observation_gap_seconds:
+                return DetectorResult(
+                    detector_id=self.detector_id,
+                    evidence_code=EvidenceCode.NORMAL,
+                    status=DetectorStatus.NORMAL,
+                    severity=Severity.NONE,
+                )
 
         recent_dv = sum(p.dv_pressure_bar for p in recent) / len(recent)
         past_dv = sum(p.dv_pressure_bar for p in past) / len(past)
@@ -219,6 +239,8 @@ class TemporalStepDetector(BaseDetector):
                     "actual_baseline_timestamps": [p.timestamp.isoformat() for p in past],
                     "gap_count": gaps,
                     "allowed_regime_gaps": self.allowed_regime_gaps,
+                    "max_observation_gap_seconds": self.max_observation_gap_seconds,
+                    "is_temporally_contiguous": True,
                 }
             )
 

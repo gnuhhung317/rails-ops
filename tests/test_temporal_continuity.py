@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 import pytest
 
-from src.domain.enums import OperatingRegime
+from src.domain.enums import OperatingRegime, DetectorStatus, EvidenceCode
 from src.domain.models import TelemetryPoint
+from src.engine.detectors import TemporalStepDetector
 from src.engine.recovery import RecoveryCriteria, RecoveryVerifier
 
 
@@ -226,3 +227,107 @@ def test_recovery_post_verification_gap_resets_is_verified():
     assert res_post_gap.is_verified is False
     assert verifier.consecutive_healthy_observations == 1
     assert verifier.is_verified is False
+
+
+def test_temporal_step_continuity_valid_10s_intervals():
+    detector = TemporalStepDetector(
+        step_threshold=0.5,
+        required_observations=3,
+        baseline_observations=5,
+        max_observation_gap_seconds=30.0,
+    )
+    t0 = datetime(2020, 6, 8, 16, 0, 0)
+    window = []
+    # 5 baseline points with dv=0.0 at 10s intervals
+    for i in range(5):
+        window.append(_make_point(timestamp=t0 + timedelta(seconds=10 * i), dv_pressure=0.0))
+    # 3 step points with dv=1.5 at 10s intervals
+    for i in range(5, 8):
+        window.append(_make_point(timestamp=t0 + timedelta(seconds=10 * i), dv_pressure=1.5))
+
+    res = detector.detect(window)
+    assert res.status == DetectorStatus.CONFIRMED
+    assert res.evidence_code == EvidenceCode.TEMPORAL_STEP_CONFIRMED
+    assert res.provenance["is_temporally_contiguous"] is True
+    assert res.provenance["max_observation_gap_seconds"] == 30.0
+
+
+def test_temporal_step_broken_by_60s_gap_in_recent():
+    detector = TemporalStepDetector(
+        step_threshold=0.5,
+        required_observations=3,
+        baseline_observations=5,
+        max_observation_gap_seconds=30.0,
+    )
+    t0 = datetime(2020, 6, 8, 16, 0, 0)
+    window = []
+    # 5 baseline points with dv=0.0 at 10s intervals (t0 .. t0+40s)
+    for i in range(5):
+        window.append(_make_point(timestamp=t0 + timedelta(seconds=10 * i), dv_pressure=0.0))
+    # point 6 (+10s -> t0+50s)
+    window.append(_make_point(timestamp=t0 + timedelta(seconds=50), dv_pressure=1.5))
+    # point 7 (+10s -> t0+60s)
+    window.append(_make_point(timestamp=t0 + timedelta(seconds=60), dv_pressure=1.5))
+    # point 8 has a 60s gap (+60s -> t0+120s)
+    window.append(_make_point(timestamp=t0 + timedelta(seconds=120), dv_pressure=1.5))
+
+    res = detector.detect(window)
+    assert res.status == DetectorStatus.NORMAL
+
+
+def test_temporal_step_gap_plus_regime_change_does_not_pick_old_points():
+    detector = TemporalStepDetector(
+        step_threshold=0.5,
+        required_observations=3,
+        baseline_observations=5,
+        allowed_regime_gaps=2,
+        max_observation_gap_seconds=30.0,
+    )
+    t0 = datetime(2020, 6, 8, 16, 0, 0)
+    window = []
+    # 5 baseline points with dv=0.0 at 10s intervals (t0 .. t0+40s)
+    for i in range(5):
+        window.append(_make_point(timestamp=t0 + timedelta(seconds=10 * i), dv_pressure=0.0))
+    # 1 point with dv=1.5 (t0+50s)
+    window.append(_make_point(timestamp=t0 + timedelta(seconds=50), dv_pressure=1.5))
+    # 5 minutes of OFF regime (point at t0 + 60s and t0 + 350s)
+    window.append(_make_point(timestamp=t0 + timedelta(seconds=60), regime=OperatingRegime.OFF))
+    # 2 new LOADED points (t0+360s, t0+370s)
+    window.append(_make_point(timestamp=t0 + timedelta(seconds=360), dv_pressure=1.5))
+    window.append(_make_point(timestamp=t0 + timedelta(seconds=370), dv_pressure=1.5))
+
+    res = detector.detect(window)
+    assert res.status == DetectorStatus.NORMAL
+
+
+def test_temporal_step_duplicate_or_retrograde_timestamps_fail_continuity():
+    detector = TemporalStepDetector(
+        step_threshold=0.5,
+        required_observations=3,
+        baseline_observations=5,
+        max_observation_gap_seconds=30.0,
+    )
+    t0 = datetime(2020, 6, 8, 16, 0, 0)
+
+    # Subtest 1: Duplicate timestamp
+    window_dup = []
+    for i in range(5):
+        window_dup.append(_make_point(timestamp=t0 + timedelta(seconds=10 * i), dv_pressure=0.0))
+    window_dup.append(_make_point(timestamp=t0 + timedelta(seconds=50), dv_pressure=1.5))
+    window_dup.append(_make_point(timestamp=t0 + timedelta(seconds=60), dv_pressure=1.5))
+    window_dup.append(_make_point(timestamp=t0 + timedelta(seconds=60), dv_pressure=1.5))  # Duplicate ts
+
+    res_dup = detector.detect(window_dup)
+    assert res_dup.status == DetectorStatus.NORMAL
+
+    # Subtest 2: Retrograde timestamp
+    window_retro = []
+    for i in range(5):
+        window_retro.append(_make_point(timestamp=t0 + timedelta(seconds=10 * i), dv_pressure=0.0))
+    window_retro.append(_make_point(timestamp=t0 + timedelta(seconds=50), dv_pressure=1.5))
+    window_retro.append(_make_point(timestamp=t0 + timedelta(seconds=60), dv_pressure=1.5))
+    window_retro.append(_make_point(timestamp=t0 + timedelta(seconds=55), dv_pressure=1.5))  # Retrograde ts
+
+    res_retro = detector.detect(window_retro)
+    assert res_retro.status == DetectorStatus.NORMAL
+
