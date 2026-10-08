@@ -10,12 +10,14 @@ from src.domain.enums import (
 )
 from src.domain.models import EvidenceState, Decision, IncidentContext
 
-ACTIVE_INCIDENT_STATES = {
+# Active states for autonomous engine decision evaluation.
+# RESOLVED, FAILED, and ESCALATED are non-active states (handled by operators or terminal).
+ACTIVE_INCIDENT_STATES: frozenset[IncidentLifecycleState] = frozenset({
     IncidentLifecycleState.DETECTED,
     IncidentLifecycleState.INVESTIGATING,
     IncidentLifecycleState.MITIGATING,
     IncidentLifecycleState.VERIFYING_RECOVERY,
-}
+})
 
 class DecisionEngine(BaseDecisionEngine):
     def evaluate(

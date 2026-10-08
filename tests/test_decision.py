@@ -185,7 +185,12 @@ def test_decision_reactive_lps():
     assert decision.operational_confidence == OperationalConfidence.CRITICAL_REACTIVE
 
 
-def test_decision_resolved_and_failed_not_treated_as_active_incident():
+@pytest.mark.parametrize("lifecycle_state", [
+    IncidentLifecycleState.RESOLVED,
+    IncidentLifecycleState.FAILED,
+    IncidentLifecycleState.ESCALATED,
+])
+def test_decision_inactive_states_allow_new_incident_creation(lifecycle_state):
     engine = DecisionEngine()
     state = EvidenceState(
         asset_id="APU-COMP-01",
@@ -213,20 +218,10 @@ def test_decision_resolved_and_failed_not_treated_as_active_incident():
             ),
         ]
     )
-    # Context with RESOLVED lifecycle state must NOT be treated as active incident
-    ctx_resolved = IncidentContext(
+    ctx = IncidentContext(
         active_incident_id="APU-INC-20200605-01",
-        lifecycle_state=IncidentLifecycleState.RESOLVED
+        lifecycle_state=lifecycle_state
     )
-    dec_resolved = engine.evaluate(state, incident_context=ctx_resolved)
-    # Since previous incident is RESOLVED, a new confirmed degradation must trigger CREATE
-    assert dec_resolved.incident_action == IncidentAction.CREATE
-
-    # Context with FAILED lifecycle state must also NOT be treated as active incident
-    ctx_failed = IncidentContext(
-        active_incident_id="APU-INC-20200605-01",
-        lifecycle_state=IncidentLifecycleState.FAILED
-    )
-    dec_failed = engine.evaluate(state, incident_context=ctx_failed)
-    assert dec_failed.incident_action == IncidentAction.CREATE
+    dec = engine.evaluate(state, incident_context=ctx)
+    assert dec.incident_action == IncidentAction.CREATE
 
