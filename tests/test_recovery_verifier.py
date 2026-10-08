@@ -10,34 +10,15 @@ from src.engine.recovery import (
     RecoveryVerifier,
 )
 
-_base_timestamp = datetime(2020, 6, 8, 16, 5, 0)
-_timestamp_step = 0
-
-
-@pytest.fixture(autouse=True)
-def _reset_timestamp_step():
-    global _timestamp_step
-    _timestamp_step = 0
-
-
 def _make_point(
     dv_pressure: float,
     oil_temp: float,
     regime: OperatingRegime,
-    timestamp: Optional[datetime] = None,
-    ts: Optional[datetime] = None,
+    timestamp: datetime,
 ) -> TelemetryPoint:
-    actual_ts = timestamp or ts
-    global _timestamp_step
-    if actual_ts is None:
-        point_ts = _base_timestamp + timedelta(seconds=10 * _timestamp_step)
-        _timestamp_step += 1
-    else:
-        point_ts = actual_ts
-
     return TelemetryPoint(
         asset_id="APU-COMP-01",
-        timestamp=point_ts,
+        timestamp=timestamp,
         tp2_bar=0.0,
         tp3_bar=9.5,
         h1_bar=9.5,
@@ -84,9 +65,20 @@ def test_recovery_near_success_reset_invariant():
     assert verifier.consecutive_healthy_observations == 0
     assert not verifier.is_verified
 
+    base_ts = datetime(2020, 6, 8, 16, 5, 0)
+    current_ts = base_ts
+
+    def step_ts() -> datetime:
+        nonlocal current_ts
+        ts = current_ts
+        current_ts += timedelta(seconds=10)
+        return ts
+
     # 1. Feeds 4 healthy points -> verifier.consecutive_healthy_observations == 4, is_verified == False
     for _ in range(4):
-        result = verifier.evaluate(_make_point(dv_pressure=-0.016, oil_temp=64.0, regime=OperatingRegime.LOADED))
+        result = verifier.evaluate(
+            _make_point(dv_pressure=-0.016, oil_temp=64.0, regime=OperatingRegime.LOADED, timestamp=step_ts())
+        )
         assert result.is_applicable_regime is True
         assert result.is_observation_healthy is True
         assert result.is_verified is False
@@ -94,7 +86,9 @@ def test_recovery_near_success_reset_invariant():
     assert verifier.is_verified is False
 
     # 2. Feeds 1 unhealthy point (oil_temp=72.0°C > 67.0°C) -> resets immediately
-    unhealthy_point = _make_point(dv_pressure=-0.016, oil_temp=72.0, regime=OperatingRegime.LOADED)
+    unhealthy_point = _make_point(
+        dv_pressure=-0.016, oil_temp=72.0, regime=OperatingRegime.LOADED, timestamp=step_ts()
+    )
     result = verifier.evaluate(unhealthy_point)
     assert result.is_applicable_regime is True
     assert result.is_observation_healthy is False
@@ -104,7 +98,9 @@ def test_recovery_near_success_reset_invariant():
     assert verifier.is_verified is False
 
     # 3. Feeds 1 OFF regime point -> suspended (does not increment or reset)
-    off_point = _make_point(dv_pressure=-0.016, oil_temp=64.0, regime=OperatingRegime.OFF)
+    off_point = _make_point(
+        dv_pressure=-0.016, oil_temp=64.0, regime=OperatingRegime.OFF, timestamp=step_ts()
+    )
     result = verifier.evaluate(off_point)
     assert result.is_applicable_regime is False
     assert result.is_observation_healthy is False
@@ -115,7 +111,9 @@ def test_recovery_near_success_reset_invariant():
 
     # 4. Feeds 5 healthy points -> reaches target, verified == True
     for i in range(1, 6):
-        result = verifier.evaluate(_make_point(dv_pressure=0.01, oil_temp=63.5, regime=OperatingRegime.LOADED))
+        result = verifier.evaluate(
+            _make_point(dv_pressure=0.01, oil_temp=63.5, regime=OperatingRegime.LOADED, timestamp=step_ts())
+        )
         assert result.is_applicable_regime is True
         assert result.is_observation_healthy is True
         assert result.consecutive_healthy_observations == i
@@ -132,13 +130,18 @@ def test_recovery_near_success_reset_invariant():
 
 def test_recovery_verifier_dv_pressure_breach():
     verifier = RecoveryVerifier()
+    t0 = datetime(2020, 6, 8, 16, 5, 0)
     # 2 healthy points
-    verifier.evaluate(_make_point(dv_pressure=0.02, oil_temp=60.0, regime=OperatingRegime.LOADED))
-    verifier.evaluate(_make_point(dv_pressure=0.03, oil_temp=61.0, regime=OperatingRegime.LOADED))
+    verifier.evaluate(_make_point(dv_pressure=0.02, oil_temp=60.0, regime=OperatingRegime.LOADED, timestamp=t0))
+    verifier.evaluate(
+        _make_point(dv_pressure=0.03, oil_temp=61.0, regime=OperatingRegime.LOADED, timestamp=t0 + timedelta(seconds=10))
+    )
     assert verifier.consecutive_healthy_observations == 2
 
     # Breach on dv_pressure (0.08 > 0.05)
-    result = verifier.evaluate(_make_point(dv_pressure=0.08, oil_temp=60.0, regime=OperatingRegime.LOADED))
+    result = verifier.evaluate(
+        _make_point(dv_pressure=0.08, oil_temp=60.0, regime=OperatingRegime.LOADED, timestamp=t0 + timedelta(seconds=20))
+    )
     assert result.is_applicable_regime is True
     assert result.is_observation_healthy is False
     assert result.consecutive_healthy_observations == 0
@@ -148,32 +151,54 @@ def test_recovery_verifier_dv_pressure_breach():
 
 def test_recovery_verifier_suspension_preserves_counter():
     verifier = RecoveryVerifier()
+    t0 = datetime(2020, 6, 8, 16, 5, 0)
     # Feed 2 healthy points
-    verifier.evaluate(_make_point(dv_pressure=0.01, oil_temp=62.0, regime=OperatingRegime.LOADED))
-    verifier.evaluate(_make_point(dv_pressure=0.02, oil_temp=63.0, regime=OperatingRegime.LOADED))
+    verifier.evaluate(_make_point(dv_pressure=0.01, oil_temp=62.0, regime=OperatingRegime.LOADED, timestamp=t0))
+    verifier.evaluate(
+        _make_point(dv_pressure=0.02, oil_temp=63.0, regime=OperatingRegime.LOADED, timestamp=t0 + timedelta(seconds=10))
+    )
     assert verifier.consecutive_healthy_observations == 2
 
     # Feed OFF point -> should keep counter at 2
-    off_result = verifier.evaluate(_make_point(dv_pressure=0.01, oil_temp=62.0, regime=OperatingRegime.OFF))
+    off_result = verifier.evaluate(
+        _make_point(dv_pressure=0.01, oil_temp=62.0, regime=OperatingRegime.OFF, timestamp=t0 + timedelta(seconds=20))
+    )
     assert off_result.is_applicable_regime is False
     assert verifier.consecutive_healthy_observations == 2
 
     # Feed STARTING point -> should keep counter at 2
-    start_result = verifier.evaluate(_make_point(dv_pressure=0.01, oil_temp=62.0, regime=OperatingRegime.STARTING))
+    start_result = verifier.evaluate(
+        _make_point(dv_pressure=0.01, oil_temp=62.0, regime=OperatingRegime.STARTING, timestamp=t0 + timedelta(seconds=25))
+    )
     assert start_result.is_applicable_regime is False
     assert verifier.consecutive_healthy_observations == 2
 
     # Feed 3 more healthy points -> completes 5
-    for _ in range(3):
-        verifier.evaluate(_make_point(dv_pressure=0.01, oil_temp=62.0, regime=OperatingRegime.LOADED))
+    for i in range(3):
+        verifier.evaluate(
+            _make_point(
+                dv_pressure=0.01,
+                oil_temp=62.0,
+                regime=OperatingRegime.LOADED,
+                timestamp=t0 + timedelta(seconds=35 + 10 * i),
+            )
+        )
     assert verifier.consecutive_healthy_observations == 5
     assert verifier.is_verified is True
 
 
 def test_recovery_verifier_reset():
     verifier = RecoveryVerifier()
-    for _ in range(5):
-        verifier.evaluate(_make_point(dv_pressure=0.01, oil_temp=62.0, regime=OperatingRegime.LOADED))
+    t0 = datetime(2020, 6, 8, 16, 5, 0)
+    for i in range(5):
+        verifier.evaluate(
+            _make_point(
+                dv_pressure=0.01,
+                oil_temp=62.0,
+                regime=OperatingRegime.LOADED,
+                timestamp=t0 + timedelta(seconds=10 * i),
+            )
+        )
     assert verifier.consecutive_healthy_observations == 5
     assert verifier.is_verified is True
 

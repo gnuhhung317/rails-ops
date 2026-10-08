@@ -112,7 +112,7 @@ class RecoveryVerifier:
         if is_healthy:
             if self.last_healthy_timestamp is not None:
                 gap = (point.timestamp - self.last_healthy_timestamp).total_seconds()
-                if gap > self.criteria.max_observation_gap_seconds:
+                if gap <= 0.0 or gap > self.criteria.max_observation_gap_seconds:
                     self.consecutive_healthy_observations = 1
                 else:
                     self.consecutive_healthy_observations += 1
@@ -128,6 +128,7 @@ class RecoveryVerifier:
                     f"{self.criteria.target_healthy_observations} consecutive healthy observations achieved."
                 )
             else:
+                self.is_verified = False
                 reason = (
                     f"Healthy observation {self.consecutive_healthy_observations}/"
                     f"{self.criteria.target_healthy_observations} in regime {self.criteria.required_regime}."
