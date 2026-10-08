@@ -16,7 +16,10 @@ from src.domain.models import (
     IncidentEvent,
     IncidentContext,
     Decision,
+    CaseEvent,
+    CaseEventType,
 )
+from src.engine.action_guard import ActionGuard
 from src.engine.decision import DecisionEngine
 from src.engine.factory import setup_golden_path
 from src.engine.fusion import EvidenceFusionEngine
@@ -91,6 +94,8 @@ class IncidentLifecycleManager:
         self.current_point: Optional[TelemetryPoint] = None
         self.current_evidence_state: Optional[EvidenceState] = None
         self.current_decision: Optional[Decision] = None
+        self.action_guard: ActionGuard = ActionGuard()
+        self.case_events: List[CaseEvent] = []
 
         if (
             self.replay is None
@@ -121,11 +126,74 @@ class IncidentLifecycleManager:
         self.current_point = None
         self.current_evidence_state = None
         self.current_decision = None
+        self.case_events = []
         self.recovery_verifier.reset()
         if self.replay is not None:
             self.stream = self.replay.stream_telemetry(
                 "2020-06-05 09:40:00", "2020-06-06 20:00:00"
             )
+
+    def record_case_event(
+        self,
+        event_type: CaseEventType,
+        phase: str,
+        title: str,
+        detail: str,
+        actor: str = "system",
+        source: str = "CompressorGuard Engine",
+        provenance: Optional[Dict[str, Any]] = None,
+        event_time: Optional[Any] = None,
+    ) -> CaseEvent:
+        if event_time is not None:
+            ts = pd.to_datetime(event_time)
+        elif self.current_point is not None:
+            ts = self.current_point.timestamp
+        else:
+            ts = pd.to_datetime("2020-06-05 09:40:00")
+
+        evt = CaseEvent(
+            event_id=f"EVT-{len(self.case_events) + 1:03d}",
+            event_time=ts,
+            event_type=event_type,
+            phase=phase,
+            title=title,
+            detail=detail,
+            actor=actor,
+            source=source,
+            provenance=provenance or {},
+        )
+        self.case_events.append(evt)
+        return evt
+
+    def get_case_events(self) -> List[Dict[str, Any]]:
+        return [evt.model_dump() for evt in self.case_events]
+
+    def close_case(self, operator_id: str = "DISPATCHER-0941", notes: str = "") -> Dict[str, Any]:
+        if not self.recovery_verifier.is_verified:
+            raise ValueError("Recovery not verified. Cannot close operational case before 5/5 healthy LOADED observations are verified.")
+        self.lifecycle_state = IncidentLifecycleState.RESOLVED
+        self.asset_health = AssetHealthState.HEALTHY
+        if self.active_incident:
+            self.active_incident.lifecycle_state = IncidentLifecycleState.RESOLVED
+            self.active_incident.health_state = AssetHealthState.HEALTHY
+            if self.current_point:
+                self.active_incident.updated_at = self.current_point.timestamp
+
+        self.record_case_event(
+            event_type=CaseEventType.CASE_CLOSED,
+            phase="RESOLVED",
+            title="Case Signed Off & Closed",
+            detail=f"Operator {operator_id} signed off incident. Asset APU-COMP-01 released back to HEALTHY service. Notes: {notes or 'Recovery criteria satisfied'}",
+            actor=f"operator:{operator_id}",
+            source="Operations Console",
+        )
+        return {
+            "status": "CASE_CLOSED",
+            "operator_id": operator_id,
+            "notes": notes,
+            "lifecycle_state": "RESOLVED",
+            "asset_health": "HEALTHY",
+        }
 
     def trigger_safe_mode(self) -> Dict[str, Any]:
         """
@@ -148,6 +216,16 @@ class IncidentLifecycleManager:
                 "Action safe-mode rejected: DecisionEngine has not recommended mitigation for current evidence."
             )
 
+        guard_res = self.action_guard.validate(
+            lifecycle_state=self.lifecycle_state,
+            has_active_case=(self.active_incident is not None),
+            recommended_action=self.current_decision.recommended_action,
+            replay_branch_available=True,
+            conflicting_cases_count=0,
+        )
+        if not guard_res.is_permitted:
+            raise InvalidStateTransitionError(f"Action safe-mode rejected: {guard_res.denial_reason}")
+
         self.lifecycle_state = IncidentLifecycleState.MITIGATING
         if self.active_incident:
             self.active_incident.lifecycle_state = IncidentLifecycleState.MITIGATING
@@ -155,6 +233,16 @@ class IncidentLifecycleManager:
         self.is_recovery_branch = True
         self.stream = self.replay.stream_telemetry(
             "2020-06-08 16:05:00", "2020-06-08 17:00:00"
+        )
+
+        self.record_case_event(
+            event_type=CaseEventType.ACTION,
+            phase="MITIGATING",
+            title="Safe Mode Simulated Intervention",
+            detail="ActionGuard validated 5 criteria. Branching stream to post-maintenance historical segment.",
+            actor="operator:dispatcher",
+            source="ActionGuard",
+            event_time=self.current_point.timestamp if self.current_point else None,
         )
 
         return {
@@ -210,6 +298,15 @@ class IncidentLifecycleManager:
                     self.active_incident.lifecycle_state = IncidentLifecycleState.RESOLVED
                     self.active_incident.health_state = AssetHealthState.HEALTHY
                     self.active_incident.updated_at = pt.timestamp
+                self.record_case_event(
+                    event_type=CaseEventType.RECOVERY,
+                    phase="RESOLVED",
+                    title="Recovery Criteria Verified (5/5 healthy LOADED observations)",
+                    detail="Discharge valve pressure < 0.05 bar and oil temp < 67°C verified across 5 consecutive loaded observations.",
+                    actor="system:recovery_verifier",
+                    source="RecoveryVerifier",
+                    event_time=pt.timestamp,
+                )
             return pt
 
         # Branch 2: Degradation stream
@@ -250,6 +347,15 @@ class IncidentLifecycleManager:
                 evidence_chain=[self.current_evidence_state],
             )
             self.lifecycle_state = IncidentLifecycleState.DETECTED
+            self.record_case_event(
+                event_type=CaseEventType.DETECTION,
+                phase="DETECTED",
+                title="Confirmed degradation detected",
+                detail="Severe step degradation in DV_pressure with thermal drift sustained across loaded observations. Case opened.",
+                actor="system:detector",
+                source="PressureAnomalyDetector",
+                event_time=pt.timestamp,
+            )
 
         # 2. ML Corroboration -> INVESTIGATING
         if self.lifecycle_state == IncidentLifecycleState.DETECTED and (
@@ -268,6 +374,15 @@ class IncidentLifecycleManager:
                 self.active_incident.evidence_chain.append(
                     self.current_evidence_state
                 )
+            self.record_case_event(
+                event_type=CaseEventType.CORROBORATION,
+                phase="INVESTIGATING",
+                title="Multivariate Isolation Forest Corroboration",
+                detail="Isolation Forest exceeded threshold (score > 0.35) on 5 LOADED features. Mitigation recommended.",
+                actor="system:ml",
+                source="IsolationForestDetector",
+                event_time=pt.timestamp,
+            )
 
         return pt
 
@@ -287,10 +402,9 @@ class IncidentLifecycleManager:
         # Handle post-maintenance recovery branch
         if milestone_name == "post_maintenance_1605":
             if not self.is_recovery_branch:
-                if self.lifecycle_state in (
-                    IncidentLifecycleState.DETECTED,
-                    IncidentLifecycleState.INVESTIGATING,
-                ):
+                if self.lifecycle_state == IncidentLifecycleState.DETECTED:
+                    self.jump_to_milestone("ml_corroborated_1015")
+                if self.lifecycle_state == IncidentLifecycleState.INVESTIGATING:
                     self.trigger_safe_mode()
                 else:
                     self.is_recovery_branch = True

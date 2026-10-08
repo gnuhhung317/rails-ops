@@ -11,6 +11,7 @@ from src.domain.enums import (
     DetectorStatus,
     Severity,
     EvidenceCode,
+    CaseEventType,
 )
 
 class IncidentContext(BaseModel):
@@ -89,3 +90,19 @@ class RecoveryStatus(BaseModel):
     @property
     def target_healthy_cycles(self) -> int:
         return self.target_healthy_observations
+
+
+class CaseEvent(BaseModel):
+    event_id: str
+    event_time: datetime
+    event_type: CaseEventType
+    phase: str
+    title: str
+    detail: str
+    actor: str = "system"
+    source: str = "CompressorGuard Engine"
+    provenance: Dict[str, Any] = Field(default_factory=dict)
+
+
+# Semantic product alias
+OperationalCase = IncidentEvent
