@@ -616,9 +616,12 @@ class IncidentLifecycleManager:
             return
 
         # For degradation milestones:
-        # If currently in recovery branch or cursor is past target_dt, reset first
-        if self.is_recovery_branch or (
-            self.current_point is not None and self.current_point.timestamp > target_dt
+        # If currently in recovery branch or cursor is past target_dt, or cursor is prior to scenario start (e.g. from early excursion), reset first
+        scenario_start_dt = pd.to_datetime(self.scenario.stream_start)
+        if (
+            self.is_recovery_branch
+            or (self.current_point is not None and self.current_point.timestamp > target_dt)
+            or (self.current_point is not None and self.current_point.timestamp < scenario_start_dt)
         ):
             self.reset()
 

@@ -71,6 +71,10 @@ def test_repository_telemetry_and_case_lifecycle():
     assert len(events) >= 1
     assert events[0]["event_id"] == "EVT-001"
 
+    # Mark resolved to not conflict with subsequent tests
+    case_doc["phase"] = "RESOLVED"
+    repo.save_case(case_doc)
+
 
 def test_repository_rolling_stats_pipeline():
     repo = CompressorGuardRepository()

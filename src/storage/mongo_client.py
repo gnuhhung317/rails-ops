@@ -109,6 +109,10 @@ class InMemoryCollection:
         self.documents = kept
         return DeleteResult(del_count)
 
+    def clear(self):
+        self.documents = []
+        self._indexes = {}
+
     def create_index(self, keys: Any, **kwargs):
         name = kwargs.get("name", str(keys))
         self._indexes[name] = {"key": keys, **kwargs}

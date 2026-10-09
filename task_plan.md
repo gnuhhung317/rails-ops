@@ -32,10 +32,10 @@ Chuyển hóa CompressorGuard từ một Vertical Slice Backend thành một **H
 | **Phase 3** | **MongoDB Atlas Multi-Modal Integration** | `COMPLETE` | 63/63 pytest passed; Time Series collection `measurements`, pipeline `$setWindowFields`, `operational_cases`, `case_events`, ingest script. |
 | **Phase 4** | **Datadog Unified Observability Integration** | `COMPLETE` | 76/76 pytest passed; DogStatsD metrics, APM distributed tracing, structured JSON logging với `dd.trace_id`, Monitors & Dashboard JSON. |
 | **Phase 5** | **Operations Command Console Frontend (Web UI)** | `COMPLETE` | 91/91 pytest passed; Modern SPA in FastAPI, Screens 01-07, 4 Tiers, Dual-clock playback, ActionGuard & Recovery UI. |
-| **Phase 6** | **Demo Hardening, 1-Click Simulation & Pitch Deck** | `READY` | 1-Click launcher, evaluation gates (G1-G5), pitch deck, and judging runbook. |
+| **Phase 6** | **Demo Hardening, 1-Click Simulation & Pitch Deck** | `COMPLETE` | 1-Click launcher (`run_demo.py`, `demo.bat`), 5 Evaluation Gates G1-G5 (`verify_evaluation_gates.py`), Pitch Deck & Judging Runbook (`PITCH_DECK_AND_DEMO_RUNBOOK.md`), 98/98 tests passing. |
 
 ---
 
 ## 4. Current Milestone & Next Action
-- **Current Milestone:** Phase 5 hoàn tất xuất sắc với 91/91 test vượt qua (100% pass rate). Giao diện chỉ huy vận hành Operations Command Console (Web UI) hiện thực hóa đầy đủ 7 màn hình theo chuẩn Siemens Senseye & Datadog Incident Timelines, chạy trơn tru trực tiếp từ FastAPI mà không phát sinh thêm tiến trình hay bước build nào.
-- **Recommended Next Action:** Khởi động **Phase 6: Demo Hardening, 1-Click Simulation & Pitch Deck** (Tạo script chạy 1-click `run_demo.py` / `demo.bat`, kiểm chứng 5 Evaluation Gates G1-G5, chuẩn bị Pitch Deck và kịch bản demo 3 phút).
+- **Current Milestone:** Tất cả 6 giai đoạn (Phases 1 through 6) đã hoàn tất 100% với 98/98 kiểm thử vượt qua. Nền tảng điều hành sự cố công nghiệp CompressorGuard đã sẵn sàng cho demo hackathon, thẩm định kỹ thuật và thương mại hóa.
+- **Recommended Next Action:** Sẵn sàng nghiệm thu, vận hành demo trực tiếp bằng `demo.bat` / `python run_demo.py` và thuyết trình ban giám khảo theo kịch bản 3 phút tại `docs/PITCH_DECK_AND_DEMO_RUNBOOK.md`.
