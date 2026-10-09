@@ -26,6 +26,7 @@ from src.domain.scenarios import ScenarioDefinition, FAILURE_3_SCENARIO
 from src.engine.fusion import EvidenceFusionEngine
 from src.engine.recovery import RecoveryVerifier
 from src.engine.replay import ReplayEngine
+from src.observability.metrics import DatadogMetricsClient, get_metrics_client
 
 MILESTONES = FAILURE_3_SCENARIO.milestones.copy()
 
@@ -74,6 +75,7 @@ class IncidentLifecycleManager:
         recovery_verifier: Optional[RecoveryVerifier] = None,
         scenario: Optional[ScenarioDefinition] = None,
         repository: Optional[Any] = None,
+        metrics_client: Optional[DatadogMetricsClient] = None,
     ) -> None:
         self.scenario: ScenarioDefinition = scenario or FAILURE_3_SCENARIO
         self.milestones: Dict[str, str] = self.scenario.milestones.copy()
@@ -83,6 +85,7 @@ class IncidentLifecycleManager:
         self.decision_engine: Optional[DecisionEngine] = decision_engine
         self.recovery_verifier: RecoveryVerifier = recovery_verifier or RecoveryVerifier()
         self.repository = repository
+        self.metrics_client: DatadogMetricsClient = metrics_client or get_metrics_client()
 
         self.window: List[TelemetryPoint] = []
         self.active_incident: Optional[IncidentEvent] = None
@@ -163,6 +166,11 @@ class IncidentLifecycleManager:
             provenance=provenance or {},
         )
         self.case_events.append(evt)
+        if getattr(self, "metrics_client", None) is not None:
+            try:
+                self.metrics_client.emit_case_transition(self.lifecycle_state)
+            except Exception:
+                pass
         if getattr(self, "repository", None) is not None:
             try:
                 self.repository.save_case_event(evt.model_dump(mode="json"))
@@ -181,12 +189,29 @@ class IncidentLifecycleManager:
             result.append(d)
         return result
 
+    def has_active_case(self) -> bool:
+        """Determines if there is a currently open, active operational case."""
+        if self.active_incident is None:
+            return False
+        return self.active_incident.lifecycle_state in (
+            IncidentLifecycleState.DETECTED,
+            IncidentLifecycleState.INVESTIGATING,
+            IncidentLifecycleState.MITIGATING,
+            IncidentLifecycleState.VERIFYING_RECOVERY,
+        )
+
+    def get_active_case(self) -> Optional[IncidentEvent]:
+        """Returns the active incident if open, else None."""
+        return self.active_incident if self.has_active_case() else None
+
     def close_case(self, operator_id: str = "DISPATCHER-0941", notes: str = "") -> Dict[str, Any]:
         if not self.recovery_verifier.is_verified:
             raise ValueError("Recovery not verified. Cannot close operational case before 5/5 healthy LOADED observations are verified.")
         self.lifecycle_state = IncidentLifecycleState.RESOLVED
         self.asset_health = AssetHealthState.HEALTHY
+        closed_case_id = "CASE-20200605-01"
         if self.active_incident:
+            closed_case_id = self.active_incident.incident_id
             self.active_incident.lifecycle_state = IncidentLifecycleState.RESOLVED
             self.active_incident.health_state = AssetHealthState.HEALTHY
             if self.current_point:
@@ -205,8 +230,13 @@ class IncidentLifecycleManager:
                 self.repository.save_case(self.active_incident.model_dump(mode="json"))
             except Exception:
                 pass
+
+        # Clear active incident pointer so it is no longer reported as active
+        self.active_incident = None
+
         return {
             "status": "CASE_CLOSED",
+            "case_id": closed_case_id,
             "operator_id": operator_id,
             "notes": notes,
             "lifecycle_state": "RESOLVED",
@@ -325,6 +355,12 @@ class IncidentLifecycleManager:
                     source="RecoveryVerifier",
                     event_time=pt.timestamp,
                 )
+            if getattr(self, "metrics_client", None) is not None and pt is not None:
+                self.metrics_client.emit_telemetry(pt)
+                self.metrics_client.emit_recovery_progress(
+                    self.recovery_verifier.consecutive_healthy_observations,
+                    asset_id=pt.asset_id,
+                )
             return pt
 
         # Branch 2: Degradation stream
@@ -401,6 +437,23 @@ class IncidentLifecycleManager:
                 source="IsolationForestDetector",
                 event_time=pt.timestamp,
             )
+
+        if getattr(self, "metrics_client", None) is not None and pt is not None:
+            self.metrics_client.emit_telemetry(pt)
+            if self.current_evidence_state:
+                ml_sig = next(
+                    (s for s in self.current_evidence_state.signals if s.detector_id == "isolation_forest"),
+                    None,
+                )
+                if ml_sig and ml_sig.observed_value is not None:
+                    self.metrics_client.emit_ml_score(ml_sig.observed_value, asset_id=pt.asset_id)
+            if self.active_incident:
+                self.metrics_client.emit_lead_time(121920, asset_id=pt.asset_id)
+            if self.recovery_verifier:
+                self.metrics_client.emit_recovery_progress(
+                    self.recovery_verifier.consecutive_healthy_observations,
+                    asset_id=pt.asset_id,
+                )
 
         return pt
 
@@ -487,7 +540,7 @@ class IncidentLifecycleManager:
         incident_id = (
             self.active_incident.incident_id
             if self.active_incident
-            else "APU-INC-20200605-01"
+            else None
         )
         asset_id = "APU-COMP-01"
         lifecycle_state_val = (
@@ -512,12 +565,12 @@ class IncidentLifecycleManager:
 
         if self.active_incident and self.active_incident.created_at:
             actual_detection_dt = self.active_incident.created_at
-        elif "onset_0950" in self.milestones:
+        elif "onset_0950" in self.milestones and self.has_active_case():
             actual_detection_dt = pd.to_datetime(self.milestones["onset_0950"])
         else:
             actual_detection_dt = None
 
-        if actual_lps_dt and actual_detection_dt:
+        if self.has_active_case() and actual_lps_dt and actual_detection_dt:
             delta = actual_lps_dt - actual_detection_dt
             lead_time_minutes = max(0, int(round(delta.total_seconds() / 60.0)))
             lead_hours = lead_time_minutes // 60
@@ -526,10 +579,10 @@ class IncidentLifecycleManager:
             conv_ts = actual_lps_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
             early_ts = actual_detection_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
-            lead_time_minutes = 0
-            lead_time_formatted = "0h 00m"
-            conv_ts = ""
-            early_ts = ""
+            lead_time_minutes = None
+            lead_time_formatted = None
+            conv_ts = None
+            early_ts = None
 
         if self.active_incident and self.active_incident.summary:
             summary = self.active_incident.summary

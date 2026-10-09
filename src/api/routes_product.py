@@ -26,16 +26,21 @@ router = APIRouter(prefix="/api", tags=["Product Domain"])
 def get_operations(manager: IncidentLifecycleManager = Depends(get_manager)) -> OperationsResponse:
     """Returns the operations command overview with asset hierarchy and active case."""
     registry = AssetRegistry.get_default()
-    has_active = manager.active_incident is not None
+    has_active = manager.has_active_case()
     is_observing = manager.lifecycle_state == IncidentLifecycleState.NONE
+
+    lead_time_val = None
+    if has_active:
+        payload = manager.get_incident_payload()
+        lead_time_val = payload.get("lead_time", {}).get("lead_time_formatted")
 
     summary = OperationsSummaryInfo(
         monitored_assets_count=1,
         active_cases_count=1 if has_active else 0,
         assets_observing_count=1 if is_observing else 0,
-        scenario_name="Failure #3 — Air Leak",
+        scenario_name="Failure #3 — Air Leak" if manager.scenario.scenario_id == "failure_3" else manager.scenario.name,
         simulation_mode="LIVE_SIMULATION",
-        confirmed_intervention_window="33h 52m" if has_active else None,
+        confirmed_intervention_window=lead_time_val,
     )
 
     return OperationsResponse(

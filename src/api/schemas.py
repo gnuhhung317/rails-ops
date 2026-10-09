@@ -10,14 +10,14 @@ class ErrorResponse(BaseModel):
 
 # --- Product API Schemas ---
 class LeadTimeInfo(BaseModel):
-    lead_time_minutes: int
-    lead_time_formatted: str
-    conventional_alert_timestamp: str
-    earliest_detection_timestamp: str
+    lead_time_minutes: Optional[int] = None
+    lead_time_formatted: Optional[str] = None
+    conventional_alert_timestamp: Optional[str] = None
+    earliest_detection_timestamp: Optional[str] = None
 
 
 class IncidentResponse(BaseModel):
-    incident_id: str
+    incident_id: Optional[str] = None
     asset_id: str = "APU-COMP-01"
     lifecycle_state: str
     asset_health: str
