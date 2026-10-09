@@ -3,3 +3,5 @@ __pycache__/
 .pytest_cache/
 *.zip
 dataset/MetroPT3(AirCompressor).csv
+*repomix-output.xml
+scratch/
