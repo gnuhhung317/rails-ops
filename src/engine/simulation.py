@@ -101,6 +101,16 @@ class SimulationRunner:
         self.total_points_emitted += 1
         return pt
 
+    def play(self) -> None:
+        self.is_paused = False
+
+    def pause(self) -> None:
+        self.is_paused = True
+
+    def seek(self, event_time: datetime) -> Optional[TelemetryPoint]:
+        self.stream.seek(event_time)
+        return self.step()
+
     def reset(self) -> None:
         self.stream.reset()
         self.current_point = None

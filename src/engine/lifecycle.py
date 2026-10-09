@@ -26,7 +26,8 @@ from src.domain.scenarios import ScenarioDefinition, FAILURE_3_SCENARIO
 from src.engine.benchmark import BaselineBenchmarkTracker
 from src.engine.fusion import EvidenceFusionEngine
 from src.engine.recovery import RecoveryVerifier
-from src.engine.replay import ReplayEngine
+from src.engine.replay import ReplayEngine, DEFAULT_CSV_PATH
+from src.engine.simulation import SimulationRunner, HistoricalScenarioStream, SimulationPacingConfig
 from src.observability.metrics import DatadogMetricsClient, get_metrics_client
 
 MILESTONES = FAILURE_3_SCENARIO.milestones.copy()
@@ -77,6 +78,7 @@ class IncidentLifecycleManager:
         scenario: Optional[ScenarioDefinition] = None,
         repository: Optional[Any] = None,
         metrics_client: Optional[DatadogMetricsClient] = None,
+        runner: Optional[SimulationRunner] = None,
     ) -> None:
         self.scenario: ScenarioDefinition = scenario or FAILURE_3_SCENARIO
         self.milestones: Dict[str, str] = self.scenario.milestones.copy()
@@ -87,6 +89,7 @@ class IncidentLifecycleManager:
         self.recovery_verifier: RecoveryVerifier = recovery_verifier or RecoveryVerifier()
         self.repository = repository
         self.metrics_client: DatadogMetricsClient = metrics_client or get_metrics_client()
+        self.runner: Optional[SimulationRunner] = runner
 
         self.window: List[TelemetryPoint] = []
         self.active_incident: Optional[IncidentEvent] = None
@@ -137,9 +140,31 @@ class IncidentLifecycleManager:
         self.benchmark_tracker = BaselineBenchmarkTracker(self.scenario.lps_milestone)
         self.recovery_verifier.reset()
         if self.replay is not None:
+            csv_path = str(self.replay.csv_path)
+            stream = HistoricalScenarioStream(
+                start_ts=self.scenario.stream_start,
+                end_ts=self.scenario.stream_end,
+                csv_path=csv_path,
+            )
+            self.runner = SimulationRunner(stream=stream, scenario_name=self.scenario.name)
             self.stream = self.replay.stream_telemetry(
                 self.scenario.stream_start, self.scenario.stream_end
             )
+
+    def play(self) -> None:
+        if self.runner is not None:
+            self.runner.play()
+
+    def pause(self) -> None:
+        if self.runner is not None:
+            self.runner.pause()
+
+    def set_simulation_speed(self, multiplier: float) -> None:
+        if self.runner is not None:
+            self.runner.set_speed(multiplier)
+
+    def get_simulation_status(self) -> Dict[str, Any]:
+        return self.runner.get_status() if self.runner else {}
 
     def record_case_event(
         self,
@@ -286,6 +311,9 @@ class IncidentLifecycleManager:
         self.is_recovery_branch = True
         rec_start = self.scenario.recovery_start or "2020-06-08 16:05:00"
         rec_end = self.scenario.recovery_end or "2020-06-08 17:00:00"
+        csv_path = str(self.replay.csv_path if self.replay else DEFAULT_CSV_PATH)
+        if self.runner is not None:
+            self.runner.stream = HistoricalScenarioStream(rec_start, rec_end, csv_path=csv_path)
         self.stream = self.replay.stream_telemetry(rec_start, rec_end)
 
         self.record_case_event(
@@ -320,12 +348,17 @@ class IncidentLifecycleManager:
         if self.lifecycle_state == IncidentLifecycleState.RESOLVED:
             return self.current_point
 
-        if self.stream is None:
-            return None
+        if self.runner is not None:
+            pt = self.runner.step()
+        elif self.stream is not None:
+            try:
+                pt = next(self.stream)
+            except StopIteration:
+                pt = None
+        else:
+            pt = None
 
-        try:
-            pt = next(self.stream)
-        except StopIteration:
+        if pt is None:
             return None
 
         self.current_point = pt
@@ -479,6 +512,9 @@ class IncidentLifecycleManager:
         # Handle early excursion milestone
         if milestone_name == "early_excursion_0033":
             self.is_recovery_branch = False
+            csv_path = str(self.replay.csv_path if self.replay else DEFAULT_CSV_PATH)
+            if self.runner is not None:
+                self.runner.stream = HistoricalScenarioStream("2020-06-04 00:30:00", self.scenario.stream_end, csv_path=csv_path)
             self.stream = self.replay.stream_telemetry("2020-06-04 00:30:00", self.scenario.stream_end)
             while self.current_point is None or self.current_point.timestamp < target_dt:
                 pt = self.tick()
@@ -497,6 +533,9 @@ class IncidentLifecycleManager:
                     self.is_recovery_branch = True
                     rec_start = self.scenario.recovery_start or "2020-06-08 16:05:00"
                     rec_end = self.scenario.recovery_end or "2020-06-08 17:00:00"
+                    csv_path = str(self.replay.csv_path if self.replay else DEFAULT_CSV_PATH)
+                    if self.runner is not None:
+                        self.runner.stream = HistoricalScenarioStream(rec_start, rec_end, csv_path=csv_path)
                     self.stream = self.replay.stream_telemetry(rec_start, rec_end)
             while self.current_point is None or self.current_point.timestamp < target_dt:
                 pt = self.tick()
