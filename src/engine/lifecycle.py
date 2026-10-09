@@ -280,7 +280,7 @@ class IncidentLifecycleManager:
             "asset_health": "HEALTHY",
         }
 
-    def trigger_safe_mode(self) -> Dict[str, Any]:
+    def trigger_safe_mode(self, operator_id: str = "DISPATCHER-0941") -> Dict[str, Any]:
         """
         Validates state, transitions to MITIGATING, and branches stream to
         post-maintenance (2020-06-08 16:05:00 to 2020-06-08 17:00:00).
@@ -301,12 +301,19 @@ class IncidentLifecycleManager:
                 "Action safe-mode rejected: DecisionEngine has not recommended mitigation for current evidence."
             )
 
+        has_recovery = bool(self.scenario.recovery_start and self.scenario.recovery_end)
+        conflicting_count = 0
+        if getattr(self, "repository", None) is not None:
+            active_existing = self.repository.get_active_case_for_asset(self.scenario.asset_id)
+            if active_existing and active_existing.get("case_id") != getattr(self.active_incident, "incident_id", None):
+                conflicting_count = 1
+
         guard_res = self.action_guard.validate(
             lifecycle_state=self.lifecycle_state,
             has_active_case=(self.active_incident is not None),
             recommended_action=self.current_decision.recommended_action,
-            replay_branch_available=True,
-            conflicting_cases_count=0,
+            replay_branch_available=has_recovery,
+            conflicting_cases_count=conflicting_count,
         )
         if not guard_res.is_permitted:
             raise InvalidStateTransitionError(f"Action safe-mode rejected: {guard_res.denial_reason}")
@@ -328,13 +335,14 @@ class IncidentLifecycleManager:
             phase="MITIGATING",
             title="Safe Mode Simulated Intervention",
             detail="ActionGuard validated 5 criteria. Branching stream to post-maintenance historical segment.",
-            actor="operator:dispatcher",
+            actor=f"operator:{operator_id}",
             source="ActionGuard",
             event_time=self.current_point.timestamp if self.current_point else None,
         )
 
         return {
             "action_id": "ACT-SM-001",
+            "operator_id": operator_id,
             "status": "ACTIVATED",
             "execution_mode": "SIMULATION_BRANCH",
             "target_state": "MITIGATING",

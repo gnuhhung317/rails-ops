@@ -5,6 +5,7 @@ from src.api.dependencies import get_manager
 from src.api.schemas import (
     IncidentResponse,
     EvidenceResponse,
+    SafeModeRequest,
     SafeModeResponse,
     RecoveryResponse,
     ErrorResponse,
@@ -79,10 +80,13 @@ def get_case_events(manager: IncidentLifecycleManager = Depends(get_manager)) ->
     responses={409: {"model": ErrorResponse, "description": "Invalid state transition"}},
 )
 def trigger_safe_mode(
+    payload: Optional[SafeModeRequest] = None,
     manager: IncidentLifecycleManager = Depends(get_manager),
 ) -> SafeModeResponse:
     """Triggers reversible safe mode, transitioning state to MITIGATING and branching stream."""
-    return manager.trigger_safe_mode()
+    op_id = payload.operator_id if payload and payload.operator_id else "DISPATCHER-0941"
+    res = manager.trigger_safe_mode(operator_id=op_id)
+    return SafeModeResponse(**res)
 
 
 @router.post(

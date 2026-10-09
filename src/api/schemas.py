@@ -56,8 +56,13 @@ class StreamBranchInfo(BaseModel):
     offset_timestamp: str
 
 
+class SafeModeRequest(BaseModel):
+    operator_id: str = "DISPATCHER-0941"
+
+
 class SafeModeResponse(BaseModel):
     action_id: str
+    operator_id: Optional[str] = "DISPATCHER-0941"
     status: str
     execution_mode: str
     target_state: str
@@ -168,3 +173,25 @@ class ValidationReferenceResponse(BaseModel):
     confirmed_intervention_window_minutes: int
     confirmed_intervention_window_formatted: str
     maintenance_summary: str
+
+
+# --- Simulation Playback & Pacing Schemas ---
+class SimulationSpeedRequest(BaseModel):
+    speed_multiplier: float
+
+
+class SimulationPlaybackResponse(BaseModel):
+    status: str
+    is_paused: bool
+    speed_multiplier: Optional[float] = None
+
+
+class SimulationStatusResponse(BaseModel):
+    scenario_name: str
+    is_paused: bool
+    speed_multiplier: float
+    current_event_time: Optional[str] = None
+    total_points_emitted: int
+    mode: str = "LIVE_SIMULATION"
+    provenance: str = "MetroPT-3 Historical Telemetry"
+
