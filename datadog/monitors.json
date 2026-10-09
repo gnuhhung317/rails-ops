@@ -1,0 +1,42 @@
+{
+  "monitors": [
+    {
+      "name": "[CompressorGuard] Early Warning Pressure Breach (DV_pressure > 2.0 bar)",
+      "type": "metric alert",
+      "query": "avg(last_1m):compressorguard.telemetry.dv_pressure_bar{asset_id:APU-COMP-01,regime:LOADED} > 2.0",
+      "message": "⚠️ High discharge valve leakage detected on APU-COMP-01 while operating in LOADED regime.\nPotential air leakage in tháp sấy (dryer tower). Dynamic intervention window: 33h 52m.\nTriggering CompressorGuard Incident Dispatcher. @pagerduty-metro-ops",
+      "tags": [
+        "service:compressorguard",
+        "asset_id:APU-COMP-01",
+        "severity:critical",
+        "env:hackathon-2026"
+      ],
+      "options": {
+        "thresholds": {
+          "critical": 2.0,
+          "warning": 1.0
+        },
+        "notify_no_data": false,
+        "renotify_interval": 60
+      }
+    },
+    {
+      "name": "[CompressorGuard] Recovery Criteria Verified (5/5 healthy LOADED observations)",
+      "type": "metric alert",
+      "query": "max(last_1m):compressorguard.recovery.consecutive_observations{asset_id:APU-COMP-01} >= 5",
+      "message": "✅ Physical recovery verified for APU-COMP-01 across 5 consecutive loaded observations.\nDV_pressure < 0.05 bar and Oil_temperature < 67°C satisfied.\nCase ready for operator sign-off and asset release. @metro-dispatch",
+      "tags": [
+        "service:compressorguard",
+        "asset_id:APU-COMP-01",
+        "severity:info",
+        "env:hackathon-2026"
+      ],
+      "options": {
+        "thresholds": {
+          "critical": 5.0
+        },
+        "notify_no_data": false
+      }
+    }
+  ]
+}

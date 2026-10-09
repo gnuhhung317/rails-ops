@@ -32,10 +32,11 @@ class HistoricalScenarioStream(ScenarioStream):
         start_ts: str = "2020-06-05 09:40:00",
         end_ts: str = "2020-06-06 20:00:00",
         csv_path: str = str(DEFAULT_CSV_PATH),
+        replay: Optional[ReplayEngine] = None,
     ) -> None:
         self.start_ts = start_ts
         self.end_ts = end_ts
-        self.replay = ReplayEngine(csv_path)
+        self.replay = replay or ReplayEngine(csv_path)
         self.generator: Optional[Generator[TelemetryPoint, None, None]] = None
         self.reset()
 

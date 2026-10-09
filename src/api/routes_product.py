@@ -38,7 +38,7 @@ def get_operations(manager: IncidentLifecycleManager = Depends(get_manager)) -> 
         monitored_assets_count=1,
         active_cases_count=1 if has_active else 0,
         assets_observing_count=1 if is_observing else 0,
-        scenario_name="Failure #3 — Air Leak" if manager.scenario.scenario_id == "failure_3" else manager.scenario.name,
+        scenario_name="Failure #3 - Air Leak" if manager.scenario.scenario_id == "failure_3" else manager.scenario.name,
         simulation_mode="LIVE_SIMULATION",
         confirmed_intervention_window=lead_time_val,
     )

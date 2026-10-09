@@ -1,0 +1,127 @@
+{
+  "title": "CompressorGuard — Metro APU Fleet Operations & Incident Command",
+  "description": "Unified Observability Dashboard for Lisbon Metro Fleet APU-COMP-01 (MUGVN Hackathon 2026)",
+  "layout_type": "ordered",
+  "widgets": [
+    {
+      "id": 1,
+      "definition": {
+        "title": "Discharge Valve Pressure (DV_pressure) vs Baseline",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "avg:compressorguard.telemetry.dv_pressure_bar{asset_id:APU-COMP-01} by {regime}",
+            "display_type": "line",
+            "style": {
+              "palette": "warm",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          }
+        ],
+        "markers": [
+          {
+            "value": "y = 2.0",
+            "display_type": "error dashed",
+            "label": "Critical Threshold (2.0 bar)"
+          },
+          {
+            "value": "y = -0.016",
+            "display_type": "ok solid",
+            "label": "Healthy Baseline (-0.016 bar)"
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "definition": {
+        "title": "Compressor Oil Temperature (°C) vs Boiling Limit",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "avg:compressorguard.telemetry.oil_temp_c{asset_id:APU-COMP-01}",
+            "display_type": "line",
+            "style": {
+              "palette": "cool",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          }
+        ],
+        "markers": [
+          {
+            "value": "y = 74.0",
+            "display_type": "error dashed",
+            "label": "Severe Drift (74°C)"
+          },
+          {
+            "value": "y = 67.0",
+            "display_type": "warning dashed",
+            "label": "Recovery Ceiling (67°C)"
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "definition": {
+        "title": "Confirmed Actionable Intervention Window (Lead Time)",
+        "type": "query_value",
+        "requests": [
+          {
+            "q": "max:compressorguard.incident.lead_time_seconds{asset_id:APU-COMP-01} / 3600"
+          }
+        ],
+        "autoscale": true,
+        "custom_unit": "hours",
+        "precision": 1
+      }
+    },
+    {
+      "id": 4,
+      "definition": {
+        "title": "Physical Recovery Verification Streak (5/5 LOADED)",
+        "type": "check_status",
+        "requests": [
+          {
+            "q": "max:compressorguard.recovery.consecutive_observations{asset_id:APU-COMP-01}"
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "definition": {
+        "title": "Multivariate Isolation Forest Anomaly Score",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "avg:compressorguard.ml.anomaly_score{asset_id:APU-COMP-01}",
+            "display_type": "bars"
+          }
+        ],
+        "markers": [
+          {
+            "value": "y = 0.35",
+            "display_type": "warning dashed",
+            "label": "ML Corroboration Threshold (0.35)"
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "definition": {
+        "title": "Domain Operations Engine Latency (APM Spans)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "avg:trace.compressorguard.detector.evaluate.duration{env:hackathon-2026} by {resource_name}",
+            "display_type": "line"
+          }
+        ]
+      }
+    }
+  ]
+}

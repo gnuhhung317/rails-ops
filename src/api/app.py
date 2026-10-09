@@ -9,8 +9,10 @@ from src.engine.lifecycle import (
     IncidentLifecycleManager,
     InvalidStateTransitionError,
 )
+from src.observability.logger import setup_datadog_logging
+from src.observability.tracer import get_tracer
 
-logger = logging.getLogger("compressorguard.api")
+logger = setup_datadog_logging("compressorguard.api")
 _DEFAULT_MANAGER: Optional[IncidentLifecycleManager] = None
 
 
@@ -36,6 +38,17 @@ def create_app(manager: Optional[IncidentLifecycleManager] = None) -> FastAPI:
 
     # Set manager singleton on app state
     app.state.manager = manager if manager is not None else get_default_manager()
+
+    # Datadog APM tracing middleware
+    @app.middleware("http")
+    async def datadog_apm_middleware(request: Request, call_next):
+        tracer = get_tracer()
+        with tracer.trace("fastapi.request", resource=f"{request.method} {request.url.path}", service="compressorguard") as span:
+            span.set_tag("http.url", str(request.url.path))
+            span.set_tag("http.method", request.method)
+            response = await call_next(request)
+            span.set_tag("http.status_code", response.status_code)
+            return response
 
     # Mount domain routes and demo controls
     app.include_router(product_router)

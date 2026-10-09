@@ -145,6 +145,7 @@ class IncidentLifecycleManager:
                 start_ts=self.scenario.stream_start,
                 end_ts=self.scenario.stream_end,
                 csv_path=csv_path,
+                replay=self.replay,
             )
             self.runner = SimulationRunner(stream=stream, scenario_name=self.scenario.name)
             self.stream = self.replay.stream_telemetry(
@@ -313,7 +314,7 @@ class IncidentLifecycleManager:
         rec_end = self.scenario.recovery_end or "2020-06-08 17:00:00"
         csv_path = str(self.replay.csv_path if self.replay else DEFAULT_CSV_PATH)
         if self.runner is not None:
-            self.runner.stream = HistoricalScenarioStream(rec_start, rec_end, csv_path=csv_path)
+            self.runner.stream = HistoricalScenarioStream(rec_start, rec_end, csv_path=csv_path, replay=self.replay)
         self.stream = self.replay.stream_telemetry(rec_start, rec_end)
 
         self.record_case_event(
@@ -511,10 +512,13 @@ class IncidentLifecycleManager:
 
         # Handle early excursion milestone
         if milestone_name == "early_excursion_0033":
+            self.reset()
             self.is_recovery_branch = False
             csv_path = str(self.replay.csv_path if self.replay else DEFAULT_CSV_PATH)
             if self.runner is not None:
-                self.runner.stream = HistoricalScenarioStream("2020-06-04 00:30:00", self.scenario.stream_end, csv_path=csv_path)
+                self.runner.stream = HistoricalScenarioStream(
+                    "2020-06-04 00:30:00", self.scenario.stream_end, csv_path=csv_path, replay=self.replay
+                )
             self.stream = self.replay.stream_telemetry("2020-06-04 00:30:00", self.scenario.stream_end)
             while self.current_point is None or self.current_point.timestamp < target_dt:
                 pt = self.tick()
@@ -535,7 +539,9 @@ class IncidentLifecycleManager:
                     rec_end = self.scenario.recovery_end or "2020-06-08 17:00:00"
                     csv_path = str(self.replay.csv_path if self.replay else DEFAULT_CSV_PATH)
                     if self.runner is not None:
-                        self.runner.stream = HistoricalScenarioStream(rec_start, rec_end, csv_path=csv_path)
+                        self.runner.stream = HistoricalScenarioStream(
+                            rec_start, rec_end, csv_path=csv_path, replay=self.replay
+                        )
                     self.stream = self.replay.stream_telemetry(rec_start, rec_end)
             while self.current_point is None or self.current_point.timestamp < target_dt:
                 pt = self.tick()
@@ -701,9 +707,28 @@ class IncidentLifecycleManager:
                         "sigma_deviation": 0.0,
                         "status": "CONFIRMED" if has_temporal_confirmed else "TRIGGERED",
                         "is_primary": False,
+                        "provenance": {
+                            **sig.provenance,
+                            "event_time": self.current_point.timestamp.strftime("%Y-%m-%dT%H:%M:%SZ") if self.current_point else None,
+                            "regime": self.current_point.regime.value if self.current_point and self.current_point.regime else "LOADED",
+                        },
                     }
                 )
                 continue
+
+            prov = dict(sig.provenance) if hasattr(sig, "provenance") and sig.provenance else {}
+            if "event_time" not in prov:
+                prov["event_time"] = (
+                    self.current_point.timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if self.current_point
+                    else None
+                )
+            if "regime" not in prov:
+                prov["regime"] = (
+                    self.current_point.regime.value
+                    if self.current_point and self.current_point.regime
+                    else "LOADED"
+                )
 
             if sig.detector_id == "pressure_anomaly":
                 evidence_pack.append(
@@ -720,6 +745,7 @@ class IncidentLifecycleManager:
                             else "TRIGGERED"
                         ),
                         "is_primary": True,
+                        "provenance": prov,
                     }
                 )
             elif sig.detector_id == "thermal_stress":
@@ -737,6 +763,7 @@ class IncidentLifecycleManager:
                             else "ELEVATED"
                         ),
                         "is_primary": False,
+                        "provenance": prov,
                     }
                 )
             elif sig.detector_id == "isolation_forest":
@@ -750,6 +777,7 @@ class IncidentLifecycleManager:
                         "sigma_deviation": None,
                         "status": "CORROBORATED",
                         "is_primary": False,
+                        "provenance": prov,
                     }
                 )
             elif sig.detector_id == "reactive_lps":
@@ -763,6 +791,7 @@ class IncidentLifecycleManager:
                         "sigma_deviation": None,
                         "status": "CRITICAL",
                         "is_primary": False,
+                        "provenance": prov,
                     }
                 )
 

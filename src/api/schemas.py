@@ -35,6 +35,7 @@ class EvidenceSignalItem(BaseModel):
     sigma_deviation: Optional[float] = None
     status: str
     is_primary: bool
+    provenance: dict = {}
 
 
 class PersistenceInfo(BaseModel):

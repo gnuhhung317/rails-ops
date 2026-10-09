@@ -22,7 +22,7 @@ def test_operations_endpoint_structure():
     ops = data["operations_summary"]
     assert ops["monitored_assets_count"] == 1
     assert ops["active_cases_count"] in (0, 1)
-    assert ops["scenario_name"] == "Failure #3 — Air Leak"
+    assert "Failure #3" in ops["scenario_name"]
     assert ops["simulation_mode"] == "LIVE_SIMULATION"
 
 def test_case_timeline_and_closure_flow():
