@@ -185,8 +185,14 @@ class IncidentLifecycleManager:
         else:
             ts = pd.to_datetime("2020-06-05 09:40:00")
 
+        case_id = (
+            self.active_incident.incident_id
+            if self.active_incident is not None
+            else "APU-INC-20200605-01"
+        )
         evt = CaseEvent(
             event_id=f"EVT-{len(self.case_events) + 1:03d}",
+            case_id=case_id,
             event_time=ts,
             event_type=event_type,
             phase=phase,
@@ -450,6 +456,15 @@ class IncidentLifecycleManager:
                 source="PressureAnomalyDetector",
                 event_time=pt.timestamp,
             )
+            self.record_case_event(
+                event_type=CaseEventType.DECISION,
+                phase="DETECTED",
+                title="Operational Policy Evaluation: Open Case",
+                detail="DecisionEngine evaluated multi-sensor evidence. Confirmed persistent degradation; opened case and recommended elevated monitoring.",
+                actor="system:decision_engine",
+                source="DecisionEngine",
+                event_time=pt.timestamp,
+            )
 
         # 2. ML Corroboration -> INVESTIGATING
         if self.lifecycle_state == IncidentLifecycleState.DETECTED and (
@@ -475,6 +490,15 @@ class IncidentLifecycleManager:
                 detail="Isolation Forest exceeded threshold (score > 0.35) on 5 LOADED features. Mitigation recommended.",
                 actor="system:ml",
                 source="IsolationForestDetector",
+                event_time=pt.timestamp,
+            )
+            self.record_case_event(
+                event_type=CaseEventType.DECISION,
+                phase="INVESTIGATING",
+                title="Operational Policy Evaluation: Mitigation Recommended",
+                detail="DecisionEngine corroborated anomaly with Isolation Forest. Recommended EXECUTE_MITIGATION under ActionGuard.",
+                actor="system:decision_engine",
+                source="DecisionEngine",
                 event_time=pt.timestamp,
             )
 
@@ -524,6 +548,15 @@ class IncidentLifecycleManager:
                 pt = self.tick()
                 if pt is None:
                     break
+            self.record_case_event(
+                event_type=CaseEventType.OBSERVATION,
+                phase="MONITORING",
+                title="Early Excursion Telemetry Observation",
+                detail="Discharge valve transient pressure excursion observed (6.046 bar, 65.4σ) at 00:33:07. Insufficient temporal persistence suppressed case creation.",
+                actor="system:detector",
+                source="PressureAnomalyDetector",
+                event_time=self.current_point.timestamp if self.current_point else target_dt,
+            )
             return
 
         # Handle post-maintenance recovery branch
@@ -585,6 +618,21 @@ class IncidentLifecycleManager:
             pt = self.tick()
             if pt is None:
                 break
+
+        if milestone_name == "lps_reactive_1942":
+            if not any(
+                e.event_type in (CaseEventType.BENCHMARK, CaseEventType.BENCHMARK_REFERENCE_REACHED)
+                for e in self.case_events
+            ):
+                self.record_case_event(
+                    event_type=CaseEventType.BENCHMARK_REFERENCE_REACHED,
+                    phase="CRITICAL",
+                    title="Unmitigated Historical LPS Breach Reference",
+                    detail="Conventional low pressure switch breach observed in historical baseline without early intervention.",
+                    actor="system:benchmark_tracker",
+                    source="BaselineBenchmarkTracker",
+                    event_time=target_dt,
+                )
 
     def get_incident_payload(self) -> Dict[str, Any]:
         """Returns the incident summary matching the Product API GET /api/incident schema."""

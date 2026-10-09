@@ -20,7 +20,9 @@ def get_default_manager() -> IncidentLifecycleManager:
     """Lazily initializes and returns the shared singleton lifecycle manager."""
     global _DEFAULT_MANAGER
     if _DEFAULT_MANAGER is None:
-        _DEFAULT_MANAGER = IncidentLifecycleManager()
+        from src.storage.repository import CompressorGuardRepository
+        repo = CompressorGuardRepository()
+        _DEFAULT_MANAGER = IncidentLifecycleManager(repository=repo)
     return _DEFAULT_MANAGER
 
 
