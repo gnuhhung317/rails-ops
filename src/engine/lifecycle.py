@@ -23,6 +23,7 @@ from src.engine.action_guard import ActionGuard
 from src.engine.decision import DecisionEngine
 from src.engine.factory import setup_golden_path
 from src.domain.scenarios import ScenarioDefinition, FAILURE_3_SCENARIO
+from src.engine.benchmark import BaselineBenchmarkTracker
 from src.engine.fusion import EvidenceFusionEngine
 from src.engine.recovery import RecoveryVerifier
 from src.engine.replay import ReplayEngine
@@ -99,6 +100,9 @@ class IncidentLifecycleManager:
         self.current_decision: Optional[Decision] = None
         self.action_guard: ActionGuard = ActionGuard()
         self.case_events: List[CaseEvent] = []
+        self.benchmark_tracker: BaselineBenchmarkTracker = BaselineBenchmarkTracker(
+            self.scenario.lps_milestone
+        )
 
         if (
             self.replay is None
@@ -130,6 +134,7 @@ class IncidentLifecycleManager:
         self.current_evidence_state = None
         self.current_decision = None
         self.case_events = []
+        self.benchmark_tracker = BaselineBenchmarkTracker(self.scenario.lps_milestone)
         self.recovery_verifier.reset()
         if self.replay is not None:
             self.stream = self.replay.stream_telemetry(
@@ -401,6 +406,7 @@ class IncidentLifecycleManager:
                 evidence_chain=[self.current_evidence_state],
             )
             self.lifecycle_state = IncidentLifecycleState.DETECTED
+            self.benchmark_tracker.record_onset(pt.timestamp)
             self.record_case_event(
                 event_type=CaseEventType.DETECTION,
                 phase="DETECTED",
@@ -559,25 +565,20 @@ class IncidentLifecycleManager:
             else str(self.operational_confidence)
         )
 
-        # Dynamic lead time derived from detection timestamp and verified LPS milestone timestamp
-        lps_str = self.milestones.get("lps_reactive_1942") or self.scenario.lps_milestone
-        actual_lps_dt = pd.to_datetime(lps_str) if lps_str else None
-
-        if self.active_incident and self.active_incident.created_at:
-            actual_detection_dt = self.active_incident.created_at
-        elif "onset_0950" in self.milestones and self.has_active_case():
-            actual_detection_dt = pd.to_datetime(self.milestones["onset_0950"])
-        else:
-            actual_detection_dt = None
-
-        if self.has_active_case() and actual_lps_dt and actual_detection_dt:
-            delta = actual_lps_dt - actual_detection_dt
-            lead_time_minutes = max(0, int(round(delta.total_seconds() / 60.0)))
-            lead_hours = lead_time_minutes // 60
-            lead_mins = lead_time_minutes % 60
-            lead_time_formatted = f"{lead_hours}h {lead_mins:02d}m"
-            conv_ts = actual_lps_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-            early_ts = actual_detection_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        # Dynamic lead time derived strictly from benchmark_tracker
+        if self.has_active_case() and self.benchmark_tracker.is_ready:
+            lead_time_minutes = self.benchmark_tracker.lead_time_minutes
+            lead_time_formatted = self.benchmark_tracker.formatted_lead_time
+            conv_ts = (
+                self.benchmark_tracker.lps_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
+                if self.benchmark_tracker.lps_timestamp
+                else None
+            )
+            early_ts = (
+                self.benchmark_tracker.onset_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
+                if self.benchmark_tracker.onset_timestamp
+                else None
+            )
         else:
             lead_time_minutes = None
             lead_time_formatted = None
