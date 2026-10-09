@@ -114,3 +114,26 @@
    - Viết bộ kiểm thử chuyên biệt [`tests/test_mongodb_storage.py`](file:///d:/Code/Projects/self-projects/iot-hackathon/tests/test_mongodb_storage.py) (4/4 passed).
    - Chạy kiểm thử hồi quy toàn bộ hệ thống: **63/63 pytest passed 100%** (zero regression).
 
+---
+
+## Session: 2026-10-09 — Phase 4: Datadog Unified Observability Integration
+
+### Completed Actions:
+1. **DogStatsD Custom Metrics (`src/observability/metrics.py`):**
+   - Triển khai `DatadogMetricsClient` hỗ trợ DogStatsD với bộ nhớ đệm ngoại tuyến an toàn `buffered_metrics` (zero crash khi agent offline).
+   - Đo lường metrics thời gian thực: `compressorguard.telemetry.pressure_bar`, `compressorguard.telemetry.oil_temperature_c`, `compressorguard.ml.anomaly_score`, `compressorguard.incident.lead_time_seconds` (121,920s), `compressorguard.recovery.consecutive_observations`, `compressorguard.case.lifecycle_state`.
+2. **APM Distributed Tracing (`src/observability/tracer.py`):**
+   - Đóng gói client `ddtrace.tracer` với fallback Span context manager.
+   - Thêm FastAPI APM tracing middleware tự động sinh span `fastapi.request` cho toàn bộ endpoint HTTP.
+3. **Structured JSON Logging (`src/observability/logger.py`):**
+   - Triển khai `DatadogJSONFormatter` tự động gắn `dd.trace_id`, `dd.span_id`, `dd.service`, `dd.env` vào từng log record.
+4. **Monitors & Dashboard Definitions (`datadog/`):**
+   - [`datadog/monitors.json`](file:///d:/Code/Projects/self-projects/iot-hackathon/datadog/monitors.json): Định nghĩa monitor cảnh báo sớm áp suất (`Early Warning Pressure Breach`) và kiểm chứng hồi phục (`Recovery Criteria Verified`).
+   - [`datadog/dashboard.json`](file:///d:/Code/Projects/self-projects/iot-hackathon/datadog/dashboard.json): Layout 6 widget hiển thị tình trạng hạm đội, biểu đồ áp suất, điểm dị thường ML, thời gian can thiệp xác nhận, và chuỗi hồi phục.
+5. **Tối Ưu Hóa Tốc Độ Kiểm Thử (Performance Breakthrough):**
+   - Khắc phục bottleneck tải lại file CSV (1.5M dòng) bằng cách tái sử dụng instance `ReplayEngine` trong `HistoricalScenarioStream`.
+   - Giảm thời gian chạy test suite từ >8 phút xuống còn **21.78 giây** cho 76 test.
+6. **Kiểm Thử Toàn Diện (Full Regression Suite):**
+   - Viết bộ kiểm thử chuyên biệt [`tests/test_datadog_observability.py`](file:///d:/Code/Projects/self-projects/iot-hackathon/tests/test_datadog_observability.py) (5/5 passed).
+   - Chạy kiểm thử hồi quy toàn bộ hệ thống: **76/76 passed in 21.78s** (zero regression).
+

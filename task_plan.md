@@ -30,12 +30,12 @@ Chuyển hóa CompressorGuard từ một Vertical Slice Backend thành một **H
 | **Phase 1.8** | **Fleet-Centric Case Architecture & Docs Alignment** | `COMPLETE` | 3 Data Layers, Dual-Clock Live Simulation, Screen 01-07 Specs, ActionGuard, CaseEvent Ledger, Expanded API Contracts. |
 | **Phase 2** | **Backend Domain & API Contract Expansion (P0/P1)** | `COMPLETE` | 59/59 pytest passed; AssetRegistry, ScenarioStream dual-clock, ActionGuard, CaseEvent ledger, `/api/operations`, `/api/case`, `/api/case/events`, `/api/case/close`. |
 | **Phase 3** | **MongoDB Atlas Multi-Modal Integration** | `COMPLETE` | 63/63 pytest passed; Time Series collection `measurements`, pipeline `$setWindowFields`, `operational_cases`, `case_events`, ingest script. |
-| **Phase 4** | **Datadog Unified Observability Integration** | `READY` | DogStatsD metrics, `dd-trace` APM, structured JSON logs với `dd.trace_id`. |
-| **Phase 5** | **Operations Command Console Frontend (Web UI)** | `PENDING` | 4 Tiers of Progressive Disclosure, Fleet Hierarchy Landing, Case Workspace 4 Questions, Validation Reference Drawer. |
+| **Phase 4** | **Datadog Unified Observability Integration** | `COMPLETE` | 76/76 pytest passed; DogStatsD metrics, APM distributed tracing, structured JSON logging với `dd.trace_id`, Monitors & Dashboard JSON. |
+| **Phase 5** | **Operations Command Console Frontend (Web UI)** | `READY` | 4 Tiers of Progressive Disclosure, Fleet Hierarchy Landing, Case Workspace 4 Questions, Validation Reference Drawer. |
 | **Phase 6** | **Demo Hardening, 1-Click Simulation & Pitch Deck** | `PENDING` | Dual-clock pacing controls (1x, 10x, 60x), 5 evaluation gates (G1-G5). |
 
 ---
 
 ## 4. Current Milestone & Next Action
-- **Current Milestone:** Phase 3 hoàn tất xuất sắc với 63/63 test vượt qua (100% pass rate). Toàn bộ storage layer MongoDB Time Series, Document collections, Aggregation Pipeline `$setWindowFields`, và script nạp dữ liệu lịch sử đã sẵn sàng.
-- **Recommended Next Action:** Triển khai **Phase 4: Datadog Unified Observability Integration** (DogStatsD custom metrics cho áp suất/nhiệt độ/lead time, APM tracing với `dd-trace`, và liên kết log có cấu trúc mang `dd.trace_id`).
+- **Current Milestone:** Phase 4 hoàn tất với 76/76 test vượt qua (100% pass rate, thời gian chạy chỉ ~21s). Toàn bộ hệ thống đo lường thời gian thực Datadog DogStatsD, phân tán APM tracer, log có cấu trúc chuẩn Datadog JSON inject trace_id/span_id, cùng mẫu dashboard và cảnh báo monitors đã hoàn thành.
+- **Recommended Next Action:** Triển khai **Phase 5: Operations Command Console Frontend (Web UI)** kết nối API và hiện thực hóa 7 màn hình theo chuẩn `screen/01..07.md`.
