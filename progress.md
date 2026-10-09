@@ -91,3 +91,26 @@
 
 8. **Kiểm Chứng Toàn Diện (Full Regression Suite):**
    - Chạy toàn bộ test suite: **59/59 pytest passed 100% in 100.95s** (zero regression).
+
+---
+
+## Session: 2026-10-09 — Phase 3: MongoDB Atlas Multi-Modal Integration
+
+### Completed Actions:
+1. **Thiết Kế Lớp Lưu Trữ Đa Mô Thức (`src/storage/`):**
+   - [`src/storage/mongo_client.py`](file:///d:/Code/Projects/self-projects/iot-hackathon/src/storage/mongo_client.py): Kết nối MongoDB Atlas linh hoạt qua biến môi trường `MONGODB_URI` với cơ chế In-Memory fallback tự động khi cluster offline hoặc chạy test cục bộ.
+   - Hàm `init_mongodb_schema()` tạo collection Time Series `measurements` (`timeField: "timestamp"`, `metaField: "metadata"`, `granularity: "seconds"`), document collection `operational_cases` và `case_events` với các index tối ưu.
+2. **Hiện Thực Repository Pattern (`src/storage/repository.py`):**
+   - Triển khai `CompressorGuardRepository` với đầy đủ phương thức nạp telemetry đơn lẻ/hàng loạt, lưu trữ và truy vấn Case theo `case_id`, quản lý sổ cái `case_events`.
+   - Triển khai Aggregation Pipeline `$setWindowFields` tính toán giá trị trung bình trượt và độ lệch trượt trong cửa sổ 600 giây (`rolling_avg_dv`, `rolling_avg_oil_temp`).
+3. **Liên Kết Với Domain Lifecycle Engine (`src/engine/lifecycle.py`):**
+   - Tiêm phụ thuộc `repository` vào `IncidentLifecycleManager`.
+   - Tự động đồng bộ hóa các sự kiện phát sinh (`DETECTION`, `CORROBORATION`, `ACTION`, `RECOVERY`, `CASE_CLOSED`) vào collection `case_events`.
+   - Cập nhật tài liệu Case vào `operational_cases` khi đóng case.
+4. **Script Nạp Dữ Liệu Lịch Sử (`scripts/ingest_historical_to_mongo.py`):**
+   - Đọc dữ liệu chuỗi thời gian phân đoạn Failure #3 từ `ReplayEngine` và nạp hàng loạt (batch insert) vào MongoDB `measurements`.
+   - Đã kiểm tra thực thi thành công nạp 50 điểm mẫu thử nghiệm.
+5. **Kiểm Thử Toàn Diện (Full Regression Suite):**
+   - Viết bộ kiểm thử chuyên biệt [`tests/test_mongodb_storage.py`](file:///d:/Code/Projects/self-projects/iot-hackathon/tests/test_mongodb_storage.py) (4/4 passed).
+   - Chạy kiểm thử hồi quy toàn bộ hệ thống: **63/63 pytest passed 100%** (zero regression).
+

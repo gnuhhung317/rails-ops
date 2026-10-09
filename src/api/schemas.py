@@ -131,6 +131,7 @@ class OperationsResponse(BaseModel):
 
 class CaseEventItem(BaseModel):
     event_id: str
+    case_id: str = "APU-INC-20200605-01"
     event_time: str
     event_type: str
     phase: str

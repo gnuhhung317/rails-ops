@@ -94,6 +94,7 @@ class RecoveryStatus(BaseModel):
 
 class CaseEvent(BaseModel):
     event_id: str
+    case_id: str = "APU-INC-20200605-01"
     event_time: datetime
     event_type: CaseEventType
     phase: str

@@ -73,6 +73,7 @@ class IncidentLifecycleManager:
         decision_engine: Optional[DecisionEngine] = None,
         recovery_verifier: Optional[RecoveryVerifier] = None,
         scenario: Optional[ScenarioDefinition] = None,
+        repository: Optional[Any] = None,
     ) -> None:
         self.scenario: ScenarioDefinition = scenario or FAILURE_3_SCENARIO
         self.milestones: Dict[str, str] = self.scenario.milestones.copy()
@@ -81,6 +82,7 @@ class IncidentLifecycleManager:
         self.fusion: Optional[EvidenceFusionEngine] = fusion
         self.decision_engine: Optional[DecisionEngine] = decision_engine
         self.recovery_verifier: RecoveryVerifier = recovery_verifier or RecoveryVerifier()
+        self.repository = repository
 
         self.window: List[TelemetryPoint] = []
         self.active_incident: Optional[IncidentEvent] = None
@@ -161,6 +163,11 @@ class IncidentLifecycleManager:
             provenance=provenance or {},
         )
         self.case_events.append(evt)
+        if getattr(self, "repository", None) is not None:
+            try:
+                self.repository.save_case_event(evt.model_dump(mode="json"))
+            except Exception:
+                pass
         return evt
 
     def get_case_events(self) -> List[Dict[str, Any]]:
@@ -193,6 +200,11 @@ class IncidentLifecycleManager:
             actor=f"operator:{operator_id}",
             source="Operations Console",
         )
+        if getattr(self, "repository", None) is not None and self.active_incident is not None:
+            try:
+                self.repository.save_case(self.active_incident.model_dump(mode="json"))
+            except Exception:
+                pass
         return {
             "status": "CASE_CLOSED",
             "operator_id": operator_id,
