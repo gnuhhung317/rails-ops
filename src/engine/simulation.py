@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional, Generator, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.domain.models import TelemetryPoint
 from src.engine.replay import ReplayEngine, DEFAULT_CSV_PATH

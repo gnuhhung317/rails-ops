@@ -166,7 +166,15 @@ class IncidentLifecycleManager:
         return evt
 
     def get_case_events(self) -> List[Dict[str, Any]]:
-        return [evt.model_dump() for evt in self.case_events]
+        result = []
+        for evt in self.case_events:
+            d = evt.model_dump()
+            if hasattr(d["event_time"], "isoformat"):
+                d["event_time"] = d["event_time"].isoformat()
+            else:
+                d["event_time"] = str(d["event_time"])
+            result.append(d)
+        return result
 
     def close_case(self, operator_id: str = "DISPATCHER-0941", notes: str = "") -> Dict[str, Any]:
         if not self.recovery_verifier.is_verified:
