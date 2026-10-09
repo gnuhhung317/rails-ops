@@ -137,3 +137,34 @@
    - Viết bộ kiểm thử chuyên biệt [`tests/test_datadog_observability.py`](file:///d:/Code/Projects/self-projects/iot-hackathon/tests/test_datadog_observability.py) (5/5 passed).
    - Chạy kiểm thử hồi quy toàn bộ hệ thống: **76/76 passed in 21.78s** (zero regression).
 
+---
+
+## Session: 2026-10-09 — Phase 5: Operations Command Console Frontend (Web UI)
+
+### Completed Actions:
+1. **Kiến Trúc Web Console Hiện Đại Không Cần Build (Zero-Build Modern SPA):**
+   - [`src/static/index.html`](file:///d:/Code/Projects/self-projects/iot-hackathon/src/static/index.html): Xây dựng khung giao diện chuẩn Enterprise APM tích hợp Tailwind CSS, fonts Inter & JetBrains Mono, Dark Mode sắc nét.
+   - [`src/static/styles.css`](file:///d:/Code/Projects/self-projects/iot-hackathon/src/static/styles.css): Định nghĩa hệ thống màu carbon, hiệu ứng pulse cho trạng thái khẩn cấp, badge trạng thái, thanh cuộn tùy chỉnh và drawer mượt mà.
+   - [`src/static/app.js`](file:///d:/Code/Projects/self-projects/iot-hackathon/src/static/app.js): Động cơ SPA phản ứng với state store toàn diện, client API, vòng lặp phát dòng hai đồng hồ, toast alerts, và điều phối các view.
+2. **Hiện Thực Hóa 100% Đặc Tả 7 Màn Hình (`screen/01..07.md`):**
+   - **Screen 01 (Operations Landing):** Cây phân cấp hạm đội Linha Azul $\rightarrow$ Train #302 $\rightarrow$ APU $\rightarrow$ APU-COMP-01, bộ đếm vận hành trung thực, Panel trình diễn chống báo động ảo lúc 00:33:07 (Noise Rejection Demo).
+   - **Screen 02 (Active Cases):** Bất biến Siemens Senseye (tối đa 1 case/asset), thẻ Case đang mở kèm nút mở Workspace, bảng lịch sử Case đã giải quyết.
+   - **Screen 03 (What Changed?):** Phân tầng 4 khối thông tin: Observed Telemetry $\rightarrow$ Operational Condition $\rightarrow$ Business Context $\rightarrow$ Validation Reference; Hero metric 33h 52m.
+   - **Screen 04 (Why? Evidence):** 4 thẻ bằng chứng vật lý kèm Provenance đầy đủ (Áp suất +23.75σ, Nhiệt độ +5.71σ, Bước nhảy 3/3 chu kỳ, ML Isolation Forest 0.382 trên 5 features có tải) + Sơ đồ chuỗi nhân quả nhiệt động lực học.
+   - **Screen 05 (What Did We Do?):** Hàng rào 5 kiểm định ActionGuard + Nút bấm kích hoạt Safe Mode mô phỏng rẽ nhánh sang dữ liệu sau bảo trì ngày 08/06/2020.
+   - **Screen 06 (Did It Work?):** Thanh tiến độ kiểm chứng tiêu chí hồi phục 5/5 quan sát mang tải LOADED + Nút nghiệm thu đóng Case và giải phóng tài sản về HEALTHY.
+   - **Screen 07 (Case Timeline):** Sổ cái `CaseEvent` biên niên sử kiểu Datadog Incident Timeline.
+   - **Validation Reference Drawer:** Ngăn kéo trượt hiển thị chi tiết đối chứng lịch sử Failure #3 từ dataset MetroPT-3.
+3. **Mở Rộng Backend API & Static Mounting:**
+   - [`src/api/app.py`](file:///d:/Code/Projects/self-projects/iot-hackathon/src/api/app.py): Mount `/static`, cấu hình `GET /` và `GET /console` trả về Web Console SPA, giữ `GET /health` làm JSON health probe.
+   - [`src/api/routes_demo.py`](file:///d:/Code/Projects/self-projects/iot-hackathon/src/api/routes_demo.py): Bổ sung `/demo/play`, `/demo/pause`, `/demo/speed`, `/demo/status`.
+4. **Tối Ưu Hóa & Khắc Phục Lỗi Tồn Đọng (Bug Fixes & Hardening):**
+   - Khắc phục lỗi so sánh offset-naive và offset-aware datetime trong pipeline `$sort` của `InMemoryCollection`.
+   - Bổ sung toán tử `$nin` và `$in` trong bộ lọc truy vấn của `InMemoryCollection`.
+   - Cập nhật truy vấn `get_active_case_for_asset` loại trừ cả hai trạng thái `RESOLVED` và `CLOSED`.
+   - Thêm cơ chế tự động dọn dẹp các Case cũ khi gọi `manager.reset()`.
+5. **Kiểm Thử Toàn Diện (Full Regression Suite):**
+   - Viết bộ kiểm thử chuyên biệt [`tests/test_web_console_integration.py`](file:///d:/Code/Projects/self-projects/iot-hackathon/tests/test_web_console_integration.py) (4/4 passed).
+   - Chạy kiểm thử toàn bộ hệ thống: **91/91 passed in 45.55s** (100% pass rate, zero regression).
+
+
