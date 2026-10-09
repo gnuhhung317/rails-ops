@@ -21,6 +21,14 @@ from .models import (
     IncidentContext,
 )
 
+from .scenarios import (
+    ScenarioDefinition,
+    FAILURE_3_SCENARIO,
+    FAILURE_1_SCENARIO,
+    FAILURE_4_SCENARIO,
+    HEALTHY_SCENARIO,
+)
+
 __all__ = [
     "OperatingRegime",
     "AssetHealthState",
@@ -37,4 +45,9 @@ __all__ = [
     "IncidentEvent",
     "RecoveryStatus",
     "IncidentContext",
+    "ScenarioDefinition",
+    "FAILURE_3_SCENARIO",
+    "FAILURE_1_SCENARIO",
+    "FAILURE_4_SCENARIO",
+    "HEALTHY_SCENARIO",
 ]

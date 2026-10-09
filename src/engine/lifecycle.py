@@ -22,16 +22,12 @@ from src.domain.models import (
 from src.engine.action_guard import ActionGuard
 from src.engine.decision import DecisionEngine
 from src.engine.factory import setup_golden_path
+from src.domain.scenarios import ScenarioDefinition, FAILURE_3_SCENARIO
 from src.engine.fusion import EvidenceFusionEngine
 from src.engine.recovery import RecoveryVerifier
 from src.engine.replay import ReplayEngine
 
-MILESTONES = {
-    "onset_0950": "2020-06-05 09:50:00",
-    "ml_corroborated_1015": "2020-06-05 10:15:00",
-    "lps_reactive_1942": "2020-06-06 19:42:19",
-    "post_maintenance_1605": "2020-06-08 16:05:00",
-}
+MILESTONES = FAILURE_3_SCENARIO.milestones.copy()
 
 _CACHED_GOLDEN_PATH = None
 
@@ -76,8 +72,10 @@ class IncidentLifecycleManager:
         fusion: Optional[EvidenceFusionEngine] = None,
         decision_engine: Optional[DecisionEngine] = None,
         recovery_verifier: Optional[RecoveryVerifier] = None,
+        scenario: Optional[ScenarioDefinition] = None,
     ) -> None:
-        self.milestones: Dict[str, str] = MILESTONES.copy()
+        self.scenario: ScenarioDefinition = scenario or FAILURE_3_SCENARIO
+        self.milestones: Dict[str, str] = self.scenario.milestones.copy()
         self.replay: Optional[ReplayEngine] = replay
         self.detectors: Optional[List[BaseDetector]] = detectors
         self.fusion: Optional[EvidenceFusionEngine] = fusion
@@ -115,7 +113,7 @@ class IncidentLifecycleManager:
     def reset(self) -> None:
         """
         Resets state, recovery verifier, sliding window, and degradation stream
-        from 2020-06-05 09:40:00 to 2020-06-06 20:00:00.
+        according to the configured scenario's temporal bounds.
         """
         self.window = []
         self.active_incident = None
@@ -130,7 +128,7 @@ class IncidentLifecycleManager:
         self.recovery_verifier.reset()
         if self.replay is not None:
             self.stream = self.replay.stream_telemetry(
-                "2020-06-05 09:40:00", "2020-06-06 20:00:00"
+                self.scenario.stream_start, self.scenario.stream_end
             )
 
     def record_case_event(
@@ -239,9 +237,9 @@ class IncidentLifecycleManager:
             self.active_incident.lifecycle_state = IncidentLifecycleState.MITIGATING
 
         self.is_recovery_branch = True
-        self.stream = self.replay.stream_telemetry(
-            "2020-06-08 16:05:00", "2020-06-08 17:00:00"
-        )
+        rec_start = self.scenario.recovery_start or "2020-06-08 16:05:00"
+        rec_end = self.scenario.recovery_end or "2020-06-08 17:00:00"
+        self.stream = self.replay.stream_telemetry(rec_start, rec_end)
 
         self.record_case_event(
             event_type=CaseEventType.ACTION,
@@ -407,6 +405,16 @@ class IncidentLifecycleManager:
         target_ts_str = self.milestones[milestone_name]
         target_dt = pd.to_datetime(target_ts_str)
 
+        # Handle early excursion milestone
+        if milestone_name == "early_excursion_0033":
+            self.is_recovery_branch = False
+            self.stream = self.replay.stream_telemetry("2020-06-04 00:30:00", self.scenario.stream_end)
+            while self.current_point is None or self.current_point.timestamp < target_dt:
+                pt = self.tick()
+                if pt is None:
+                    break
+            return
+
         # Handle post-maintenance recovery branch
         if milestone_name == "post_maintenance_1605":
             if not self.is_recovery_branch:
@@ -416,9 +424,9 @@ class IncidentLifecycleManager:
                     self.trigger_safe_mode()
                 else:
                     self.is_recovery_branch = True
-                    self.stream = self.replay.stream_telemetry(
-                        "2020-06-08 16:05:00", "2020-06-08 17:00:00"
-                    )
+                    rec_start = self.scenario.recovery_start or "2020-06-08 16:05:00"
+                    rec_end = self.scenario.recovery_end or "2020-06-08 17:00:00"
+                    self.stream = self.replay.stream_telemetry(rec_start, rec_end)
             while self.current_point is None or self.current_point.timestamp < target_dt:
                 pt = self.tick()
                 if pt is None:
@@ -487,17 +495,29 @@ class IncidentLifecycleManager:
         )
 
         # Dynamic lead time derived from detection timestamp and verified LPS milestone timestamp
-        actual_lps_dt = pd.to_datetime(self.milestones["lps_reactive_1942"])
+        lps_str = self.milestones.get("lps_reactive_1942") or self.scenario.lps_milestone
+        actual_lps_dt = pd.to_datetime(lps_str) if lps_str else None
+
         if self.active_incident and self.active_incident.created_at:
             actual_detection_dt = self.active_incident.created_at
-        else:
+        elif "onset_0950" in self.milestones:
             actual_detection_dt = pd.to_datetime(self.milestones["onset_0950"])
+        else:
+            actual_detection_dt = None
 
-        delta = actual_lps_dt - actual_detection_dt
-        lead_time_minutes = max(0, int(round(delta.total_seconds() / 60.0)))
-        lead_hours = lead_time_minutes // 60
-        lead_mins = lead_time_minutes % 60
-        lead_time_formatted = f"{lead_hours}h {lead_mins:02d}m"
+        if actual_lps_dt and actual_detection_dt:
+            delta = actual_lps_dt - actual_detection_dt
+            lead_time_minutes = max(0, int(round(delta.total_seconds() / 60.0)))
+            lead_hours = lead_time_minutes // 60
+            lead_mins = lead_time_minutes % 60
+            lead_time_formatted = f"{lead_hours}h {lead_mins:02d}m"
+            conv_ts = actual_lps_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+            early_ts = actual_detection_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            lead_time_minutes = 0
+            lead_time_formatted = "0h 00m"
+            conv_ts = ""
+            early_ts = ""
 
         if self.active_incident and self.active_incident.summary:
             summary = self.active_incident.summary
@@ -515,8 +535,8 @@ class IncidentLifecycleManager:
             "lead_time": {
                 "lead_time_minutes": lead_time_minutes,
                 "lead_time_formatted": lead_time_formatted,
-                "conventional_alert_timestamp": actual_lps_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "earliest_detection_timestamp": actual_detection_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "conventional_alert_timestamp": conv_ts,
+                "earliest_detection_timestamp": early_ts,
             },
             "summary": summary,
         }
