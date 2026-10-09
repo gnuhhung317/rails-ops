@@ -14,6 +14,7 @@ class InMemoryCollection:
     def __init__(self, name: str):
         self.name = name
         self.documents: List[Dict[str, Any]] = []
+        self._indexes: Dict[str, Any] = {}
 
     def insert_one(self, doc: Dict[str, Any]):
         class InsertResult:
@@ -39,7 +40,15 @@ class InMemoryCollection:
         for d in reversed(self.documents):
             match = True
             for k, v in query.items():
-                if isinstance(v, dict) and "$ne" in v:
+                if "." in k:
+                    parts = k.split(".")
+                    val = d
+                    for part in parts:
+                        val = val.get(part) if isinstance(val, dict) else None
+                    if val != v:
+                        match = False
+                        break
+                elif isinstance(v, dict) and "$ne" in v:
                     if d.get(k) == v["$ne"]:
                         match = False
                         break
@@ -58,7 +67,15 @@ class InMemoryCollection:
         for d in self.documents:
             match = True
             for k, v in query.items():
-                if d.get(k) != v:
+                if "." in k:
+                    parts = k.split(".")
+                    val = d
+                    for part in parts:
+                        val = val.get(part) if isinstance(val, dict) else None
+                    if val != v:
+                        match = False
+                        break
+                elif d.get(k) != v:
                     match = False
                     break
             if match:
@@ -84,8 +101,13 @@ class InMemoryCollection:
             new_doc.update(set_vals)
             self.insert_one(new_doc)
 
-    def create_index(self, *args, **kwargs):
-        pass
+    def create_index(self, keys: Any, **kwargs):
+        name = kwargs.get("name", str(keys))
+        self._indexes[name] = {"key": keys, **kwargs}
+        return name
+
+    def index_information(self) -> Dict[str, Any]:
+        return dict(self._indexes)
 
     def aggregate(self, pipeline: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         # Lightweight simulation of $match, $setWindowFields, $sort, and $limit
@@ -204,6 +226,11 @@ def init_mongodb_schema(db: Any) -> List[str]:
             )
         except Exception:
             db.create_collection("measurements")
+
+    try:
+        db["measurements"].create_index([("timestamp", pymongo.ASCENDING)], expireAfterSeconds=30 * 86400)
+    except Exception:
+        pass
 
     # 2. Collections for cases and events
     if "operational_cases" not in existing:

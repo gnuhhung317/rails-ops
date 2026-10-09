@@ -369,6 +369,23 @@ class IncidentLifecycleManager:
             return None
 
         self.current_point = pt
+        if getattr(self, "repository", None) is not None:
+            doc = {
+                "timestamp": pt.timestamp,
+                "metadata": {
+                    "asset_id": pt.asset_id,
+                    "scenario": self.scenario.scenario_id,
+                },
+                "dv_pressure_bar": pt.dv_pressure_bar,
+                "oil_temp_c": pt.oil_temp_c,
+                "motor_current_a": pt.motor_current_a,
+                "regime": pt.regime.value if pt.regime else "LOADED",
+            }
+            try:
+                self.repository.insert_measurement(doc)
+            except Exception:
+                pass
+
         self.window.append(pt)
         if len(self.window) > 10:
             self.window.pop(0)
@@ -757,6 +774,7 @@ class IncidentLifecycleManager:
                         "is_primary": False,
                         "provenance": {
                             **sig.provenance,
+                            "source": sig.provenance.get("detector_class", "TemporalStepDetector"),
                             "event_time": self.current_point.timestamp.strftime("%Y-%m-%dT%H:%M:%SZ") if self.current_point else None,
                             "regime": self.current_point.regime.value if self.current_point and self.current_point.regime else "LOADED",
                         },
@@ -765,6 +783,8 @@ class IncidentLifecycleManager:
                 continue
 
             prov = dict(sig.provenance) if hasattr(sig, "provenance") and sig.provenance else {}
+            if "source" not in prov:
+                prov["source"] = prov.get("detector_class", sig.detector_id)
             if "event_time" not in prov:
                 prov["event_time"] = (
                     self.current_point.timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
