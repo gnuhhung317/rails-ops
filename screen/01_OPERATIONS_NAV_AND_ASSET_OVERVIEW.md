@@ -64,10 +64,10 @@
   * Trạng thái quan sát (00:33): `1 MONITORED ASSET | 0 ACTIVE CASES | 1 ASSET OBSERVING | REPLAY: FAILURE #3`.
   * Khi sự cố được xác nhận (09:50): `1 MONITORED ASSET | 1 ACTIVE CASE | 1 TRAIN AT RISK | 33h 52m CONFIRMED INTERVENTION WINDOW`.
 
-### 2.3 Khoảnh khắc "Đắt Giá" trong Demo (00:33:07 Noise Rejection)
-- Thay vì nhảy cóc qua mốc 00:33 bằng nút bấm giả tạo, bộ mô phỏng chạy liên tục qua thời điểm 00:33:07.
-- Operator và giám khảo trực tiếp chứng kiến xung áp suất 0.52 bar xuất hiện, hệ thống chuyển sang `OBSERVING`, đếm `1/3 Cycles`, nhận thấy nhiệt độ dầu không đổi và ML bình thường $\rightarrow$ **Tự động ngăn chặn tạo Case**.
-- Đây là minh chứng đanh thép rằng hệ thống liên tục suy luận thời gian thực, không phải là một storyboard cứng nhắc.
+### 2.3 Khoảnh khắc "Đắt Giá" trong Demo (00:33:07 Transient Noise Rejection)
+- Thay vì storyboard cứng nhắc, bộ mô phỏng chạy liên tục qua thời điểm 00:33:07 UTC.
+- Operator và giám khảo trực tiếp chứng kiến xung áp suất thực tế 6.046 bar (+65.4σ) xuất hiện trong chu kỳ LOADED. Hệ thống ghi nhận `Signal: OBSERVED`, `Pressure: ELEVATED`, nhưng `Temporal Evidence: INSUFFICIENT` và thiếu xác nhận nhiệt độ $\rightarrow$ Chuyển Asset sang `DEGRADING` để giám sát chặt chẽ, nhưng **Tự động ngăn chặn tạo Case giả mạo** (`Operational Case: NONE`, `Decision: NO_CASE_CREATED`).
+- Đây là minh chứng đanh thép rằng hệ thống liên tục suy luận đa chiều và tôn trọng bằng chứng vật lý, không hề có tình trạng "báo cháy giả".
 
 ---
 
@@ -75,36 +75,40 @@
 
 ```json
 {
-  "fleet_id": "FLEET-METRO-AZUL",
-  "fleet_name": "Linha Azul Fleet",
+  "fleet_id": "FLEET-METRO-01",
+  "fleet_name": "Metro Fleet (Linha Azul) — Illustrative Business Context",
   "summary": {
     "monitored_assets": 1,
     "active_cases": 0,
     "assets_observing": 1,
     "trains_at_risk": 0,
-    "replay_scenario": "Failure #3"
+    "replay_scenario": "Failure #3 — Air Leak"
   },
   "asset_hierarchy": {
     "train_id": "TRAIN-302",
     "subsystem": "Air Production Unit (APU)",
     "asset_id": "APU-COMP-01",
-    "asset_health": "HEALTHY",
+    "asset_health": "DEGRADING",
     "operating_regime": "LOADED",
     "active_case_id": null,
-    "operational_risk": "None — Nominal operation under continuous monitoring"
+    "operational_risk": "Transient anomaly excursion under continuous monitoring. Case creation suppressed."
   },
   "signal_observation": {
-    "status": "OBSERVING",
+    "signal": "OBSERVED",
+    "pressure_state": "ELEVATED",
+    "temporal_evidence": "INSUFFICIENT",
+    "asset_health": "DEGRADING",
+    "operational_case": "NONE",
+    "decision": "NO_CASE_CREATED",
     "event_time": "2020-06-04T00:33:07Z",
     "primary_signal": "dv_pressure",
-    "observed_value": 0.52,
-    "sigma_deviation": 4.21,
+    "observed_value": 6.046,
+    "sigma_deviation": 65.4,
     "persistence": {
-      "consecutive_samples": 1,
-      "required_samples": 3,
-      "confirmed": false
+      "confirmed": false,
+      "status": "INSUFFICIENT_EVIDENCE"
     },
-    "reasoning": "Transient excursion observed — thermal drift absent and ML corroborates normality. Case creation suppressed."
+    "reasoning": "Transient excursion observed — thermal drift absent and temporal confirmation insufficient. Case creation suppressed."
   },
   "simulation": {
     "mode": "LIVE_SIMULATION",
