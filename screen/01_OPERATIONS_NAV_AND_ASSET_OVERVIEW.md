@@ -14,15 +14,15 @@
 │ [1 MONITORED ASSET]    [0 ACTIVE CASES]    [1 ASSET OBSERVING]    [REPLAY: FAILURE #3 (2020-06-04)]    │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                                        │
-│  FLEET ASSET HIERARCHY (CÂY PHÂN CẤP TÀI SẢN VẬN HÀNH)                                                 │
+│  FLEET ASSET HIERARCHY (CÂY PHÂN CẤP TÀI SẢN VẬN HÀNH — ILLUSTRATIVE CONTEXT)                           │
 │  ────────────────────────────────────────────────────────────────────────────────────────────────────  │
-│  ▼ 🏢 FLEET: Linha Azul (Lisbon Metro Fleet)                                                           │
+│  ▼ 🏢 FLEET: Linha Azul (Lisbon Metro Fleet — Illustrative Context)                                     │
 │     └── ▼ 🚆 TRAIN-302 (Tàu chở khách thương mại — Tuyến Xanh)                                         │
 │            └── ▼ ⚙️ APU (Cụm cấp khí nén Air Production Unit)                                          │
-│                   └── 🔴 APU-COMP-01 (Máy nén khí Piston #01)                                          │
+│                   └── 🟡 APU-COMP-01 (Máy nén khí Piston #01)                                          │
 │                        • Vận hành: LOADED (Current: 6.82 A | Van xả đóng)                              │
-│                        • Trạng thái: [🟢 HEALTHY] (Giám sát nền)                                       │
-│                        • Hồ sơ sự cố: [ NONE ] (Không có tình huống khẩn cấp)                          │
+│                        • Trạng thái: [🟡 DEGRADING] (Giám sát xung bất thường)                         │
+│                        • Hồ sơ sự cố: [ NONE ] (Ngăn chặn tạo Case giả)                                │
 │                                                                                                        │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ 👁️ SIGNAL OBSERVATION WATCHLIST (PHÒNG NGỪA BÁO ĐỘNG ẢO - NOISE REJECTION DEMO)                        │
@@ -33,18 +33,18 @@
 │                                                                                                        │
 │  ┌─────────────────────────────────┐   ┌─────────────────────────────────┐   ┌──────────────────────┐  │
 │  │ DISCHARGE PRESSURE (DV)         │   │ THERMAL DRIFT (OIL_TEMP)        │   │ MULTIVARIATE ML (IF) │  │
-│  │ Observed: 0.52 bar (+4.21σ)     │   │ Observed: 56.10 °C (+0.32σ)     │   │ Score: 0.182 (<0.35) │  │
+│  │ Observed: 6.046 bar (+65.4σ)    │   │ Observed: 56.10 °C (+0.32σ)     │   │ Score: 0.182 (<0.35) │  │
 │  │ Source:   PressureAnomalyDet    │   │ Source:   ThermalDriftDetector  │   │ Role:  Corroboration │  │
 │  │ Status:   TRANSIENT SPIKE       │   │ Status:   NORMAL BASELINE       │   │ Status: NORMAL       │  │
 │  └─────────────────────────────────┘   └─────────────────────────────────┘   └──────────────────────┘  │
 │                                                                                                        │
-│  Persistence Monitor: [ █░░ ] 1/3 Loaded Cycles (Unconfirmed - Spike lasted only 10 seconds)           │
+│  Persistence Monitor: [ INSUFFICIENT EVIDENCE ] Transient spike without multi-cycle persistence         │
 │                                                                                                        │
 │  ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐  │
 │  │ ℹ️ SYSTEM REASONING & ANTI-FATIGUE POLICY:                                                       │  │
-│  │ "A transient pressure jump of 0.52 bar was detected at 00:33:07 UTC.                             │  │
-│  │  However, thermal drift is absent (+0.32σ) and Isolation Forest confirms multivariate normality. │  │
-│  │  CASE CREATION IS SUPPRESSED. The asset remains HEALTHY to prevent operator alarm fatigue."       │  │
+│  │ "A transient pressure jump of 6.046 bar (+65.4σ) was observed at 00:33:07 UTC.                  │  │
+│  │  However, thermal drift is absent and temporal persistence across loaded cycles is insufficient. │  │
+│  │  CASE CREATION IS SUPPRESSED. Asset marked DEGRADING for observation to prevent alarm fatigue."  │  │
 │  └──────────────────────────────────────────────────────────────────────────────────────────────────┘  │
 │                                                                                                        │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘

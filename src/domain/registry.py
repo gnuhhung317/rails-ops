@@ -8,6 +8,8 @@ class FleetEntity(BaseModel):
     operator_name: str = "Metro do Porto / CP"
     depot_location: str = "Depot Oriente"
     train_ids: List[str] = Field(default_factory=lambda: ["TRAIN-302"])
+    is_illustrative_context: bool = True
+    context_note: str = "Illustrative operational hierarchy mapping for MetroPT-3 compressor telemetry."
 
 
 class TrainEntity(BaseModel):
@@ -17,6 +19,8 @@ class TrainEntity(BaseModel):
     car_number: str = "Car 1 (Leading Cab)"
     service_status: str = "REVENUE_SERVICE"
     subsystem_ids: List[str] = Field(default_factory=lambda: ["SUB-APU-01"])
+    is_illustrative_context: bool = True
+    context_note: str = "Illustrative operational hierarchy mapping for MetroPT-3 compressor telemetry."
 
 
 class SubsystemEntity(BaseModel):
@@ -25,6 +29,8 @@ class SubsystemEntity(BaseModel):
     name: str = "Air Production Unit"
     subsystem_code: str = "APU"
     asset_ids: List[str] = Field(default_factory=lambda: ["APU-COMP-01"])
+    is_illustrative_context: bool = True
+    context_note: str = "Illustrative operational hierarchy mapping for MetroPT-3 compressor telemetry."
 
 
 class CompressorAssetEntity(BaseModel):
@@ -48,6 +54,13 @@ class ValidationReference(BaseModel):
     online_detector_confirmation: str = "2020-06-05T09:50:39Z"
     confirmed_intervention_window_minutes: int = 2032
     confirmed_intervention_window_formatted: str = "33h 52m"
+    computed_by_compressorguard: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "online_detector_confirmation": "2020-06-05T09:50:39Z",
+            "confirmed_intervention_window_minutes": 2032,
+            "confirmed_intervention_window_formatted": "33h 52m",
+        }
+    )
     maintenance_summary: str = (
         "UCI dataset ground truth record: MetroPT-3 compressor failure report #3 "
         "indicates discharge valve leak and high thermal stress. CompressorGuard provides "
