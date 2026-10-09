@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CompressorGuard // Operations Command Console</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: '#38bdf8',
+            surface: '#0f172a',
+            card: '#141e33',
+            border: '#1e293b'
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-[#070a10] text-slate-100 min-h-screen flex flex-col font-sans selection:bg-sky-500 selection:text-slate-950">
+
+  <!-- ================= TOP COMMAND HEADER ================= -->
+  <header class="border-b border-slate-800/90 bg-[#0c1220]/95 backdrop-blur-md sticky top-0 z-40">
+    <!-- Brand & Clocks Row -->
+    <div class="max-w-[1600px] mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/60">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-black text-sm">
+          CG
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-black tracking-wider text-sm text-slate-100">COMPRESSORGUARD</span>
+            <span class="text-slate-600">//</span>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">OPERATIONS COMMAND CONSOLE</span>
+          </div>
+          <div class="text-[11px] text-slate-500 flex items-center gap-2">
+            <span>Asset: <span class="mono text-slate-400">APU-COMP-01</span></span>
+            <span>·</span>
+            <span>Train: <span class="mono text-slate-400">TRAIN-302</span></span>
+            <span>·</span>
+            <span>Linha Azul (Lisbon Metro)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Honest Simulation Badge & Operational Scope -->
+      <div class="flex items-center gap-3">
+        <div class="px-2.5 py-1 rounded bg-sky-950/60 border border-sky-800/60 text-sky-300 text-[11px] mono font-bold flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+          <span>LIVE SIMULATION · HISTORICAL DATA</span>
+        </div>
+
+        <div class="hidden lg:flex items-center gap-2 px-3 py-1 rounded bg-slate-900 border border-slate-800 text-xs">
+          <span class="text-slate-500">Operator:</span>
+          <span class="mono text-slate-300 font-semibold">DISPATCHER-0941</span>
+        </div>
+
+        <div class="flex items-center gap-2 px-3 py-1 rounded bg-slate-900 border border-slate-800 text-xs">
+          <span class="text-slate-500">Historical Event Time:</span>
+          <span id="hdr-event-time" class="mono text-amber-400 font-bold">2020-06-05 09:50:39 UTC</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Simulation Pacing Toolbar & Milestones Row -->
+    <div class="max-w-[1600px] mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <!-- Playback Controls -->
+      <div class="flex items-center gap-2">
+        <button id="btn-play-pause" onclick="onPlayPause()" class="px-3.5 py-1.5 rounded-lg border border-sky-500/40 bg-sky-600/20 text-sky-400 font-bold hover:bg-sky-600/30 transition flex items-center gap-1.5">
+          <span>▶</span><span>Play</span>
+        </button>
+
+        <button onclick="onStep()" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition flex items-center gap-1">
+          <span>⏭</span><span>Step (10s)</span>
+        </button>
+
+        <button onclick="onReset()" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition flex items-center gap-1">
+          <span>🔄</span><span>Reset</span>
+        </button>
+
+        <!-- Speed Selector -->
+        <div class="flex items-center ml-2 border border-slate-800 rounded-lg p-0.5 bg-slate-900/80">
+          <span class="px-2 text-[10px] uppercase font-bold text-slate-500">Speed:</span>
+          <button onclick="onSpeedChange(1.0)" data-speed="1" class="speed-btn px-2 py-0.5 rounded text-xs transition text-slate-400 hover:text-slate-200">1x</button>
+          <button onclick="onSpeedChange(10.0)" data-speed="10" class="speed-btn px-2 py-0.5 rounded text-xs transition text-slate-400 hover:text-slate-200">10x</button>
+          <button onclick="onSpeedChange(60.0)" data-speed="60" class="speed-btn px-2 py-0.5 rounded text-xs font-bold bg-sky-500 text-slate-950">60x</button>
+          <button onclick="onSpeedChange(300.0)" data-speed="300" class="speed-btn px-2 py-0.5 rounded text-xs transition text-slate-400 hover:text-slate-200">300x</button>
+        </div>
+      </div>
+
+      <!-- Quick Milestones Shortcuts -->
+      <div class="flex items-center gap-1.5 overflow-x-auto">
+        <span class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mr-1">Milestones:</span>
+        <button onclick="onMilestoneJump('early_excursion_0033')" class="px-2.5 py-1 rounded bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] transition">
+          00:33 Noise Rejection
+        </button>
+        <button onclick="onMilestoneJump('onset_0950')" class="px-2.5 py-1 rounded bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 text-rose-300 text-[11px] font-semibold transition">
+          09:50 Onset
+        </button>
+        <button onclick="onMilestoneJump('ml_corroborated_1015')" class="px-2.5 py-1 rounded bg-sky-950/40 hover:bg-sky-900/60 border border-sky-800/60 text-sky-300 text-[11px] transition">
+          10:15 ML Corroborated
+        </button>
+        <button onclick="onMilestoneJump('lps_reactive_1942')" class="px-2.5 py-1 rounded bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/60 text-amber-300 text-[11px] transition">
+          T-33h LPS Benchmark
+        </button>
+        <button onclick="onMilestoneJump('post_maintenance_1605')" class="px-2.5 py-1 rounded bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/60 text-emerald-300 text-[11px] font-semibold transition">
+          16:05 Post-Maint
+        </button>
+      </div>
+
+      <!-- Validation Reference Drawer Button -->
+      <div>
+        <button onclick="toggleDrawer(true)" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold transition flex items-center gap-1.5">
+          <span>🗄️</span><span>Validation Reference</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN NAVIGATION BAR (TIER 1) ================= -->
+  <nav class="border-b border-slate-800 bg-[#090e18] px-4">
+    <div class="max-w-[1600px] mx-auto flex items-center justify-between">
+      <div class="flex gap-2">
+        <button data-view="operations" class="nav-btn px-4 py-3 border-b-2 border-sky-500 text-sky-400 bg-sky-500/10 font-bold text-xs tracking-wider transition flex items-center gap-2">
+          <span>📂</span><span>[1] OPERATIONS & FLEET ASSETS</span>
+        </button>
+        <button data-view="active_cases" class="nav-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-bold text-xs tracking-wider transition flex items-center gap-2">
+          <span>🚨</span><span>[2] ACTIVE CASES</span>
+        </button>
+        <button data-view="workspace" class="nav-btn px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-bold text-xs tracking-wider transition flex items-center gap-2">
+          <span>🛠️</span><span>[3] CASE WORKSPACE (4 TIERS)</span>
+        </button>
+      </div>
+
+      <!-- Quick Metrics Right Badge -->
+      <div class="hidden md:flex items-center gap-3 text-xs mono">
+        <div id="cnt-active-cases" class="px-2.5 py-0.5 rounded font-semibold badge-healthy">
+          0 ACTIVE CASES
+        </div>
+        <div class="text-slate-400">
+          Intervention Window: <span id="cnt-lead-time" class="text-sky-400 font-bold">33h 52m</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================= PRIMARY VIEW CONTAINER ================= -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 md:p-6">
+    <div id="view-container">
+      <!-- Reactive view rendered here by app.js -->
+    </div>
+  </main>
+
+  <!-- ================= FOOTER AUDIT BAR ================= -->
+  <footer class="border-t border-slate-900 bg-[#06090e] px-4 py-2.5 text-[11px] text-slate-500">
+    <div class="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span>CompressorGuard v2.3</span>
+        <span>·</span>
+        <span>Industrial Operations Command Platform</span>
+        <span>·</span>
+        <span>MUGVN Hackathon 2026</span>
+      </div>
+      <div class="flex items-center gap-4 mono">
+        <span>Data: <span class="text-slate-400">MetroPT-3 (AirCompressor).csv</span></span>
+        <span>Storage: <span class="text-emerald-400">MongoDB Atlas Time Series</span></span>
+        <span>Observability: <span class="text-purple-400">Datadog APM & DogStatsD</span></span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= VALIDATION REFERENCE DRAWER (SLIDE-OUT) ================= -->
+  <div id="drawer-backdrop" onclick="toggleDrawer(false)" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+  <aside id="validation-drawer" class="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-[#0e1626] border-l border-slate-800 z-50 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+    <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+      <div class="flex items-center gap-2 text-sm font-bold text-slate-100">
+        <span>🗄️</span><span>VALIDATION REFERENCE (GROUND TRUTH)</span>
+      </div>
+      <button onclick="toggleDrawer(false)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition">
+        ✕
+      </button>
+    </div>
+
+    <div id="drawer-content-body" class="p-6 overflow-y-auto flex-1">
+      <!-- Loaded dynamically by app.js -->
+    </div>
+  </aside>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Main JavaScript App -->
+  <script src="/static/app.js"></script>
+</body>
+</html>

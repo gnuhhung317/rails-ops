@@ -31,7 +31,7 @@ class CompressorGuardRepository:
 
     def get_active_case_for_asset(self, asset_id: str) -> Optional[Dict[str, Any]]:
         return self.db["operational_cases"].find_one(
-            {"asset_id": asset_id, "phase": {"$ne": "RESOLVED"}},
+            {"asset_id": asset_id, "phase": {"$nin": ["RESOLVED", "CLOSED"]}},
             {"_id": 0}
         )
 

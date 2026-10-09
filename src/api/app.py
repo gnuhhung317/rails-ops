@@ -1,7 +1,8 @@
-import logging
+from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from starlette.staticfiles import StaticFiles
 
 from src.api.routes_demo import router as demo_router
 from src.api.routes_product import router as product_router
@@ -14,6 +15,7 @@ from src.observability.tracer import get_tracer
 
 logger = setup_datadog_logging("compressorguard.api")
 _DEFAULT_MANAGER: Optional[IncidentLifecycleManager] = None
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
 
 def get_default_manager() -> IncidentLifecycleManager:
@@ -41,6 +43,10 @@ def create_app(manager: Optional[IncidentLifecycleManager] = None) -> FastAPI:
     # Set manager singleton on app state
     app.state.manager = manager if manager is not None else get_default_manager()
 
+    # Mount static assets if directory exists
+    if STATIC_DIR.exists():
+        app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
     # Datadog APM tracing middleware
     @app.middleware("http")
     async def datadog_apm_middleware(request: Request, call_next):
@@ -56,8 +62,33 @@ def create_app(manager: Optional[IncidentLifecycleManager] = None) -> FastAPI:
     app.include_router(product_router)
     app.include_router(demo_router)
 
+    # Health probe
+    @app.get("/health")
+    def health():
+        return {
+            "name": "CompressorGuard API",
+            "version": "2.1.0",
+            "status": "OPERATIONAL",
+        }
+
+    # Console landing routes
+    @app.get("/")
+    @app.get("/console")
+    def serve_console(request: Request):
+        accept = request.headers.get("accept", "")
+        index_file = STATIC_DIR / "index.html"
+        if index_file.exists() and ("text/html" in accept or "application/json" not in accept):
+            return FileResponse(str(index_file))
+        return {
+            "name": "CompressorGuard API",
+            "version": "2.1.0",
+            "status": "OPERATIONAL",
+            "console_url": "/console",
+        }
+
     # Exception Handlers
     @app.exception_handler(InvalidStateTransitionError)
+
     async def invalid_state_transition_handler(
         request: Request, exc: InvalidStateTransitionError
     ) -> JSONResponse:

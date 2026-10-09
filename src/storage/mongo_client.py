@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 import pymongo
 from pymongo.database import Database
@@ -15,6 +16,30 @@ class InMemoryCollection:
         self.name = name
         self.documents: List[Dict[str, Any]] = []
         self._indexes: Dict[str, Any] = {}
+
+    def clear(self):
+        self.documents = []
+
+    @staticmethod
+    def _doc_matches_query(d: Dict[str, Any], query: Dict[str, Any]) -> bool:
+        for k, v in query.items():
+            val = d
+            if "." in k:
+                for part in k.split("."):
+                    val = val.get(part) if isinstance(val, dict) else None
+            else:
+                val = d.get(k)
+
+            if isinstance(v, dict):
+                if "$ne" in v and val == v["$ne"]:
+                    return False
+                if "$nin" in v and val in v["$nin"]:
+                    return False
+                if "$in" in v and val not in v["$in"]:
+                    return False
+            elif val != v:
+                return False
+        return True
 
     def insert_one(self, doc: Dict[str, Any]):
         class InsertResult:
@@ -38,24 +63,7 @@ class InMemoryCollection:
 
     def find_one(self, query: Dict[str, Any], projection: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
         for d in reversed(self.documents):
-            match = True
-            for k, v in query.items():
-                if "." in k:
-                    parts = k.split(".")
-                    val = d
-                    for part in parts:
-                        val = val.get(part) if isinstance(val, dict) else None
-                    if val != v:
-                        match = False
-                        break
-                elif isinstance(v, dict) and "$ne" in v:
-                    if d.get(k) == v["$ne"]:
-                        match = False
-                        break
-                elif d.get(k) != v:
-                    match = False
-                    break
-            if match:
+            if self._doc_matches_query(d, query):
                 res = dict(d)
                 if projection and projection.get("_id") == 0 and "_id" in res:
                     del res["_id"]
@@ -65,20 +73,7 @@ class InMemoryCollection:
     def find(self, query: Dict[str, Any], projection: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         results = []
         for d in self.documents:
-            match = True
-            for k, v in query.items():
-                if "." in k:
-                    parts = k.split(".")
-                    val = d
-                    for part in parts:
-                        val = val.get(part) if isinstance(val, dict) else None
-                    if val != v:
-                        match = False
-                        break
-                elif d.get(k) != v:
-                    match = False
-                    break
-            if match:
+            if self._doc_matches_query(d, query):
                 res = dict(d)
                 if projection and projection.get("_id") == 0 and "_id" in res:
                     del res["_id"]
@@ -88,18 +83,31 @@ class InMemoryCollection:
     def update_one(self, query: Dict[str, Any], update: Dict[str, Any], upsert: bool = False):
         set_vals = update.get("$set", {})
         for idx, d in enumerate(self.documents):
-            match = True
-            for k, v in query.items():
-                if d.get(k) != v:
-                    match = False
-                    break
-            if match:
+            if self._doc_matches_query(d, query):
                 self.documents[idx].update(set_vals)
                 return
         if upsert:
             new_doc = dict(query)
             new_doc.update(set_vals)
             self.insert_one(new_doc)
+
+    def delete_many(self, query: Dict[str, Any]):
+        class DeleteResult:
+            def __init__(self, count):
+                self.deleted_count = count
+        if not query:
+            count = len(self.documents)
+            self.documents = []
+            return DeleteResult(count)
+        kept = []
+        del_count = 0
+        for d in self.documents:
+            if self._doc_matches_query(d, query):
+                del_count += 1
+            else:
+                kept.append(d)
+        self.documents = kept
+        return DeleteResult(del_count)
 
     def create_index(self, keys: Any, **kwargs):
         name = kwargs.get("name", str(keys))
@@ -110,32 +118,13 @@ class InMemoryCollection:
         return dict(self._indexes)
 
     def aggregate(self, pipeline: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        # Lightweight simulation of $match, $setWindowFields, $sort, and $limit
         results = list(self.documents)
         for stage in pipeline:
             if "$match" in stage:
                 match_spec = stage["$match"]
-                filtered = []
-                for doc in results:
-                    matched = True
-                    for k, v in match_spec.items():
-                        if "." in k:
-                            parts = k.split(".")
-                            sub = doc
-                            for p in parts:
-                                sub = sub.get(p, {}) if isinstance(sub, dict) else None
-                            if sub != v:
-                                matched = False
-                                break
-                        elif doc.get(k) != v:
-                            matched = False
-                            break
-                    if matched:
-                        filtered.append(doc)
-                results = filtered
+                results = [doc for doc in results if self._doc_matches_query(doc, match_spec)]
 
             elif "$setWindowFields" in stage:
-                # Add rolling stats
                 dv_vals = [r.get("dv_pressure_bar", 0.0) for r in results]
                 oil_vals = [r.get("oil_temp_c", 0.0) for r in results]
                 avg_dv = sum(dv_vals) / len(dv_vals) if dv_vals else 0.0
@@ -146,8 +135,15 @@ class InMemoryCollection:
 
             elif "$sort" in stage:
                 sort_spec = stage["$sort"]
+                def _safe_sort_key(doc, key):
+                    val = doc.get(key, 0)
+                    if val is None:
+                        return 0
+                    if hasattr(val, "tzinfo") and val.tzinfo is not None:
+                        return val.astimezone(timezone.utc).replace(tzinfo=None)
+                    return val
                 for k, direction in sort_spec.items():
-                    results.sort(key=lambda x: x.get(k, 0), reverse=(direction == -1))
+                    results.sort(key=lambda x: _safe_sort_key(x, k), reverse=(direction == -1))
 
             elif "$limit" in stage:
                 limit = stage["$limit"]
@@ -160,6 +156,11 @@ class InMemoryDatabase:
     def __init__(self, name: str = DATABASE_NAME):
         self.name = name
         self.collections: Dict[str, InMemoryCollection] = {}
+
+    def clear(self):
+        for col in self.collections.values():
+            col.clear()
+        self.collections = {}
 
     def __getitem__(self, name: str) -> InMemoryCollection:
         if name not in self.collections:
@@ -208,6 +209,14 @@ def get_mongo_db() -> Any:
     if _IN_MEMORY_DB is None:
         _IN_MEMORY_DB = InMemoryDatabase(DATABASE_NAME)
     return _IN_MEMORY_DB
+
+
+def reset_in_memory_db() -> None:
+    global _IN_MEMORY_DB
+    if _IN_MEMORY_DB is not None:
+        _IN_MEMORY_DB.clear()
+        _IN_MEMORY_DB = None
+
 
 
 def init_mongodb_schema(db: Any) -> List[str]:

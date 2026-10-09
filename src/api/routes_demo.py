@@ -9,6 +9,9 @@ from src.api.schemas import (
     JumpRequest,
     JumpResponse,
     ErrorResponse,
+    SimulationSpeedRequest,
+    SimulationPlaybackResponse,
+    SimulationStatusResponse,
 )
 from src.engine.lifecycle import IncidentLifecycleManager
 
@@ -71,3 +74,48 @@ def jump_demo(
         else str(manager.lifecycle_state)
     )
     return JumpResponse(status="JUMP_OK", milestone=body.milestone, lifecycle_state=state_val)
+
+
+@router.post("/play", response_model=SimulationPlaybackResponse)
+def play_demo(manager: IncidentLifecycleManager = Depends(get_manager)) -> SimulationPlaybackResponse:
+    """Resumes or starts simulation playback."""
+    manager.play()
+    return SimulationPlaybackResponse(
+        status="PLAY_OK",
+        is_paused=False,
+        speed_multiplier=manager.runner.config.speed_multiplier if manager.runner else 60.0,
+    )
+
+
+@router.post("/pause", response_model=SimulationPlaybackResponse)
+def pause_demo(manager: IncidentLifecycleManager = Depends(get_manager)) -> SimulationPlaybackResponse:
+    """Pauses simulation playback."""
+    manager.pause()
+    return SimulationPlaybackResponse(
+        status="PAUSE_OK",
+        is_paused=True,
+        speed_multiplier=manager.runner.config.speed_multiplier if manager.runner else 60.0,
+    )
+
+
+@router.post("/speed", response_model=SimulationPlaybackResponse)
+def speed_demo(
+    body: SimulationSpeedRequest,
+    manager: IncidentLifecycleManager = Depends(get_manager),
+) -> SimulationPlaybackResponse:
+    """Sets the simulation speed pacing multiplier (e.g. 1.0, 10.0, 60.0, 300.0)."""
+    manager.set_simulation_speed(body.speed_multiplier)
+    is_paused = manager.runner.is_paused if manager.runner else True
+    return SimulationPlaybackResponse(
+        status="SPEED_OK",
+        is_paused=is_paused,
+        speed_multiplier=body.speed_multiplier,
+    )
+
+
+@router.get("/status", response_model=SimulationStatusResponse)
+def status_demo(manager: IncidentLifecycleManager = Depends(get_manager)) -> SimulationStatusResponse:
+    """Returns the current simulation runner status, event_time clock, and emitted point counts."""
+    st = manager.get_simulation_status()
+    return SimulationStatusResponse(**st)
+

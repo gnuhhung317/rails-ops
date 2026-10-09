@@ -139,6 +139,11 @@ class IncidentLifecycleManager:
         self.case_events = []
         self.benchmark_tracker = BaselineBenchmarkTracker(self.scenario.lps_milestone)
         self.recovery_verifier.reset()
+        if getattr(self, "repository", None) is not None:
+            try:
+                self.repository.db["operational_cases"].delete_many({"asset_id": self.scenario.asset_id})
+            except Exception:
+                pass
         if self.replay is not None:
             csv_path = str(self.replay.csv_path)
             stream = HistoricalScenarioStream(
@@ -305,8 +310,11 @@ class IncidentLifecycleManager:
         conflicting_count = 0
         if getattr(self, "repository", None) is not None:
             active_existing = self.repository.get_active_case_for_asset(self.scenario.asset_id)
-            if active_existing and active_existing.get("case_id") != getattr(self.active_incident, "incident_id", None):
-                conflicting_count = 1
+            if active_existing:
+                existing_id = active_existing.get("case_id") or active_existing.get("incident_id")
+                current_id = getattr(self.active_incident, "incident_id", None) or getattr(self.active_incident, "case_id", None)
+                if existing_id and current_id and existing_id != current_id:
+                    conflicting_count = 1
 
         guard_res = self.action_guard.validate(
             lifecycle_state=self.lifecycle_state,
