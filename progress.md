@@ -168,3 +168,22 @@
    - Chạy kiểm thử toàn bộ hệ thống: **91/91 passed in 45.55s** (100% pass rate, zero regression).
 
 
+
+---
+
+## Session: 2026-10-17 — Roadmap & v3.0 Production-Ready Specification Reconciliation
+
+### Completed Actions:
+1. **Phân Tích & Giải Quyết Bất Đồng Giữa `task_plan.md` và Đặc Tả UI/UX v3.0 (11/10/2026):**
+   - Xác định nguyên nhân gốc rễ: Trạng thái Phase 1–6 `COMPLETE` trong `task_plan.md` được lập từ ngày 09/10/2026 cho bản prototype sơ khởi.
+   - Bản chẩn đoán ngày 11/10/2026 (`docs/superpowers/specs/2026-10-11-prod-ready-ux-and-mechanism-design.md`) đã chỉ ra 5 khiếm khuyết lớn của giao diện cũ: dữ liệu hardcode tĩnh (~90%), thiếu biểu đồ chuỗi thời gian Chart.js, thiếu tương tác Human-in-the-Loop, và nút điều khiển demo trên header tạo cảm giác auto-pilot slideshow.
+   - Mã giao diện cũ đã được thu hồi; backend đã hoàn tất mở rộng các endpoint động v3.0 (`/api/telemetry/window`, `/api/telemetry/analytics`, `/api/action/guard-status`, `/api/case/work-order`) và kiểm chứng qua `tests/test_production_backend_v3.py`.
+2. **Cập Nhật Master Roadmap ([`task_plan.md`](file:///d:/Code/Projects/self-projects/iot-hackathon/task_plan.md)):**
+   - Giữ Phase 1–4 là `COMPLETE`.
+   - Mở lại Phase 5 thành `IN PROGRESS` với phạm vi công việc chi tiết cho giao diện v3.0: Zero Hardcoded Data, Synchronized Strip Charts (Chart.js), 3-Pane Incident Investigation Workbench, Replay Studio Drawer (`Shift + S`), và luồng Human-in-the-Loop 4 bước.
+   - Chuyển Phase 6 sang `PENDING PHASE 5`.
+3. **Thiết Lập Quy Tắc Cho Agent ([`AGENTS.md`](file:///d:/Code/Projects/self-projects/iot-hackathon/AGENTS.md)):**
+   - Cưỡng chế quy tắc: **Không tự ý chạy `pytest` trần** trên toàn bộ repository (tránh nghẽn CPU và timeout do nạp file CSV 1.5 triệu dòng).
+   - Thiết lập các nguyên tắc bất biến (Zero Fake Telemetry, Decoupled Producer-Consumer, 3 Data Layers, ActionGuard, Human-in-the-Loop, Zero Hardcoded UI).
+4. **Cập Nhật Làm Giàu Sổ Cái Phát Hiện ([`findings.md`](file:///d:/Code/Projects/self-projects/iot-hackathon/findings.md)):**
+   - Bổ sung Phần 5 phân tích chi tiết khoảng cách kỹ thuật giữa bản prototype v2.3 và kiến trúc công nghiệp v3.0.

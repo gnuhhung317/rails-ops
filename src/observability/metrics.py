@@ -93,14 +93,43 @@ class DatadogMetricsClient:
         self.gauge("telemetry.oil_temp_c", point.oil_temp_c, tags=tags)
         self.gauge("telemetry.motor_current_a", point.motor_current_a, tags=tags)
         self.gauge("telemetry.h1_bar", point.h1_bar, tags=tags)
+        self.gauge("telemetry.tp3_bar", point.tp3_bar, tags=tags)
+        self.gauge("telemetry.lps_active", point.lps_active, tags=tags)
 
     def emit_ml_score(self, score: float, asset_id: str = "APU-COMP-01") -> None:
         """Emits Isolation Forest multivariate anomaly corroboration score."""
         tags = [f"asset_id:{asset_id}"]
         self.gauge("ml.anomaly_score", score, tags=tags)
 
+    def emit_ml_observability(
+        self,
+        score: float,
+        inference_latency_ms: float = 0.0,
+        physics_agreed: bool = True,
+        asset_id: str = "APU-COMP-01",
+    ) -> None:
+        """Emits AI/ML observability signals: anomaly score, inference latency, and physics consensus."""
+        tags = [f"asset_id:{asset_id}", "model:isolation_forest_5f"]
+        self.gauge("ml.anomaly_score", score, tags=tags)
+        self.gauge("ml.inference_latency_ms", round(float(inference_latency_ms), 3), tags=tags)
+        self.gauge("ml.physics_agreement", 1.0 if physics_agreed else 0.0, tags=tags)
+
+    def emit_signal_suppression(
+        self,
+        asset_id: str = "APU-COMP-01",
+        detector_id: str = "pressure_anomaly",
+    ) -> None:
+        """Increments counter when a transient spike is suppressed before case creation."""
+        tags = [f"asset_id:{asset_id}", f"detector:{detector_id}"]
+        self.increment("signals.suppressed_total", 1, tags=tags)
+
+    def emit_runtime_warning_elapsed(self, elapsed_seconds: int, asset_id: str = "APU-COMP-01") -> None:
+        """Emits real-time elapsed warning duration since confirmed onset while LPS remains silent."""
+        tags = [f"asset_id:{asset_id}"]
+        self.gauge("incident.elapsed_warning_seconds", float(max(0, elapsed_seconds)), tags=tags)
+
     def emit_lead_time(self, seconds: int, asset_id: str = "APU-COMP-01") -> None:
-        """Emits confirmed intervention lead time buffer in seconds (e.g. 121,920s = 33h 52m)."""
+        """Emits confirmed counterfactual intervention lead time buffer in seconds (e.g. 121,920s = 33h 52m)."""
         tags = [f"asset_id:{asset_id}"]
         self.gauge("incident.lead_time_seconds", float(seconds), tags=tags)
 
@@ -125,3 +154,4 @@ def get_metrics_client(buffer_only: bool = False) -> DatadogMetricsClient:
     if _GLOBAL_METRICS_CLIENT is None:
         _GLOBAL_METRICS_CLIENT = DatadogMetricsClient(buffer_only=buffer_only)
     return _GLOBAL_METRICS_CLIENT
+

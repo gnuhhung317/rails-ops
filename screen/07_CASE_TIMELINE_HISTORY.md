@@ -1,146 +1,152 @@
-# SCREEN 07 — CASE TIMELINE & AUDIT HISTORY (CASEEVENT LEDGER)
-> **Mục tiêu:** Cung cấp biên niên sử sự cố theo dòng thời gian chuẩn Datadog Incident Timeline. Sổ cái sự kiện `CaseEvent` dạng append-only lưu vết tự động mọi quan sát thực tế, phán đoán của động cơ, hành động của người điều độ, mốc còi cũ và nghiệm thu phục hồi.
+# SCREEN 07 — CASE TIMELINE & IMMUTABLE AUDIT LEDGER (CASEEVENT STREAM)
+> **Mục tiêu:** Cung cấp sổ cái kiểm toán bất biến (`Append-Only CaseEvent Audit Ledger`) theo chuẩn Datadog Incident Timeline & Industrial Compliance. Lưu vết đầy đủ cả **sự kiện tự động của hệ thống (`System Detectors & DecisionEngine`)** lẫn **hành động điều hành của con người (`Operator Triage, Notes, Work Order, Safe Mode, Sign-Off`)**.
 
 ---
 
-## 1. BỐ CỤC GIAO DIỆN (ASCII WIREFRAME)
+## 1. BỐ CỤC GIAO DIỆN (3-PANE WORKBENCH — VIEW 5: IMMUTABLE CASEEVENT AUDIT LEDGER)
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ CASE WORKSPACE // CASE-20200605-01: APU-COMP-01 (TRAIN #302)                            [STATUS: CLOSED]│
-├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ [1. WHAT CHANGED?]   [2. WHY? (EVIDENCE)]   [3. WHAT DID WE DO?]   [4. DID IT WORK?]   [★ 5. TIMELINE] │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                                        │
-│  SỔ CÁI SỰ KIỆN VÒNG ĐỜI SỰ CỐ (APPEND-ONLY CASEEVENT AUDIT LEDGER — DATADOG APM PATTERN)               │
-│  ────────────────────────────────────────────────────────────────────────────────────────────────────  │
-│                                                                                                        │
-│  ● 2020-06-04 00:33:07 UTC  [ 🟡 OBSERVATION — TRANSIENT NOISE SUPPRESSED ]                            │
-│  │   Actor: CompressorGuard Engine          Source: PressureAnomalyDetector     Phase: OBSERVING       │
-│  │   Detail: Transient pressure spike of 0.52 bar (+4.21σ); thermal normal; case creation suppressed.  │
-│  │                                                                                                     │
-│  ● 2020-06-05 09:50:39 UTC  [ 🔴 CASE_CREATED — CONFIRMED DEGRADATION DETECTED ]                       │
-│  │   Actor: CompressorGuard Engine          Source: PressureAnomalyDetector     Phase: DETECTED        │
-│  │   Detail: Discharge pressure jumped to 2.1856 bar (+23.75σ) sustained 3 loaded cycles. Case opened.│
-│  │                                                                                                     │
-│  ● 2020-06-05 10:15:00 UTC  [ ⚠️ CORROBORATION — MULTIVARIATE ML CONFIRMED ]                           │
-│  │   Actor: ML Analytics Pipeline           Source: IsolationForestModel        Phase: INVESTIGATING   │
-│  │   Detail: Oil temp 74.97°C (+5.71σ); IF score 0.382 > 0.35 on 5 loaded features. Confidence elevated│
-│  │                                                                                                     │
-│  ● 2020-06-05 10:15:05 UTC  [ 💡 DECISION — MITIGATION RECOMMENDED ]                                   │
-│  │   Actor: DecisionEngine                  Source: FusionRuleEngine            Phase: INVESTIGATING   │
-│  │   Detail: 3 physical signals confirmed + ML corroborated -> ActionGuard recommends Safe Mode.       │
-│  │                                                                                                     │
-│  ● 2020-06-05 10:15:20 UTC  [ ⚡ ACTION — SAFE MODE SIMULATED INTERVENTION ]                            │
-│  │   Actor: DISPATCHER-0941 (Operator)      Source: ActionGuard                 Phase: MITIGATING      │
-│  │   Detail: ActionGuard checks cleared (5/5). Stream branched to post-maintenance segment (08/06).   │
-│  │                                                                                                     │
-│  ● 2020-06-06 19:42:19 UTC  [ ⏱️ BENCHMARK_LPS — CONVENTIONAL ALARM MILESTONE ]                        │
-│  │   Actor: Benchmark Reference             Source: MetroPT-3 Historical Stream Phase: MITIGATING      │
-│  │   Detail: Mechanical LPS=1 tripped in unmitigated baseline. Confirmed Intervention Window: 33h 52m! │
-│  │                                                                                                     │
-│  ● 2020-06-08 16:05:50 UTC  [ 🟢 RECOVERY — RECOVERY CRITERIA VERIFIED ]                               │
-│  │   Actor: RecoveryVerifier                Source: RecoveryCriteriaPolicy      Phase: RESOLVED        │
-│  │   Detail: 5/5 consecutive loaded observations verified (DV: -0.016 bar, Oil: 64.1°C).               │
-│  │                                                                                                     │
-│  ● 2020-06-08 16:06:10 UTC  [ 🔒 CASE_CLOSED — OPERATOR SIGN-OFF & ASSET RELEASED ]                    │
-│  │   Actor: DISPATCHER-0941 (Operator)      Source: POST /api/case/close        Phase: CLOSED          │
-│  │   Detail: Operator signed off case. Asset APU-COMP-01 released back to HEALTHY on Operations Landing│
-│                                                                                                        │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ WORKBENCH // APU-INC-20200605-01 · Train #302 (APU-COMP-01)   [PHASE: RESOLVED]       [LEDGER: APPEND-ONLY]  │
+│ Sub-View Focus: [1. WHAT CHANGED?]  [2. WHY? (EVIDENCE)]  [3. PLAYBOOK & GUARD]  [4. RECOVERY]  [★ 5. AUDIT] │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ LEDGER FILTER & EXPORT TOOLBAR:                                                                              │
+│ Actor: [All (System + Operator) ▼]   Type: [All Event Types ▼]   [🔍 Filter events...]   [📥 Export Dossier] │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ CHRONOLOGICAL APPEND-ONLY CASEEVENT AUDIT LEDGER (BOUND TO GET /api/case/events)                             │
+│ ──────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+│                                                                                                              │
+│  ● 2020-06-04 00:33:07 UTC  [ 🟡 OBSERVATION ]      Phase: MONITORING       Actor: system:detector           │
+│  │   Title:  Early Excursion Telemetry Observation (Noise Suppressed)                                        │
+│  │   Detail: Discharge valve transient pressure excursion observed (6.046 bar, 65.4σ). Insufficient          │
+│  │           temporal persistence (1/3 cycles) suppressed case creation.                                     │
+│  │                                                                                                           │
+│  ● 2020-06-05 09:50:39 UTC  [ 🔴 DETECTION ]        Phase: DETECTED         Actor: system:detector           │
+│  │   Title:  Confirmed degradation detected — Case APU-INC-20200605-01 Opened                                │
+│  │   Detail: Severe step degradation in DV_pressure (+23.75σ) sustained across 3 consecutive LOADED cycles.  │
+│  │                                                                                                           │
+│  ● 2020-06-05 09:52:10 UTC  [ 👤 OPERATOR_ACK ]     Phase: DETECTED         Actor: operator:DISPATCHER-0941  │
+│  │   Title:  Case Acknowledged & Claimed by Shift Dispatcher                                                 │
+│  │   Detail: Priority assigned P1-CRITICAL. Monitoring thermal drift and multivariate ML corroboration.      │
+│  │                                                                                                           │
+│  ● 2020-06-05 10:15:00 UTC  [ 🔵 CORROBORATION ]    Phase: INVESTIGATING    Actor: system:ml                 │
+│  │   Title:  Multivariate Isolation Forest Corroboration (5 Loaded Features)                                 │
+│  │   Detail: Isolation Forest exceeded threshold (0.382 > 0.35) with Oil_temp at 74.97°C (+5.71σ).           │
+│  │                                                                                                           │
+│  ● 2020-06-05 10:15:00 UTC  [ 💡 DECISION ]         Phase: INVESTIGATING    Actor: system:decision_engine    │
+│  │   Title:  Operational Policy Evaluation: Mitigation Recommended                                           │
+│  │   Detail: Recommended EXECUTE_MITIGATION under ActionGuard (5/5 pre-flight safety criteria satisfied).    │
+│  │                                                                                                           │
+│  ● 2020-06-05 10:15:15 UTC  [ 📋 WORK_ORDER ]       Phase: INVESTIGATING    Actor: operator:DISPATCHER-0941  │
+│  │   Title:  Maintenance Work Order WO-20200605-302 Drafted                                                  │
+│  │   Detail: Selected Playbook SOP-APU-ISO-04 for Depot Oriente (Isolate Dryer Tower #2 drain valve).        │
+│  │                                                                                                           │
+│  ● 2020-06-05 10:15:20 UTC  [ ⚡ ACTION ]           Phase: MITIGATING       Actor: operator:DISPATCHER-0941  │
+│  │   Title:  Safe Mode Simulated Intervention Activated                                                      │
+│  │   Detail: ActionGuard validated 5 criteria. Branched stream to post-maintenance historical segment.       │
+│  │                                                                                                           │
+│  ● 2020-06-06 19:42:19 UTC  [ ⏱️ BENCHMARK_LPS ]    Phase: MITIGATING       Actor: system:benchmark_tracker  │
+│  │   Title:  Unmitigated Historical LPS Breach Reference                                                     │
+│  │   Detail: Conventional low pressure switch tripped in unmitigated baseline (33h 52m after detection).     │
+│  │                                                                                                           │
+│  ● 2020-06-08 16:05:50 UTC  [ 🟢 RECOVERY ]         Phase: RESOLVED         Actor: system:recovery_verifier  │
+│  │   Title:  Recovery Criteria Verified (5/5 healthy LOADED observations)                                    │
+│  │   Detail: DV_pressure < 0.05 bar and Oil_temp < 67°C verified across 5 consecutive loaded observations.   │
+│  │                                                                                                           │
+│  ● 2020-06-08 16:06:10 UTC  [ 🔒 CASE_CLOSED ]      Phase: RESOLVED         Actor: operator:DISPATCHER-0941  │
+│      Title:  Case Signed Off & Closed — Asset Released to Revenue Service                                    │
+│      Detail: Root cause confirmed (Desiccant Drain Valve Leak). Asset APU-COMP-01 restored to HEALTHY.       │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Ý NGHĨA QUẢN TRỊ VẬN HÀNH (OPERATIONAL GOVERNANCE)
+## 2. GIÁ TRỊ KIỂM TOÁN & QUẢN TRỊ VẬN HÀNH (OPERATIONAL AUDITABILITY)
 
-1. **Thực thể dữ liệu thật (Real Domain Entity):** 
-   - `CaseEvent` không phải là văn bản tĩnh viết sẵn trong frontend.
-   - Nó là một danh sách bản ghi có cấu trúc (`timestamp`, `event_type`, `title`, `detail`, `actor`, `source`, `case_phase`) được sinh ra tự động trong suốt quá trình chạy mô phỏng.
-2. **Minh chứng "Không Phải Kịch Bản Hardcode":**
-   - Giám khảo có thể đối chiếu từng dòng sự kiện với các mốc dữ liệu thực tế: Từ lúc phát hiện sớm, ML xác nhận, lệnh bấm của operator, mốc còi cơ học, cho đến khi hồi phục.
-   - Sổ cái này tương thích hoàn toàn nếu chạy trên các kịch bản khác (Failure #1, Failure #4, hoặc Chu kỳ vận hành bình thường).
+1. **Sự Kết Hợp Giữa Trí Tuệ Máy (`system:*`) và Trách Nhiệm Con Người (`operator:*`):**
+   - Trong môi trường công nghiệp đường sắt, mọi quyết định điều độ đều phải trả lời được câu hỏi kiểm toán: *"Máy đã phát hiện lúc nào, bằng thuật toán gì, và ai là người đã phê duyệt lệnh can thiệp cũng như ký đóng hồ sơ?"*
+   - Sổ cái `CaseEvent` phân biệt rõ `actor: "system:detector" / "system:ml"` và `actor: "operator:DISPATCHER-0941"`.
+2. **Cơ Chế Append-Only Bất Biến Trên MongoDB (`case_events` collection):**
+   - Mọi bản ghi `CaseEvent` chỉ được phép nối thêm (`insert_one`), không bao giờ bị ghi đè hay xóa bỏ trong suốt vòng đời sự cố.
+   - Hỗ trợ lọc nhanh theo nhóm sự kiện (`System Only`, `Operator Actions Only`) và xuất toàn bộ hồ sơ sự cố ra định dạng báo cáo hậu kiểm (`Post-Mortem Verification Dossier`).
 
 ---
 
-## 3. RÀNG BUỘC DỮ LIỆU (DATA BINDING CONTRACT — `GET /api/case/events`)
+## 3. RÀNG BUỘC DỮ LIỆU ĐỘNG (`GET /api/case/events`)
 
 ```json
-{
-  "case_id": "CASE-20200605-01",
-  "events": [
-    {
-      "timestamp": "2020-06-04T00:33:07Z",
-      "event_type": "OBSERVATION",
-      "title": "Transient Pressure Excursion",
-      "detail": "Transient spike of 0.52 bar observed; thermal normal; case creation suppressed to prevent alert fatigue.",
-      "actor": "CompressorGuard Engine",
-      "source": "PressureAnomalyDetector",
-      "case_phase": "OBSERVING"
-    },
-    {
-      "timestamp": "2020-06-05T09:50:39Z",
-      "event_type": "CASE_CREATED",
-      "title": "Confirmed Degradation Detected",
-      "detail": "Discharge pressure 2.18 bar sustained across 3 loaded cycles (+23.75σ). Operational Case opened.",
-      "actor": "CompressorGuard Engine",
-      "source": "PressureAnomalyDetector",
-      "case_phase": "DETECTED"
-    },
-    {
-      "timestamp": "2020-06-05T10:15:00Z",
-      "event_type": "CORROBORATION",
-      "title": "Multivariate Corroboration Confirmed",
-      "detail": "Oil temp reached 74.97°C (+5.71σ); Isolation Forest score 0.382 > 0.35. Escalated to INVESTIGATING.",
-      "actor": "ML Pipeline",
-      "source": "IsolationForestModel",
-      "case_phase": "INVESTIGATING"
-    },
-    {
-      "timestamp": "2020-06-05T10:15:05Z",
-      "event_type": "DECISION",
-      "title": "Mitigation Recommended",
-      "detail": "Multi-signal physics + ML corroboration established; DecisionEngine recommends Safe Mode.",
-      "actor": "DecisionEngine",
-      "source": "FusionRuleEngine",
-      "case_phase": "INVESTIGATING"
-    },
-    {
-      "timestamp": "2020-06-05T10:15:20Z",
-      "event_type": "ACTION",
-      "title": "Safe Mode Simulated Intervention",
-      "detail": "Operator verified ActionGuard conditions and executed simulated isolation. Stream branched to post-maintenance telemetry.",
-      "actor": "DISPATCHER-0941",
-      "source": "ActionGuard",
-      "case_phase": "MITIGATING"
-    },
-    {
-      "timestamp": "2020-06-06T19:42:19Z",
-      "event_type": "BENCHMARK_LPS",
-      "title": "Reactive Benchmark Reached",
-      "detail": "Mechanical Low Pressure Switch (LPS=1) tripped in historical unmitigated baseline. Confirmed lead time: 33h 52m.",
-      "actor": "Benchmark Tracker",
-      "source": "MetroPT-3 Baseline",
-      "case_phase": "MITIGATING"
-    },
-    {
-      "timestamp": "2020-06-08T16:05:50Z",
-      "event_type": "RECOVERY",
-      "title": "Recovery Criteria Verified",
-      "detail": "5/5 consecutive loaded observations verified (DV < 0.05 bar, Oil < 67°C).",
-      "actor": "RecoveryVerifier",
-      "source": "RecoveryCriteriaPolicy",
-      "case_phase": "RESOLVED"
-    },
-    {
-      "timestamp": "2020-06-08T16:06:10Z",
-      "event_type": "CASE_CLOSED",
-      "title": "Operator Sign-off & Asset Released",
-      "detail": "Operator signed off case. Asset APU-COMP-01 released back to HEALTHY on Operations Landing Page.",
-      "actor": "DISPATCHER-0941",
-      "source": "POST /api/case/close",
-      "case_phase": "CLOSED"
-    }
-  ]
-}
+[
+  {
+    "event_id": "EVT-001",
+    "case_id": "APU-INC-20200605-01",
+    "event_time": "2020-06-05T09:50:39",
+    "event_type": "DETECTION",
+    "phase": "DETECTED",
+    "title": "Confirmed degradation detected",
+    "detail": "Severe step degradation in DV_pressure with thermal drift sustained across loaded observations. Case opened.",
+    "actor": "system:detector",
+    "source": "PressureAnomalyDetector",
+    "provenance": {}
+  },
+  {
+    "event_id": "EVT-002",
+    "case_id": "APU-INC-20200605-01",
+    "event_time": "2020-06-05T09:52:10",
+    "event_type": "OPERATOR_ACK",
+    "phase": "DETECTED",
+    "title": "Case Acknowledged by Operator",
+    "detail": "Dispatcher DISPATCHER-0941 acknowledged case and assigned priority P1-CRITICAL.",
+    "actor": "operator:DISPATCHER-0941",
+    "source": "Operations Console",
+    "provenance": {"priority": "P1-CRITICAL"}
+  },
+  {
+    "event_id": "EVT-003",
+    "case_id": "APU-INC-20200605-01",
+    "event_time": "2020-06-05T10:15:00",
+    "event_type": "CORROBORATION",
+    "phase": "INVESTIGATING",
+    "title": "Multivariate Isolation Forest Corroboration",
+    "detail": "Isolation Forest exceeded threshold (score > 0.35) on 5 LOADED features. Mitigation recommended.",
+    "actor": "system:ml",
+    "source": "IsolationForestDetector",
+    "provenance": {}
+  },
+  {
+    "event_id": "EVT-004",
+    "case_id": "APU-INC-20200605-01",
+    "event_time": "2020-06-05T10:15:20",
+    "event_type": "ACTION",
+    "phase": "MITIGATING",
+    "title": "Safe Mode Simulated Intervention",
+    "detail": "ActionGuard validated 5 criteria. Branching stream to post-maintenance historical segment.",
+    "actor": "operator:DISPATCHER-0941",
+    "source": "ActionGuard",
+    "provenance": {"playbook_id": "SOP-APU-ISO-04", "depot": "Depot Oriente"}
+  },
+  {
+    "event_id": "EVT-005",
+    "case_id": "APU-INC-20200605-01",
+    "event_time": "2020-06-08T16:05:50",
+    "event_type": "RECOVERY",
+    "phase": "RESOLVED",
+    "title": "Recovery Criteria Verified (5/5 healthy LOADED observations)",
+    "detail": "Discharge valve pressure < 0.05 bar and oil temp < 67°C verified across 5 consecutive loaded observations.",
+    "actor": "system:recovery_verifier",
+    "source": "RecoveryVerifier",
+    "provenance": {}
+  },
+  {
+    "event_id": "EVT-006",
+    "case_id": "APU-INC-20200605-01",
+    "event_time": "2020-06-08T16:06:10",
+    "event_type": "CASE_CLOSED",
+    "phase": "RESOLVED",
+    "title": "Case Signed Off & Closed",
+    "detail": "Operator DISPATCHER-0941 signed off incident. Asset APU-COMP-01 released back to HEALTHY service.",
+    "actor": "operator:DISPATCHER-0941",
+    "source": "Operations Console",
+    "provenance": {"root_cause": "DESICCANT_DRAIN_VALVE_LEAK"}
+  }
+]
 ```

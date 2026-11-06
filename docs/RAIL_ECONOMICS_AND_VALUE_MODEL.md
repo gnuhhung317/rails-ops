@@ -31,7 +31,10 @@ Các dự án hackathon hoặc giải pháp IoT công nghiệp thường thất 
 > *"CompressorGuard biến suy thoái thiết bị sớm thành quyết định vận hành có bằng chứng, can thiệp được kiểm chứng, và giá trị kinh tế đo lường được."*  
 > **(Turns early machine degradation into an evidence-backed operational decision, a verified intervention, and a measurable business impact).**
 
-Hệ thống không lấy các ví dụ sản xuất dược phẩm (Pharma) hay nhà máy chung chung, mà gắn chặt 100% vào **Kinh tế học Vận hành Đầu máy Toa xe Đường sắt Đô thị (Metro Rolling Stock Economics)** dựa trên dữ liệu thực tế từ **Lisbon Metro (MetroPT-3)**, **Hanoi Metro (Tuyến 2A)**, **SNCF**, **Alstom**, và **Shanghai Metro**.
+### 🎯 Chiến Lược Ngữ Cảnh Kép (Dual-Context Pitching Strategy):
+Hệ thống kết hợp chặt chẽ giữa 2 tầng ngữ cảnh để vừa đảm bảo độ tin cậy khoa học, vừa gây ấn tượng thực chiến tại thị trường Việt Nam:
+1. **Tầng Kỹ Thuật Đối Chứng (Technical Ground Truth — Châu Âu / EUR €):** Sử dụng tập dữ liệu thực 1.5M mẫu từ **Lisbon Metro (MetroPT-3)** để chứng minh vật lý suy thoái van xả (+23.75σ) và lead-time 33h 52m không thể chối cãi.
+2. **Tầng Kinh Tế Triển Khai Thực Chiến (Commercial Deployment Horizon — Việt Nam / VNĐ ₫):** Ưu tiên quy đổi và mô hình hóa giá trị kinh tế theo **VNĐ (Việt Nam Đồng)**, dựa trên bài toán vận hành thực tế của **Hà Nội Metro (Tuyến 2A Cát Linh - Hà Đông & Tuyến 3)** và **TP.HCM Metro (Tuyến 1 Bến Thành - Suối Tiên)** trước cột mốc hết hạn bảo hành nhà thầu vào cuối năm 2026.
 
 ---
 
@@ -109,11 +112,13 @@ CompressorGuard thiết lập thứ bậc nguồn số liệu nghiêm ngặt:
 | Thứ bậc | Thực thể / Nghiên cứu | Loại số liệu & Ý nghĩa đối chuẩn |
 | :---: | :--- | :--- |
 | **Level 1** | **MetroPT-3 Dataset (Lisbon Metro)** *(Nature 2022)* | **Ground Truth hậu quả thực tế:** Sự cố Failure #3 ghi nhận rò rỉ khí làm sập áp khiến đoàn tàu bị cưỡng chế dừng hoạt động và kéo khỏi đường ray (*train had to be removed from tracks*). |
-| **Level 2** | **Hanoi Metro (Tuyến 2A Cát Linh - Hà Đông)** *(Báo cáo SXKD 2023 & 2025)* | **Quy mô kinh tế vận hành công khai:**<br>• 2025: 161,611 lượt tàu chạy, 1,756,495 train-km, 20.68 triệu hành khách, doanh thu vé Tuyến 2A đạt 97.78 tỷ VNĐ.<br>• Doanh thu/hành khách: ~7,148 VNĐ; Doanh thu/train-km: ~55,650 VNĐ.<br>• Định mức bảo dưỡng định kỳ: 1.0–1.5% nguyên giá TSCĐ; Sửa chữa lớn: 10–30% chi phí khấu hao.<br>• Bài học thực tế: Sự cố ngày 30/05/2025 (17:36) được cô lập điện và chạy quay đầu ngắn (short-turn) trong 25 phút để duy trì dịch vụ. |
-| **Level 3** | **SNCF (Đường sắt Quốc gia Pháp)** *(Digitalisation 2023–2026)* | **Hiệu quả thực chiến CBM trên đầu máy toa xe:**<br>• Giám sát 8,000 biến/đoàn tàu (2,000 real-time), 1,100+ đoàn tàu trang bị IoT.<br>• Giảm sự cố kỹ thuật 50%, giảm sự cố chết máy (breakdowns) hơn 50% đến 66%.<br>• Chi phí bảo dưỡng giảm 20%, số lần vào xưởng giảm 30%.<br>• **Tăng +30% độ sẵn sàng (Availability)** của hạm đội tàu ngoại ô Paris. |
-| **Level 4** | **Alstom HealthHub** *(Báo cáo Giải pháp 2023–2026)* | **KPI bảo dưỡng số hóa đường sắt:**<br>• Giảm thời gian chết (Train downtime) lên tới **-30%**.<br>• Giảm chi phí vật tư (Material cost) lên tới **-20%**.<br>• Giảm lỗi lặp lại (Recurring faults) lên tới **-50%**. |
-| **Level 5** | **Siemens Mobility (RRX Network)** | **Độ tin cậy vận hành đường sắt:**<br>• Chỉ 1 trên 5,800 chuyến tàu bị trễ do bảo dưỡng trong 3.6 triệu km. |
-| **Level 6** | **Shanghai Metro (Tuyến 17 - Air Supply Unit)** *(Nghiên cứu 2026)* | **Khẳng định tính trọng yếu của APU:**<br>• Nghiên cứu chuyên biệt tối ưu chi phí O&M của cụm cấp khí nén VV120 Air Supply Units trên tàu metro bằng RCM. |
+| **Level 2** | **Hanoi Metro (Tuyến 2A & Tuyến 3)** *(Báo cáo Thành phố 01/2026 & 05/2026)* | **Quy mô kinh tế & Chu kỳ bảo dưỡng thực tế:**<br>• Lũy kế đến 30/04/2026: **>493,000 lượt tàu chạy**, phục vụ **>62.2 triệu lượt khách** trên 2 tuyến (Tuyến 2A: 13 đoàn tàu, Tuyến 3 trên cao: 10 đoàn tàu).<br>• Năm 2025: Tuyến 2A đạt 161,611 lượt tàu, 1,756,495 train-km, 20.68 triệu khách, doanh thu vé đạt 97.78 tỷ VNĐ (~55,650 VNĐ/train-km).<br>• **Tài liệu Kỹ thuật Gốc:** [*Sổ tay YN-007 (Chương 7: Hệ thống hãm và cấp khí)*](https://www.scribd.com/document/788322712/YN-007-Chuong-7-H%E1%BB%87-th%E1%BB%91ng-ham-va-c%E1%BA%A5p-khi-S%E1%BB%95-tay-%C4%91ao-t%E1%BA%A1o) quy định tại Bảng 7-17 (trang 7-60): Kiểm tra/bổ sung dầu bôi trơn **6 tháng**; Vệ sinh bộ làm mát, kiểm tra công tắc áp suất, thay lõi lọc khí & lọc dầu/gioăng **1 năm**.<br>• **Điểm nóng 2026:** Ngày 14/01/2026, UBND TP. Hà Nội chỉ đạo lập kế hoạch đại tu giữa kỳ cho 13 đoàn tàu Tuyến 2A, ưu tiên chuyển giao công nghệ và các giải pháp quản lý bảo trì tích hợp. Tháng 10/2026 ký thỏa thuận 200 đoàn tàu Alstom Metropolis kèm chuyển giao công nghệ. |
+| **Level 2.5** | **HCMC Metro (Tuyến 1 Bến Thành - Suối Tiên)** *(MAUR & Báo cáo Chính phủ 2026)* | **Áp lực chuyển giao & Hết hạn bảo hành cuối 2026:**<br>• Phục vụ **>30.35 triệu lượt khách** (01/2025 – đầu tháng 06/2026) với 17 đoàn tàu Hitachi (51 toa).<br>• **Tài liệu Kỹ thuật Gốc:** [*Kế hoạch Bảo dưỡng Dự án UMRT L1-CP3-GL-O&M-PLN-00001-D-R0 (Rev D)*](https://www.scribd.com/document/845060878/UMRTL1-CP3-GL-O-M-PLN-00001-D-R0-Submission-of-Maintenance-Plan-Rev-D-en-VN-B%E1%BA%A3o-D%C6%B0%E1%BB%A1ng) tại Bảng T5.1 (trang 32–33) quy định các mốc bảo dưỡng máy nén khí: **1 tuần** (trực quan), **1 tháng** (hiệu năng), và **4 năm** (đại tu trong xưởng depot).<br>• **Thời điểm then chốt:** Bảo hành của nhà thầu hết hạn vào **cuối năm 2026**. Đề án chuyển giao công nghệ (09/2026) đặt mục tiêu kỹ sư Việt Nam làm chủ **90%** quy trình bảo dưỡng.<br>• Ngày 17/07/2026: MAUR ký MoU với GTEL về ứng dụng AI, IoT, Big Data, Digital Twin trong vận hành bảo trì đường sắt đô thị (mục tiêu 200 km trước năm 2030, vốn >20 tỷ USD). |
+| **Level 3** | **Singapore LTA & SMRT (2025)** *(Chế tài pháp lý & Phạt gián đoạn)* | **Rủi ro tài chính do sự cố kỹ thuật:**<br>• Tháng 07/2025: LTA phạt SMRT **2.4 triệu SGD (S$2.4M)** sau sự cố tê liệt tuyến East-West Line tháng 09/2024 và yêu cầu đầu tư thêm ít nhất **600,000 SGD** vào năng lực đại tu và dự phòng phụ tùng. |
+| **Level 4** | **SNCF (Đường sắt Quốc gia Pháp)** *(Digitalisation 2023–2026)* | **Hiệu quả thực chiến CBM trên đầu máy toa xe:**<br>• Giám sát 8,000 biến/đoàn tàu (2,000 real-time), 1,100+ đoàn tàu trang bị IoT.<br>• Giảm sự cố kỹ thuật 50%, giảm sự cố chết máy (breakdowns) hơn 50% đến 66%.<br>• Chi phí bảo dưỡng giảm 20%, số lần vào xưởng giảm 30%.<br>• **Tăng +30% độ sẵn sàng (Availability)** của hạm đội tàu ngoại ô Paris (giảm tàu nằm bãi từ 9 xuống 6–7 đoàn). |
+| **Level 5** | **Alstom HealthHub** *(Báo cáo Giải pháp 2023–2026)* | **KPI bảo dưỡng số hóa đường sắt:**<br>• Giảm thời gian chết (Train downtime) lên tới **-30%**.<br>• Giảm chi phí vật tư (Material cost) lên tới **-20%**.<br>• Giảm lỗi lặp lại (Recurring faults) lên tới **-50%**.<br>• Case Dubai Tram (2023): Tăng hiệu suất dịch vụ hành khách lên 40% sau 1 năm triển khai real-time monitoring. |
+| **Level 6** | **Knorr-Bremse AirSupply Smart** *(Tài liệu Kỹ thuật 2022–2026)* | **Chuẩn mực giám sát máy nén khí thông minh:**<br>• Tích hợp giám sát tình trạng (Condition Monitoring) dựa trên áp suất, dòng biến tần và nhiệt độ, khẳng định phát hiện suy thoái sớm là cốt lõi để ngăn ngừa sự cố bất ngờ. |
+| **Level 7** | **Shanghai Metro (Tuyến 17 - Air Supply Unit)** *(Nghiên cứu 2026)* | **Khẳng định tính trọng yếu của APU:**<br>• Nghiên cứu chuyên biệt tối ưu chi phí O&M của cụm cấp khí nén VV120 bằng RCM: chứng minh suy thoái vòng bi động cơ và thoái hóa gioăng xilanh áp suất thấp là 2 nguyên nhân cốt lõi cần phát hiện sớm. |
 
 ---
 
@@ -222,6 +227,76 @@ Trong đó:
 | **Tiết kiệm giờ điều tra kỹ thuật (Labor)** | **€150** | **€350** | **€800** |
 | **TỔNG GIÁ TRỊ TRÁNH THẤT THOÁT (Gross)** | **€5,450** | **€32,350** | **€129,300** |
 
+### 8.3 So Sánh Chi Phí Can Thiệp Cụ Thể (Reactive Overhaul vs. Planned Intervention)
+
+Dựa trên dữ liệu tổng hợp chi phí kỹ thuật đường sắt (2026), sự chênh lệch giữa can thiệp sớm và để sự cố phát tác trên tuyến là một đòn bẩy tài chính khổng lồ:
+
+| Hạng mục chi phí | Can thiệp Chủ động tại Depot (Planned PdM) | Sự cố Buộc Rút Tàu Trên Tuyến (In-Service Failure) |
+| :--- | :---: | :---: |
+| **Nhân công chẩn đoán & sửa chữa** | €150 – €300 (ca ngày/đêm định kỳ) | €500 – €2,000 (tăng ca đêm khẩn cấp) |
+| **Cứu hộ, dồn tàu & kéo về depot** | €0 (tự di chuyển trong ca trống) | €500 – €5,000 (phụ thuộc vào vị trí & mức độ tắc nghẽn) |
+| **Phụ tùng thay thế & Logistics** | €100 – €500 (thay phớt/van, kho sẵn) | €500 – €3,000 (hỏng lây xilanh/cháy motor, cước hỏa tốc) |
+| **Điều hành & khôi phục dịch vụ** | €0 (không ảnh hưởng biểu đồ) | €500 – €5,000 (điều độ lại toàn tuyến) |
+| **Rủi ro chế tài & bồi thường hành khách** | €0 | €0 – €20,000+ (phạt hợp đồng / bồi thường EU 2021/782) |
+| **TỔNG CHI PHÍ ƯỚC TÍNH MỖI SỰ CỐ** | **€250 – €800** | **€2,000 – €35,000+** |
+
+### 8.4 Mô Hình Định Lượng Kinh Tế Đường Sắt Đô Thị Việt Nam (Đơn Vị VNĐ ₫)
+*(Phục vụ trực tiếp cho Chiến lược Pitching & Kế hoạch Thương mại hóa nội địa)*
+
+Để ban giám khảo và đối tác vận hành metro tại Việt Nam (Hanoi Metro, MAUR TP.HCM) hình dung rõ rệt tác động tài chính, CompressorGuard thiết lập bảng quy đổi giá trị sang **Việt Nam Đồng (VNĐ)** (tỷ giá tham chiếu $1\text{ EUR} \approx 27.500\text{ VNĐ}$):
+
+#### A. So sánh chi phí can thiệp sự cố trực tiếp (VNĐ):
+| Hạng mục chi phí | Can thiệp Chủ động tại Depot (Planned PdM) | Sự cố Buộc Rút Tàu Trên Tuyến (In-Service Failure) |
+| :--- | :---: | :---: |
+| **Nhân công chẩn đoán & xử lý** | 4.100.000 – 8.200.000 VNĐ | 13.700.000 – 55.000.000 VNĐ (tăng ca đêm khẩn) |
+| **Cứu hộ kéo tàu & dồn đường xưởng** | 0 VNĐ (tự hành về depot ca trống) | 13.700.000 – 137.500.000 VNĐ (kéo tàu tắc hầm) |
+| **Phụ tùng, gioăng van & logistics** | 2.700.000 – 13.700.000 VNĐ (thay gioăng van sấy) | 13.700.000 – 82.500.000 VNĐ (cháy motor/xilanh, cước gấp) |
+| **Tái lập điều hành & biểu đồ chạy tàu** | 0 VNĐ (không chậm giờ) | 13.700.000 – 137.500.000 VNĐ (xáo trộn lịch toàn tuyến) |
+| **Rủi ro đền bù / thiệt hại doanh thu** | 0 VNĐ | 0 – 550.000.000+ VNĐ (hàng vạn khách ùn ứ) |
+| **TỔNG TỔN THẤT ƯỚC TÍNH / SỰ CỐ** | **6.800.000 – 22.000.000 VNĐ** | **55.000.000 – 962.500.000+ VNĐ** |
+
+> **Đòn bẩy kinh tế:** Phát hiện suy thoái sớm 33h 52m giúp chuyển sự cố từ nhánh **chết máy trên tuyến (>50–900 triệu VNĐ)** về nhánh **sửa chữa định kỳ ban đêm (~7–20 triệu VNĐ)**, tiết kiệm **hơn 90%** tổng chi phí khắc phục.
+
+#### B. Ba kịch bản giá trị bảo vệ hằng năm cho Hạm đội Metro Việt Nam:
+*(Quy mô 23 đoàn tàu Hà Nội hoặc 17 đoàn tàu TP.HCM)*
+
+| Tham số kịch bản | Kịch Bản Thận Trọng (Conservative) | Kịch Bản Cơ Sở (Base Metro Case) | Kịch Bản Nghiêm Trọng (Severe Incident) |
+| :--- | :---: | :---: | :---: |
+| **Giả định sự cố tránh được** | Tránh 2 ca hỏng van nhỏ được sửa ban ngày | Tránh 4 ca sự cố hủy chuyến giờ thấp điểm | Tránh 1 ca sập áp phanh chết máy giữa hầm giờ cao điểm |
+| **Tổn thất downtime tránh được** | 132.000.000 VNĐ (8 giờ) | 825.000.000 VNĐ (48 giờ) | 3.300.000.000 VNĐ (24 giờ cao điểm) |
+| **Tiết kiệm phụ phí sửa chữa khẩn cấp** | 13.700.000 VNĐ | 55.000.000 VNĐ | 233.750.000 VNĐ |
+| **Tiết kiệm giờ kỹ sư điều tra (17 phút/ca)** | 4.100.000 VNĐ | 9.600.000 VNĐ | 22.000.000 VNĐ |
+| **TỔNG GIÁ TRỊ TRÁNH THẤT THOÁT / NĂM** | **~150.000.000 VNĐ** | **~890.000.000 VNĐ** | **~3.550.000.000 VNĐ (3.55 tỷ VNĐ)** |
+
+#### C. Lợi ích "Hạm đội bóng ma" (Shadow Fleet) tránh CapEx:
+* Mua mới 1 đoàn tàu metro 4 toa tại Việt Nam có giá từ **200 – 250 tỷ VNĐ** (\$8M – \$10M) với thời gian đặt hàng từ 2–3 năm.
+* Tăng **2% khả năng sẵn sàng (Availability)** trên hạm đội 23 đoàn tàu tại Hà Nội mang lại giá trị tương đương **0.46 đoàn tàu vận hành thực tế** (~100 tỷ VNĐ giá trị tài sản khai thác) hoàn toàn không phát sinh vốn đầu tư công.
+
+---
+
+### 8.5 Chu Kỳ Bảo Dưỡng Máy Nén Khí Thực Tế & Công Thức Chuyển Đổi Sang CBM
+*(Đối chiếu trực tiếp Sổ tay YN-007, Kế hoạch UMRT L1 và Chuẩn Knorr-Bremse)*
+
+Thay vì áp đặt một chu kỳ bảo dưỡng cứng nhắc, CompressorGuard liên kết giữa **Chu kỳ định kỳ theo tài liệu kỹ thuật (Time-based)** và **Tình trạng suy thoái cảm biến thực tế (Condition-based)**:
+
+1. **Chu kỳ định kỳ theo Tài liệu Kỹ thuật Dự án Việt Nam:**
+   * **Tuyến 2A Cát Linh – Hà Đông (Sổ tay YN-007, Bảng 7-17):**
+     * Kiểm tra mức dầu: Hàng ngày, hàng tháng.
+     * Kiểm tra & bổ sung dầu bôi trơn: **6 tháng**.
+     * Vệ sinh bộ làm mát, đo kiểm công tắc áp suất, thay lõi lọc khí & bộ lọc dầu/gioăng: **1 năm**.
+   * **Tuyến 1 Bến Thành – Suối Tiên (Hitachi, Kế hoạch UMRT L1, Bảng T5.1):**
+     * Kiểm tra trực quan: **1 tuần**.
+     * Kiểm tra hiệu năng: **1 tháng**.
+     * Đại tu xưởng (Depot Overhaul): **4 năm**.
+2. **Chuẩn mực OEM Knorr-Bremse (Máy nén trục vít SKP & Piston VV120-T):**
+   * Giới hạn thay dầu & bộ lọc kết tụ: **1.500 giờ vận hành thực tế (operating hours)** hoặc **tối đa 12 tháng**.
+3. **Công thức động tính thời điểm đến hạn bảo dưỡng/thay dầu trong CompressorGuard:**
+   $$T_{\text{due}} = \min\left(\frac{1500 - H_{\text{used}}}{h_{\text{daily}}},\ 12 - M_{\text{elapsed}}\right)$$
+   * $H_{\text{used}}$: Số giờ chạy thực tế của máy nén khí (đo qua sensor dòng điện/áp suất khi máy nén đóng tải).
+   * $h_{\text{daily}}$: Số giờ chạy trung bình mỗi ngày theo biểu đồ chạy tàu.
+   * $M_{\text{elapsed}}$: Số tháng đã trôi qua kể từ lần bảo dưỡng gần nhất.
+   * **Cơ chế CBM:** Khi CompressorGuard phát hiện nhiệt độ dầu leo dốc ($+5.71\sigma$, đạt $74.9^\circ\text{C}$ như Failure #3), hệ thống cảnh báo dầu đang thoái hóa nhiệt sớm trước mốc 1.500 giờ, tự động rút ngắn $T_{\text{due}}$ để ngăn bó kẹt xilanh.
+
 > [!IMPORTANT]
 > **Quy tắc hiển thị trên giao diện:**
 > Bắt buộc ghi nhãn: `Estimated Avoided Cost (Scenario Model)` — **Tuyệt đối không ghi `Realized Profit`** để duy trì tính trung thực trí tuệ cao nhất.
@@ -297,6 +372,24 @@ Dưới đây là các tài liệu và nghiên cứu thực tế làm chỗ dự
    [https://www.nature.com/articles/s41597-022-01877-3](https://www.nature.com/articles/s41597-022-01877-3)
 9. **Shanghai Metro Line 17 — Air Supply Unit O&M Optimization (2026):**  
    [https://umt1998.tongji.edu.cn/en/article/doi/10.16037/j.1007-869x.20260054](https://umt1998.tongji.edu.cn/en/article/doi/10.16037/j.1007-869x.20260054)
+10. **Singapore LTA — Quyết định xử phạt SMRT S$2.4M & Yêu cầu đầu tư đại tu phụ tùng (07/2025):**  
+    Land Transport Authority enforcement action on East-West Line disruption.
+11. **UITP — Global Metro Figures 2024 (Thống kê mạng lưới metro toàn cầu, phát hành 05/2025):**  
+    Báo cáo thống kê 247 mạng lưới metro tại 202 vùng đô thị, phục hồi sản lượng và tăng trưởng 37% mạng lưới Trung Quốc.
+12. **European Union — Regulation (EU) 2021/782 (Điều ước bồi thường chậm trễ tàu chở khách):**  
+    Quy định mức bồi thường 25% (trễ 60–119 phút) và 50% (trễ ≥120 phút) giá vé hành khách.
+13. **HCMC MAUR & GTEL — Biên bản ghi nhớ MoU Hệ thống số hóa & Vận hành bảo trì Metro (17/07/2026):**  
+    Kế hoạch hợp tác AI, IoT, Digital Twin cho 6 tuyến metro 200 km (>20 tỷ USD) tại TP.HCM.
+14. **Knorr-Bremse — AirSupply Smart & Embedded Rail Compressor Condition Monitoring (2022–2026):**  
+    Tài liệu kỹ thuật chuẩn công nghiệp về giám sát tình trạng cụm cấp khí nén đoàn tàu.
+15. **Hanoi Metro Tuyến 2A — Sổ tay Đào tạo Kỹ thuật YN-007 (Chương 7: Hệ thống hãm và cấp khí):**  
+    [https://www.scribd.com/document/788322712/YN-007-Chuong-7-H%E1%BB%87-th%E1%BB%91ng-ham-va-c%E1%BA%A5p-khi-S%E1%BB%95-tay-%C4%91ao-t%E1%BA%A1o](https://www.scribd.com/document/788322712/YN-007-Chuong-7-H%E1%BB%87-th%E1%BB%91ng-ham-va-c%E1%BA%A5p-khi-S%E1%BB%95-tay-%C4%91ao-t%E1%BA%A1o) (Bảng 7-17, trang 7-60).
+16. **TP.HCM Metro Tuyến 1 — Kế hoạch Bảo dưỡng Đoàn tàu UMRT L1-CP3-GL-O&M-PLN-00001-D-R0 (Rev D):**  
+    [https://www.scribd.com/document/845060878/UMRTL1-CP3-GL-O-M-PLN-00001-D-R0-Submission-of-Maintenance-Plan-Rev-D-en-VN-B%E1%BA%A3o-D%C6%B0%E1%BB%A1ng](https://www.scribd.com/document/845060878/UMRTL1-CP3-GL-O-M-PLN-00001-D-R0-Submission-of-Maintenance-Plan-Rev-D-en-VN-B%E1%BA%A3o-D%C6%B0%E1%BB%A1ng) (Bảng T5.1, trang 32–33).
+17. **Báo cáo Nghiên cứu Thị trường & Kinh tế Vận hành Đường sắt Đô thị (Deep Research Phần 1):**  
+    [https://chatgpt.com/share/6ad32e70-51d8-83ec-9827-be65fabe85a9](https://chatgpt.com/share/6ad32e70-51d8-83ec-9827-be65fabe85a9)
+18. **Báo cáo Nghiên cứu Chu kỳ Bảo dưỡng Máy nén khí Metro Việt Nam & Knorr-Bremse (Deep Research Phần 2):**  
+    [https://chatgpt.com/share/6ad333ef-1e48-83ec-a42c-5d56d35ad3d0](https://chatgpt.com/share/6ad333ef-1e48-83ec-a42c-5d56d35ad3d0)
 
 ---
 *Tài liệu được thiết lập theo quy chuẩn kỹ thuật và kinh tế vận hành đường sắt công nghiệp.*

@@ -50,6 +50,7 @@ The server initializes at `http://localhost:8000/` and opens your default browse
 
 ## 🧭 Documentation Navigator
 
+- 🏛️ **[System & Live Stream Architecture (v3.0)](docs/ARCHITECTURE.md):** Kiến trúc luồng Live tách rời (Decoupled Producer–Pipeline–Storage–Observer) theo chuẩn ThreatLens AI.
 - 🎤 **[Pitch Deck & Judge Demo Runbook](docs/PITCH_DECK_AND_DEMO_RUNBOOK.md):** 3-minute pitch script, defense against the 5 toughest judge questions, and step-by-step click guide.
 - 💶 **[Rail Economics & Value Model](docs/RAIL_ECONOMICS_AND_VALUE_MODEL.md):** Formal mathematical models for delay penalties, asset overhaul avoidance, and ROI formulas.
 - 📐 **[Screen & UX Architecture Specs](screen/01..07.md):** Detailed specs for Fleet Overview, Active Case Workspace, ActionGuard Drawer, and Ground Truth Reference.
@@ -77,7 +78,7 @@ python scripts/verify_evaluation_gates.py
 
 ## 🧪 Running the Full Automated Test Suite
 
-CompressorGuard includes 96+ automated tests covering domain contracts, detectors, fusion, state machine, ActionGuard, MongoDB persistence, Datadog observability, and Web Console integration:
+CompressorGuard includes 96+ automated tests covering domain contracts, detectors, fusion, state machine, ActionGuard, MongoDB persistence, Datadog observability, and API integration:
 
 ```bash
 # Run the 5 Evaluation Gates
@@ -89,33 +90,31 @@ pytest -q
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ System Architecture (v3.0 Decoupled Live Stream)
 
 ```text
-MetroPT-3 Replay Stream (1,516,948 rows · Lisbon Metro Linha Azul)
-       │
+[1. INDEPENDENT PRODUCER]
+MetroPT-3 Historical Stream (1,516,948 rows · Dual-Clock Background Stream Worker / CLI Streamer)
+       │  (The Dashboard does NOT trigger telemetry ticks)
+       ▼
+[2. REAL-TIME DETECTION & CORRELATION PIPELINE]
        ├── Operating Regime Classifier (STANDBY / LOADED / UNLOADED / STARTING)
-       │
        ├── Physical Detectors (Pressure Step + Thermal Stress Drift + Temporal Filter)
-       │        │
-       │        └── Independent ML Corroborator (Isolation Forest, Anomaly Score 0..1)
+       ├── Independent ML Corroborator (Isolation Forest on 5 LOADED features)
+       ├── Evidence Fusion & Deterministic Decision Engine
+       └── Case Lifecycle Correlator (Enforces Single Active Case per Asset)
        │
        ▼
-Evidence Fusion Engine (Deterministic Evidence State & Sensor Provenance)
-       │
-       ▼
-Decision Engine (Operational Confidence: LOW / MEDIUM / HIGH)
-       │
-       ├── ActionGuard (5 Pre-Flight Safety Policy Verifications)
-       │        │
-       │        └── Safe Mode Intervention Branch (Depot Maintenance Stream)
-       │
-       ▼
-RecoveryVerifier (5 Consecutive Healthy LOADED Observation Cycles)
-       │
-       ├── Operations Command Console (Vanilla Modern SPA, Dual-Clock Pacing, Live Audit Ledger)
-       ├── MongoDB Atlas (Time Series Collections + Document Case Ledger + Transactional Integrity)
+[3. MULTIMODAL STORAGE & OBSERVABILITY]
+       ├── MongoDB Atlas (`measurements` Time-Series + `anomaly_signals` + `incidents` + `case_events`)
        └── Datadog Unified Observability (DogStatsD Custom Metrics + APM Distributed Tracing)
+       │
+       ▼
+[4. OBSERVATIONAL & RESPONSE CONSOLE (Pure Observer + Human-in-the-Loop Actions)]
+       ├── DashboardQueryAdapter (Timeframe Windows: 5m / 15m / 1h / 6h / all)
+       ├── Live Chart.js Canvases (DV_pressure, Oil_temp, Motor_current, IF Score)
+       ├── Dual-Layer View (Correlated Cases vs. Raw Telemetry & Suppressed Signals)
+       └── Operator Actions (Acknowledge, Mark False Positive, ActionGuard Safe Mode, 5/5 Recovery Sign-off)
 ```
 
 ---

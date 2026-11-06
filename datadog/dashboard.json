@@ -1,12 +1,12 @@
 {
-  "title": "CompressorGuard — Metro APU Fleet Operations & Incident Command",
-  "description": "Unified Observability Dashboard for Lisbon Metro Fleet APU-COMP-01 (MUGVN Hackathon 2026)",
+  "title": "CompressorGuard — Metro APU Fleet Operations, AI/ML & Incident Command",
+  "description": "Unified Operational, Physics & AI/ML Observability Control Plane for Lisbon Metro Fleet APU-COMP-01 (MUGVN Hackathon 2026)",
   "layout_type": "ordered",
   "widgets": [
     {
       "id": 1,
       "definition": {
-        "title": "Discharge Valve Pressure (DV_pressure) vs Baseline",
+        "title": "Discharge Valve Pressure (DV_pressure) vs Loaded Baseline",
         "type": "timeseries",
         "requests": [
           {
@@ -23,12 +23,12 @@
           {
             "value": "y = 2.0",
             "display_type": "error dashed",
-            "label": "Critical Threshold (2.0 bar)"
+            "label": "Critical Leak Threshold (2.0 bar)"
           },
           {
             "value": "y = -0.016",
             "display_type": "ok solid",
-            "label": "Healthy Baseline (-0.016 bar)"
+            "label": "Healthy Loaded Baseline (-0.016 bar)"
           }
         ]
       }
@@ -36,7 +36,7 @@
     {
       "id": 2,
       "definition": {
-        "title": "Compressor Oil Temperature (°C) vs Boiling Limit",
+        "title": "Compressor Oil Temperature (°C) vs Thermal Stress Ceiling",
         "type": "timeseries",
         "requests": [
           {
@@ -53,12 +53,12 @@
           {
             "value": "y = 74.0",
             "display_type": "error dashed",
-            "label": "Severe Drift (74°C)"
+            "label": "Severe Thermal Drift (74°C)"
           },
           {
             "value": "y = 67.0",
             "display_type": "warning dashed",
-            "label": "Recovery Ceiling (67°C)"
+            "label": "Commissioning Ceiling (67°C)"
           }
         ]
       }
@@ -66,39 +66,53 @@
     {
       "id": 3,
       "definition": {
-        "title": "Confirmed Actionable Intervention Window (Lead Time)",
-        "type": "query_value",
+        "title": "Main Brake Reservoir Pressure (TP3/H1) & Legacy LPS Switch",
+        "type": "timeseries",
         "requests": [
           {
-            "q": "max:compressorguard.incident.lead_time_seconds{asset_id:APU-COMP-01} / 3600"
+            "q": "avg:compressorguard.telemetry.tp3_bar{asset_id:APU-COMP-01}",
+            "display_type": "line",
+            "style": {
+              "palette": "dog_classic",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          },
+          {
+            "q": "max:compressorguard.telemetry.lps_active{asset_id:APU-COMP-01}",
+            "display_type": "bars",
+            "style": {
+              "palette": "orange"
+            }
           }
         ],
-        "autoscale": true,
-        "custom_unit": "hours",
-        "precision": 1
-      }
-    },
-    {
-      "id": 4,
-      "definition": {
-        "title": "Physical Recovery Verification Streak (5/5 LOADED)",
-        "type": "check_status",
-        "requests": [
+        "markers": [
           {
-            "q": "max:compressorguard.recovery.consecutive_observations{asset_id:APU-COMP-01}"
+            "value": "y = 7.5",
+            "display_type": "warning dashed",
+            "label": "Safe Depot Routing Floor (7.5 bar)"
+          },
+          {
+            "value": "y = 7.0",
+            "display_type": "error solid",
+            "label": "Mechanical LPS Trip (7.0 bar)"
           }
         ]
       }
     },
     {
-      "id": 5,
+      "id": 4,
       "definition": {
-        "title": "Multivariate Isolation Forest Anomaly Score",
+        "title": "AI/ML Observability: Multivariate Isolation Forest Score & Physics Consensus",
         "type": "timeseries",
         "requests": [
           {
             "q": "avg:compressorguard.ml.anomaly_score{asset_id:APU-COMP-01}",
             "display_type": "bars"
+          },
+          {
+            "q": "avg:compressorguard.ml.physics_agreement{asset_id:APU-COMP-01}",
+            "display_type": "line"
           }
         ],
         "markers": [
@@ -111,16 +125,64 @@
       }
     },
     {
+      "id": 5,
+      "definition": {
+        "title": "Alert Fatigue Protection: Suppressed Transient Spikes vs. Active Case Transitions",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:compressorguard.signals.suppressed_total{asset_id:APU-COMP-01}.as_count()",
+            "display_type": "bars"
+          },
+          {
+            "q": "sum:compressorguard.case.transitions_total{asset_id:APU-COMP-01}.as_count()",
+            "display_type": "line"
+          }
+        ]
+      }
+    },
+    {
       "id": 6,
       "definition": {
-        "title": "Domain Operations Engine Latency (APM Spans)",
+        "title": "Post-Maintenance Commissioning Streak (5/5 Healthy LOADED Cycles)",
+        "type": "check_status",
+        "requests": [
+          {
+            "q": "max:compressorguard.recovery.consecutive_observations{asset_id:APU-COMP-01}"
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "definition": {
+        "title": "APM Distributed Trace & ML Inference Latency (ms)",
         "type": "timeseries",
         "requests": [
           {
             "q": "avg:trace.compressorguard.detector.evaluate.duration{env:hackathon-2026} by {resource_name}",
             "display_type": "line"
+          },
+          {
+            "q": "avg:compressorguard.ml.inference_latency_ms{asset_id:APU-COMP-01}",
+            "display_type": "line"
           }
         ]
+      }
+    },
+    {
+      "id": 8,
+      "definition": {
+        "title": "Historical Counterfactual Early Warning Benchmark (Hours)",
+        "type": "query_value",
+        "requests": [
+          {
+            "q": "max:compressorguard.incident.lead_time_seconds{asset_id:APU-COMP-01} / 3600"
+          }
+        ],
+        "autoscale": true,
+        "custom_unit": "hours",
+        "precision": 1
       }
     }
   ]

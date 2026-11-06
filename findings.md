@@ -28,9 +28,16 @@
 
 - **Verified Rail & Metro Benchmarks:**
   - **SNCF (France):** 1,100+ trains with CBM/IoT $\rightarrow$ Breakdowns reduced by >50% to 66%, maintenance costs down 20%, depot visits down 30%, Paris fleet availability **+30%** (offline trainsets reduced from 9 to 6-7).
-  - **Alstom HealthHub:** Train downtime down to **-30%**, material cost down to **-20%**, recurring faults down to **-50%**.
-  - **Hanoi Metro (Line 2A 2025):** 1.756M train-km, 161,611 trips, 13.68M passengers, 97.78B VND ticket revenue. Modeled revenue exposure $\approx 55,650\text{ VND/train-km}$.
-  - **Shanghai Metro Line 17 (2026):** Confirms Air Supply Units (VV120) as critical rolling stock subsystems requiring RCM optimization.
+  - **Alstom HealthHub:** Train downtime down to **-30%**, material cost down to **-20%**, recurring faults down to **-50%**; Dubai Tram passenger service performance +40%.
+  - **Knorr-Bremse AirSupply Smart:** Embedded condition monitoring for compressors proves early temperature/pressure drift is industry standard for APU degradation.
+  - **Singapore LTA & SMRT (2025):** S$2.4M fine on SMRT for East-West Line disruption + S$600k mandated investment in overhaul planning & spares.
+  - **Hanoi Metro (Line 2A & 3 to 2026):** Cumulative >493,000 trips, 62.2M passengers across 23 trains. Jan 2026 mandate: mid-term overhaul for 13 Line 2A trains, prioritizing technology transfer and integrated maintenance. Oct 2026: 200 Alstom trainsets agreement.
+  - **Hanoi Metro YN-007 Maintenance Manual:** [Scribd YN-007](https://www.scribd.com/document/788322712/YN-007-Chuong-7-H%E1%BB%87-th%E1%BB%91ng-ham-va-c%E1%BA%A5p-khi-S%E1%BB%95-tay-%C4%91ao-t%E1%BA%A1o) (Table 7-17, p. 7-60): Daily/monthly oil check, 6-month oil replenishment, 1-year cooler cleaning, pressure switch calibration, air filter and oil filter/gasket replacement.
+  - **HCMC Metro Line 1 (2026):** >30.35M passengers. Critical inflection: contractor warranty expires late 2026, requiring local mastery of 90% maintenance technologies. July 2026: MAUR-GTEL MoU on AI/IoT/Digital Twin O&M for 200 km network.
+  - **HCMC Metro Maintenance Plan UMRT L1:** [Scribd UMRT L1 Plan](https://www.scribd.com/document/845060878/UMRTL1-CP3-GL-O-M-PLN-00001-D-R0-Submission-of-Maintenance-Plan-Rev-D-en-VN-B%E1%BA%A3o-D%C6%B0%E1%BB%A1ng) (Table T5.1, p. 32-33): 1-week visual, 1-month performance check, 4-year depot overhaul.
+  - **Knorr-Bremse SKP/VV120 CBM Formula:** 1,500 operating hours or max 12 months for oil/filter change: $T_{\text{due}} = \min((1500 - H_{\text{used}})/h_{\text{daily}}, 12 - M_{\text{elapsed}})$. Early thermal drift ($>67^\circ\text{C}$) dynamically shortens $T_{\text{due}}$.
+  - **Cost Leverage (Reactive vs Planned):** Planned depot intervention €250–€800 (6.8M–22M VNĐ) vs. in-service failure €2,000–€35,000+ (55M–962M VNĐ).
+  - **Deep Research Links:** [Part 1: Transit Economics & Vietnam](https://chatgpt.com/share/6ad32e70-51d8-83ec-9827-be65fabe85a9) | [Part 2: Compressor Manuals & CBM](https://chatgpt.com/share/6ad333ef-1e48-83ec-a42c-5d56d35ad3d0).
 
 ---
 
@@ -71,3 +78,19 @@
   - Stream branches to real post-maintenance telemetry (June 8, 2020 16:05:00 UTC).
   - Recovery verifies that telemetry satisfies operational criteria (5/5 healthy LOADED observations), rather than claiming physical railway certification.
   - `CaseEvent` ledger provides an immutable append-only chronology of the entire operational incident.
+
+---
+
+## 5. Architectural Gap Analysis: v2.3 Prototype vs. v3.0 Production-Ready UI/UX
+
+- **Diagnostic Date:** 2026-10-11 (`docs/superpowers/specs/2026-10-11-prod-ready-ux-and-mechanism-design.md`).
+- **Core Diagnosis:** Giao diện v2.3 hoàn thành 98/98 test theo tiêu chuẩn "Prototype Demo", nhưng không đạt tiêu chuẩn "Industrial Operations Command Console":
+  1. **Header Clutter:** Nút nhảy mốc thời gian (`00:33`, `09:50`, `10:15`, `16:05`) nằm trên Header chính tạo cảm giác chuyển slide thay vì hệ thống SCADA/APM thực.
+     - *v3.0 Fix:* Đưa toàn bộ transport controls và scenario selector vào **Replay Studio Drawer** (`Shift + S`).
+  2. **Static Hardcoded Data:** ~90% số liệu đo lường (`2.1856 bar`, `74.97 °C`, `-0.016 bar`, và 5 dấu `✓ PASS` của ActionGuard) bị fix cứng trong HTML.
+     - *v3.0 Fix:* 100% data-driven binding từ `/api/telemetry/window` và `/api/action/guard-status`.
+  3. **Absence of Real-time Time Series Charts:** Không có strip charts trực quan hóa áp suất, nhiệt độ, dòng điện và vùng tải (`LOADED`).
+     - *v3.0 Fix:* Tích hợp biểu đồ Chart.js đồng bộ đa kênh với shading trạng thái mang tải.
+  4. **Lack of Human-in-the-Loop Governance:** Hệ thống tự động chuyển trạng thái thiếu thao tác điều độ.
+     - *v3.0 Fix:* Bổ sung quy trình 4 bước: Acknowledge & Claim -> Forensic Note & Depot Work Order -> ActionGuard 5-check Safe Mode -> 5-Sample Loaded Verification & Root-Cause Sign-Off.
+  5. **Decoupled Architecture:** Thay vì client gọi `POST /demo/tick` kéo dữ liệu, áp dụng kiến trúc *ThreatLens Decoupled Producer-Consumer* (Backend Stream Worker độc lập, UI quan sát thuần túy).

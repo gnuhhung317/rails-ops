@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, Request
@@ -28,16 +30,44 @@ def get_default_manager() -> IncidentLifecycleManager:
     return _DEFAULT_MANAGER
 
 
+async def _background_stream_worker(app: FastAPI) -> None:
+    """Background worker that advances telemetry stream when simulation is playing (unpaused)."""
+    try:
+        while True:
+            mgr: Optional[IncidentLifecycleManager] = getattr(app.state, "manager", None)
+            if mgr is not None and mgr.runner is not None and not mgr.runner.is_paused:
+                mgr.tick()
+                delay = max(0.05, mgr.runner.get_sleep_interval_seconds())
+                await asyncio.sleep(delay)
+            else:
+                await asyncio.sleep(0.25)
+    except asyncio.CancelledError:
+        pass
+
+
 def create_app(manager: Optional[IncidentLifecycleManager] = None) -> FastAPI:
     """
     FastAPI application factory for CompressorGuard Incident Command Console.
     Mounts product domain and demo routes, sets up lifecycle manager singleton,
     and registers domain exception handlers.
     """
+    @asynccontextmanager
+    async def lifespan(app_instance: FastAPI):
+        worker_task = asyncio.create_task(_background_stream_worker(app_instance))
+        try:
+            yield
+        finally:
+            worker_task.cancel()
+            try:
+                await worker_task
+            except asyncio.CancelledError:
+                pass
+
     app = FastAPI(
         title="CompressorGuard Incident Command Console API",
-        version="2.1.0",
+        version="2.2.0",
         description="Presentation-agnostic Domain API and Demo Endpoints for Lisbon Metro APU-COMP-01.",
+        lifespan=lifespan,
     )
 
     # Set manager singleton on app state

@@ -1,99 +1,95 @@
-# SCREEN 06 — CASE WORKSPACE: DID IT WORK? (RECOVERY CRITERIA VERIFIED)
-> **Mục tiêu:** Trả lời câu hỏi quan trọng nhất của chuyên viên và ban giám khảo: **"Nó có hiệu quả thật không? Bằng chứng nào chứng minh chuỗi dữ liệu đã thỏa mãn tiêu chuẩn phục hồi và sự cố có thể kết thúc?"**  
-> **Nguyên tắc:** **Recovery Criteria Verified (5/5 Healthy Observations Trong Chế Độ LOADED)** — Hệ thống chứng minh dữ liệu cảm biến thỏa mãn đầy đủ tiêu chí phục hồi toán lý, không nhận vơ chứng chỉ kiểm định cơ khí vật lý.
+# SCREEN 06 — CASE INVESTIGATION WORKBENCH: DID IT WORK? (LIVE RECOVERY VERIFIER & OPERATOR SIGN-OFF)
+> **Mục tiêu:** Trả lời câu hỏi thứ tư của chuyên viên điều độ: **"Sau khi bảo trì và đưa máy nén chạy lại dưới tải thực tế (`LOADED`), chuỗi dữ liệu cảm biến có chứng minh thiết bị đã ổn định bền vững qua đủ 5 mẫu liên tiếp để ký duyệt đóng hồ sơ và trả tàu về tuyến không?"**  
+> **Cải tiến cốt lõi v3.0:**
+> 1. **Xoá bỏ số liệu phục hồi hardcode tĩnh:** Thay vì hiển thị sẵn `-0.016 bar` và `64.12 °C`, giao diện đọc động từng mẫu từ `GET /api/recovery` và `GET /api/telemetry/window` khi con trỏ chạy qua phân đoạn `2020-06-08 16:05:00 UTC`.
+> 2. **Bảng Kiểm Chứng 5 Mẫu Mang Tải Trực Tiếp (`5-Sample Loaded Verification Table`) + Form Ký Duyệt Đóng Case (`Engineering Sign-Off Form`):** Chuyên viên theo dõi từng mẫu `#1..#5` được điền dần vào bảng, sau đó chọn **Confirmed Root Cause** và nhập **Sign-Off Notes** trước khi đóng hồ sơ.
 
 ---
 
-## 1. BỐ CỤC GIAO DIỆN (ASCII WIREFRAME)
+## 1. BỐ CỤC GIAO DIỆN (3-PANE WORKBENCH — VIEW 4: RECOVERY VERIFICATION & SIGN-OFF)
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ CASE WORKSPACE // CASE-20200605-01: APU-COMP-01 (TRAIN #302)                         [STATUS: RESOLVED]│
-├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ [1. WHAT CHANGED?]   [2. WHY? (EVIDENCE)]   [3. WHAT DID WE DO?]   [★ 4. DID IT WORK?]   [5. TIMELINE] │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                                        │
-│  TIẾN TRÌNH KIỂM CHỨNG TIÊU CHÍ PHỤC HỒI (RECOVERY CRITERIA VERIFICATION PROGRESS)                     │
-│  ────────────────────────────────────────────────────────────────────────────────────────────────────  │
-│  Tiêu chuẩn: Đạt đủ 5 Quan sát lành mạnh liên tiếp (5/5 Consecutive Observations) trong chế độ LOADED │
-│  Quy tắc nghiêm ngặt: Nếu vi phạm ở mẫu thứ 4/5, bộ đếm lập tức RESET VỀ 0/5!                          │
-│                                                                                                        │
-│  THANH TIẾN ĐỘ KIỂM CHỨNG:                                                                             │
-│  [ ✓ MẪU 1 ] ──► [ ✓ MẪU 2 ] ──► [ ✓ MẪU 3 ] ──► [ ✓ MẪU 4 ] ──► [ ✓ MẪU 5 ]  [ 5 / 5 ĐẠT TIÊU CHUẨN ]│
-│                                                                                                        │
-│  ┌──────────────────────────────────────────────┐   ┌───────────────────────────────────────────────┐  │
-│  │ 1. ÁP SUẤT XẢ THÁP SẤY (DV_PRESSURE)         │   │ 2. NHIỆT ĐỘ DẦU MÁY NÉN (OIL_TEMP)            │  │
-│  │                                              │   │                                               │  │
-│  │   -0.016 bar   [ 🟢 THỎA MÃN TIÊU CHÍ ]      │   │   64.1 °C   [ 🟢 THỎA MÃN TIÊU CHÍ ]          │  │
-│  │   Ngưỡng tối đa cho phép: < 0.050 bar        │   │   Ngưỡng trần cho phép: < 67.0 °C             │  │
-│  │                                              │   │                                               │  │
-│  │   Đánh giá: Áp suất buồng xả duy trì ở mức   │   │   Đánh giá: Nhiệt độ dầu hạ nhiệt ổn định     │  │
-│  │   chân không bình thường lúc mang tải!       │   │   dưới ngưỡng sôi thoái hóa chất bôi trơn!    │  │
-│  └──────────────────────────────────────────────┘   └───────────────────────────────────────────────┘  │
-│                                                                                                        │
-│  ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐  │
-│  │ 🏆 KẾT LUẬN NGHIỆM THU DỮ LIỆU (RECOVERY CRITERIA VERIFIED):                                     │  │
-│  │                                                                                                  │  │
-│  │  CHUỖI VIỄN THÁM ĐÃ ĐẠT TIÊU CHUẨN PHỤC HỒI TOÀN DIỆN VÀO LÚC 2020-06-08 16:05:50 UTC!           │  │
-│  │  Đủ 5/5 quan sát mang tải liên tiếp thỏa mãn cả 2 ngưỡng vật lý khắt khe (DV < 0.05, Oil < 67).   │  │
-│  │  Hồ sơ sự cố sẵn sàng để người điều độ ký duyệt đóng (Sign-off) và giải phóng tài sản hạm đội.   │  │
-│  └──────────────────────────────────────────────────────────────────────────────────────────────────┘  │
-│                                                                                                        │
-│  HÀNH ĐỘNG ĐÓNG HỒ SƠ & BÀN GIAO XƯỞNG (CASE SIGN-OFF & ASSET RELEASE)                                 │
-│  ────────────────────────────────────────────────────────────────────────────────────────────────────  │
-│                                                                                                        │
-│  ┌──────────────────────────────────────────┐     ┌─────────────────────────────────────────────────┐  │
-│  │ [ 📄 XUẤT POST-MORTEM VERIFICATION AUDIT]│     │ [ 🔒 ĐÓNG CASE & GIẢI PHÓNG ASSET VỀ GIÁM SÁT ] │  │
-│  └──────────────────────────────────────────┘     └─────────────────────────────────────────────────┘  │
-│                                                   (Gọi POST /api/case/close — Chỉ hợp lệ khi verified) │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ WORKBENCH // APU-INC-20200605-01 · Train #302 (APU-COMP-01)   [PHASE: RESOLVED]       [VERIFIED: 5/5 PASS ✓] │
+│ Sub-View Focus: [1. WHAT CHANGED?]  [2. WHY? (EVIDENCE)]  [3. PLAYBOOK & GUARD]  [★ 4. RECOVERY]  [5. AUDIT] │
+├───────────────────────────────────────────────────┬──────────────────────────────────────────────────────────┤
+│ LEFT & CENTER PANE (7 COLS):                      │ RIGHT PANE (5 COLS):                                     │
+│ LIVE 5-SAMPLE LOADED RECOVERY VERIFICATION        │ OPERATOR ROOT-CAUSE CLASSIFICATION & CASE SIGN-OFF FORM  │
+│ (Bound live to GET /api/recovery)                 │ (Unlocked strictly when is_verified == true)             │
+│ ───────────────────────────────────────────────── │ ──────────────────────────────────────────────────────── │
+│ PROGRESS: [✓ #1] ──► [✓ #2] ──► [✓ #3] ──► [✓ #4] ──► [✓ #5]   Status: [🏆 5/5 CRITERIA VERIFIED]            │
+│ Rule: Must satisfy 5 consecutive LOADED samples. Any breach immediately resets counter to 0/5.               │
+│                                                   │ 1. VERIFICATION GATE STATUS                              │
+│ LIVE THRESHOLD GAUGES (LATEST TELEMETRY POINT):   │ • Consecutive Loaded Samples: [ 5 / 5 VERIFIED ✓ ]       │
+│ ┌───────────────────────┬───────────────────────┐ │ • DV Pressure Criterion:      [ < 0.050 bar PASS ✓ ]     │
+│ │ DV_PRESSURE (LOADED)  │ OIL_TEMP (LOADED)     │ │ • Oil Temp Criterion:         [ < 67.00 °C  PASS ✓ ]     │
+│ │ Live: -0.0164 bar     │ Live: 64.12 °C        │ │                                                          │
+│ │ Max Allowed: < 0.050  │ Max Allowed: < 67.0°C │ │ 2. CONFIRMED ROOT CAUSE CLASSIFICATION                   │
+│ │ Status: [🟢 PASS]     │ Status: [🟢 PASS]     │ │ [Desiccant Drain Valve Mechanical Seal Leak (DV-02)   ▼] │
+│ └───────────────────────┴───────────────────────┘ │                                                          │
+│                                                   │ 3. RESOLUTION & WORK ORDER COMPLETION CODE               │
+│ CONSECUTIVE LOADED OBSERVATIONS LOG:              │ [WO-20200605-302: Valve Replaced & Pressure Tested    ▼] │
+│ ┌─────┬─────────────────────┬────────┬──────────┬────────┐                                                   │
+│ │ #   │ Timestamp (UTC)     │ Regime │ DV (bar) │ Oil(°C)│ 4. DISPATCHER SIGN-OFF NOTES (REQUIRED FOR AUDIT) │
+│ ├─────┼─────────────────────┼────────┼──────────┼────────┤ ┌───────────────────────────────────────────────┐ │
+│ │ #1  │ 2020-06-08 16:05:10 │ LOADED │ -0.0171  │ 64.45  │ │Verified 5/5 consecutive LOADED observations   │ │
+│ │ #2  │ 2020-06-08 16:05:20 │ LOADED │ -0.0168  │ 64.38  │ │post-maintenance. DV pressure and Oil temp     │ │
+│ │ #3  │ 2020-06-08 16:05:30 │ LOADED │ -0.0165  │ 64.29  │ │stabilized within nominal bounds. Releasing    │ │
+│ │ #4  │ 2020-06-08 16:05:40 │ LOADED │ -0.0164  │ 64.19  │ │Train #302 back to Linha Azul revenue service. │ │
+│ │ #5  │ 2020-06-08 16:05:50 │ LOADED │ -0.0164  │ 64.12  │ └───────────────────────────────────────────────┘ │
+│ └─────┴─────────────────────┴────────┴──────────┴────────┘                                                   │
+│                                                   │ ┌──────────────────────────────────────────────────────┐ │
+│                                                   │ │ 🔒 [ SIGN OFF, CLOSE CASE & RELEASE ASSET TO FLEET ] │ │
+│                                                   │ └──────────────────────────────────────────────────────┘ │
+└───────────────────────────────────────────────────┴──────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. NỘI DUNG NHẬN THỨC CỦA OPERATOR (COGNITIVE PROGRESSION)
+## 2. CƠ CHẾ KIỂM CHỨNG KHÉP KÍN & KÝ DUYỆT ĐÓNG HỒ SƠ (v3.0)
 
-1. **Nuance ngôn ngữ trung thực:** 
-   - Thay vì tuyên bố to tát "PHYSICAL RECOVERY VERIFIED / SAFETY CLEARANCE CERTIFIED" (dễ bị chuyên gia đường sắt chất vấn vì chúng ta chưa trực tiếp kiểm định chiếc van vật lý ngoài ray).
-   - Hệ thống dùng thuật ngữ chính xác: **RECOVERY CRITERIA VERIFIED (5/5 healthy LOADED observations)** — Khẳng định rằng *chuỗi viễn thám thực tế đã thỏa mãn toàn bộ tiêu chí phục hồi*.
-2. **Bắt buộc chế độ có tải (`LOADED`):** Việc máy nén phải chạy mang tải (`Motor_current > 0.5A`) mới đếm quan sát loại bỏ hoàn toàn khả năng máy đang tắt nên giả vờ mát mẻ.
-3. **Thủ tục đóng Case (`POST /api/case/close`):**
-   - Chỉ được phép gọi khi `is_verified == true`. Nếu bấm trước đó, API lập tức từ chối bằng **HTTP 409 Conflict**.
-   - Khi đóng Case: Trạng thái chuyển thành `CLOSED`, tài sản `APU-COMP-01` mở khóa và quay về `HEALTHY` trên Operations Landing Page.
+1. **Đánh giá động theo từng nhịp `tick` (`GET /api/recovery`):**
+   - Các đồng hồ đo `latest_telemetry.dv_pressure_bar` và `latest_telemetry.oil_temp_c` cập nhật trực tiếp từ điểm dữ liệu mới nhất.
+   - Chỉ những mẫu đo nằm trong chế độ mang tải (`regime == "LOADED"`, tức `Motor_current > 0.5A`) mới được đưa vào bộ đếm `consecutive_healthy_observations`. Nếu máy nén đang nghỉ (`UNLOADED`), bộ đếm giữ nguyên và chờ chu kỳ nạp tải tiếp theo.
+   - Nếu bất kỳ mẫu `LOADED` nào vượt ngưỡng (`dv_pressure_bar >= 0.05` hoặc `oil_temp_c >= 67.0`), bộ đếm lập tức reset về `0/5`.
+2. **Khoá an toàn trên nút `Close Case` (`POST /api/case/close`):**
+   - Khi `is_verified == false` (`0/5` đến `4/5`), nút `[ SIGN OFF, CLOSE CASE & RELEASE ASSET ]` ở trạng thái khóa (`disabled`). Nếu gọi trực tiếp qua API, Backend trả về **HTTP 409 Conflict**.
+   - Khi đạt `5/5`, chuyên viên điền phân loại nguyên nhân gốc (`Confirmed Root Cause`) và ghi chú nghiệm thu (`notes`) rồi bấm ký duyệt. Tài sản `APU-COMP-01` lập tức chuyển về `HEALTHY` và hồ sơ lưu vào kho lưu trữ `CLOSED`.
 
 ---
 
-## 3. RÀNG BUỘC DỮ LIỆU (DATA BINDING CONTRACT — `GET /api/recovery` & `POST /api/case/close`)
+## 3. RÀNG BUỘC DỮ LIỆU ĐỘNG (`GET /api/recovery` & `POST /api/case/close`)
 
 ```json
-// GET /api/recovery Response
 {
-  "case_id": "CASE-20200605-01",
-  "is_recovering": true,
-  "is_verified": true,
-  "consecutive_healthy_observations": 5,
-  "target_healthy_observations": 5,
-  "latest_telemetry": {
-    "dv_pressure_bar": -0.0164,
-    "oil_temp_c": 64.12,
-    "regime": "LOADED"
+  "recovery_status": {
+    "incident_id": "APU-INC-20200605-01",
+    "is_recovering": true,
+    "is_verified": true,
+    "consecutive_healthy_observations": 5,
+    "target_healthy_observations": 5,
+    "latest_telemetry": {
+      "dv_pressure_bar": -0.0164,
+      "oil_temp_c": 64.12,
+      "regime": "LOADED"
+    },
+    "criteria": {
+      "dv_pressure_max": 0.05,
+      "oil_temp_max": 67.0,
+      "required_regime": "LOADED"
+    }
   },
-  "criteria": {
-    "dv_pressure_max": 0.05,
-    "oil_temp_max": 67.0,
-    "required_regime": "LOADED"
+  "close_request": {
+    "operator_id": "DISPATCHER-0941",
+    "notes": "Verified 5/5 consecutive LOADED observations post-maintenance. Releasing Train #302 to service."
   },
-  "verification_timestamp": "2020-06-08T16:05:50Z"
-}
-
-// POST /api/case/close Response (Success)
-{
-  "case_id": "CASE-20200605-01",
-  "status": "CLOSED",
-  "asset_id": "APU-COMP-01",
-  "asset_health": "HEALTHY",
-  "closed_at": "2020-06-08T16:06:10Z",
-  "closed_by": "DISPATCHER-0941",
-  "summary": "Recovery criteria verified across 5 consecutive loaded observations. Asset released back to revenue service."
+  "close_response": {
+    "status": "CASE_CLOSED",
+    "case_id": "APU-INC-20200605-01",
+    "operator_id": "DISPATCHER-0941",
+    "notes": "Verified 5/5 consecutive LOADED observations post-maintenance. Releasing Train #302 to service.",
+    "lifecycle_state": "RESOLVED",
+    "asset_health": "HEALTHY"
+  }
 }
 ```

@@ -1,983 +1,356 @@
-# COMPRESSORGUARD — MASTER CONTEXT & SYSTEM DOSSIER
+# COMPRESSORGUARD — MASTER CONTEXT & PRODUCTION SYSTEM DOSSIER (v3.0)
 
 > **Document Type:** Master Context & Single Source of Truth (SSOT)  
-> **Status:** Active & Incrementally Appendable  
-> **Target:** MUGVN Hackathon 2026 (MongoDB + Datadog)  
-> **Core Mission:** **Detect earlier → Prove why → Act safely → Verify recovery.**  
-> **Maintainer/Role:** Lead System Architect & Fleet Operations Engineering  
+> **Status:** Active & Production-Ready Architecture (v3.0)  
+> **Target:** Industrial B2B Rail SaaS & MUGVN Hackathon 2026 (MongoDB + Datadog)  
+> **Core Mission:** **Ingest Live Fleet Telemetry → Filter Transient Noise → Prove Physical Degradation → Dispatch Safely → Verify Post-Maintenance Commissioning.**  
+> **Maintainer/Role:** Principal Product Architect & Fleet Reliability Engineering  
 
 ---
 
 ## MỤC LỤC TỔNG QUAN
 
-1. [Phần 1: Executive Summary & Project North Star](#phần-1-executive-summary--project-north-star)
-2. [Phần 2: Hackathon Strategy & Comparative Post-Mortem](#phần-2-hackathon-strategy--comparative-post-mortem)
-3. [Phần 3: Physical Domain & Ground Truth Dataset (MetroPT-3)](#phần-3-physical-domain--ground-truth-dataset-metropt-3)
-4. [Phần 4: Product Thesis & 90-Second Golden Experience Spec](#phần-4-product-thesis--90-second-golden-experience-spec)
-5. [Phần 5: Backend Domain Architecture & Vertical Slice v2.1 (Frozen)](#phần-5-backend-domain-architecture--vertical-slice-v21-frozen)
-6. [Phần 6: Master Spec Technology Blueprint (MongoDB & Datadog)](#phần-6-master-spec-technology-blueprint-mongodb--datadog)
-7. [Phần 7: Strategic Roadmap & Rules of Engagement Cho AI Tiếp Theo](#phần-7-strategic-roadmap--rules-of-engagement-cho-ai-tiếp-theo)
-8. [Phần 8: Rail Economics & Operational Value Model (Normative)](#phần-8-rail-economics--operational-value-model-normative)
+1. [Phần 1: Executive Summary & Định Vị Sản Phẩm Thực Chiến](#phần-1-executive-summary--định-vị-sản-phẩm-thực-chiến)
+2. [Phần 2: Giải Phẫu Các "Mùi Demo" Đã Loại Bỏ & Kiến Trúc Production Thực Thụ](#phần-2-giải-phẫu-các-mùi-demo-đã-loại-bỏ--kiến-trúc-production-thực-thụ)
+3. [Phần 3: Miền Vật Lý, Tập Dữ Liệu MetroPT-3 & Cơ Chế Đa Đoàn Tàu (Multi-Train Cohort)](#phần-3-miền-vật-lý-tập-dữ-liệu-metropt-3--cơ-chế-đa-đoàn-tàu-multi-train-cohort)
+4. [Phần 4: Luồng Công Việc Hàng Ngày Của Operator (Production Operator Workflows)](#phần-4-luồng-công-việc-hàng-ngày-của-operator-production-operator-workflows)
+5. [Phần 5: Kiến Trúc Miền Backend, Máy Trạng Thái Hai Giai Đoạn & Hợp Đồng REST API](#phần-5-kiến-trúc-miền-backend-máy-trạng-thái-hai-giai-đoạn--hợp-đồng-rest-api)
+6. [Phần 6: Kiến Trúc Nền Tảng Dữ Liệu Vận Hành MongoDB Atlas](#phần-6-kiến-trúc-nền-tảng-dữ-liệu-vận-hành-mongodb-atlas)
+7. [Phần 7: Kiến Trúc Giám Sát Hợp Nhất & AI Observability Với Datadog](#phần-7-kiến-trúc-giám-sát-hợp-nhất--ai-observability-với-datadog)
+8. [Phần 8: Mô Hình Kinh Tế Đường Sắt & Giá Trị Vận Hành (Rail Economics)](#phần-8-mô-hình-kinh-tế-đường-sắt--giá-trị-vận-hành-rail-economics)
+9. [Phần 9: Quy Tắc Bất Biến Kỹ Thuật & Các Bẫy Đã Khắc Phục](#phần-9-quy-tắc-bất-biến-kỹ-thuật--các-bẫy-đã-khắc-phục)
+10. [Phần 10: Danh Mục ADR (001–018) & Trạng Thái Handoff Hệ Thống](#phần-10-danh-mục-adr-001018--trạng-thái-handoff-hệ-thống)
 
 ---
 
-## PHẦN 1: EXECUTIVE SUMMARY & PROJECT NORTH STAR
+## PHẦN 1: EXECUTIVE SUMMARY & ĐỊNH VỊ SẢN PHẨM THỰC CHIẾN
 
-### 1.1 Định Vị Sản Phẩm (What is this?)
-**CompressorGuard** là một **Operations Command Platform cho Thiết Bị Vật Lý Trọng Yếu Của Hạm Đội Đường Sắt (Rail Fleet Critical Physical Assets)** — chuyên phục vụ hệ thống cung cấp khí nén **Air Production Unit (APU)** trên các đoàn tàu điện ngầm đô thị (Lisbon Metro).
+### 1.1 Định Vị Sản Phẩm (What is CompressorGuard?)
+**CompressorGuard** là một **Nền tảng Điều hành & Độ tin cậy Hạm đội Đường sắt (Rail Fleet Reliability & Operations Command Platform)** chuyên giám sát, chẩn đoán sớm và điều phối bảo trì cho hệ thống cung cấp khí nén **Air Production Unit (APU)** trên các đoàn tàu điện ngầm đô thị (Metro de Lisboa).
 
 > [!IMPORTANT]
-> **Định vị cốt lõi:**
-> - **KHÔNG PHẢI** là một dashboard hiển thị telemetry thông thường.
-> - **KHÔNG PHẢI** là một công cụ chấm điểm anomaly đơn thuần ("Anomaly Detector + Dashboard").
-> - **KHÔNG PHẢI** là một chatbot AI/LLM phụ trợ.
-> - **LÀ** một **hệ thống vận hành vòng lặp khép kín có cấu trúc phân cấp hạm đội (Closed-Loop Fleet Operations Platform)**:
->   $$\text{Fleet} \longrightarrow \text{Train} \longrightarrow \text{APU} \longrightarrow \text{Compressor} \longrightarrow \text{Case} \longrightarrow \text{Evidence} \longrightarrow \text{Decision} \longrightarrow \text{Action} \longrightarrow \text{Recovery} \longrightarrow \text{Business Impact}$$
-> - **Triết lý vai trò:**
->   - **Fleet:** Nơi ban điều hành và kinh doanh hiểu bài toán vận tải.
->   - **Asset:** Nơi sự cố vật lý xảy ra.
->   - **Case:** Đơn vị công việc có cấu trúc để con người điều độ xử lý.
->   - **Evidence:** Bằng chứng vật lý chứng minh vì sao phải tin cậy hệ thống.
->   - **Decision & Action:** Can thiệp an toàn có hàng rào chính sách bảo vệ.
->   - **Verification:** Kiểm chứng phục hồi từ cảm biến thực trước khi trả tài sản về khai thác.
+> **Định vị cốt lõi (Production-Grade Industrial SaaS):**
+> - **KHÔNG PHẢI** là một kịch bản demo "auto-pilot" chạy sẵn cho 1 thiết bị đơn lẻ.
+> - **KHÔNG PHẢI** là một bảng vẽ biểu đồ cảm biến thô (Raw Sensor Dashboard) bắt người vận hành tự đoán lỗi.
+> - **KHÔNG PHẢI** là một hộp đen AI chỉ chấm điểm anomaly vô căn cứ.
+> - **LÀ** một **Hệ thống Quản trị Sự cố Vật lý Vòng lặp Khép kín (Closed-Loop Asset Operations Platform)** vận hành theo chuỗi giá trị thực tế của ngành đường sắt:
+>   $$\text{Live Fleet Ingestion} \longrightarrow \text{Regime-Aware Noise Suppression} \longrightarrow \text{Thermodynamic + ML Evidence} \longrightarrow \text{Human-in-the-Loop Triage & Work Order} \longrightarrow \text{Depot Repair} \longrightarrow \text{Automated Commissioning Sign-Off}$$
 
 ---
 
-### 1.2 Bài Học Tiền Lệ Công Nghiệp (Industrial Precedents)
-Mô hình tổ chức của CompressorGuard trực tiếp kế thừa kiến trúc từ các nền tảng quản trị tài sản công nghiệp hàng đầu thế giới:
-* **Siemens Senseye:** Tổ chức tài sản theo phân cấp (Asset Hierarchy: Site $\rightarrow$ Line $\rightarrow$ Machine); liên kết sự cố (Case) gắn chặt vào từng Asset; thực thi bất biến *"Chỉ duy nhất một Case mở trên một Asset tại một thời điểm"*; hồ sơ Case luôn mang theo các bằng chứng đo lường liên quan.
-* **IBM Maximo:** Sử dụng Asset Hierarchy, Health, Risk, Criticality làm bối cảnh nghiệp vụ để người vận hành đưa ra quyết định hành động bảo trì trước khi hỏng hóc gây gián đoạn dây chuyền.
-* **Alstom HealthHub:** Định vị bảo dưỡng dự đoán gắn liền với quản trị hạm đội tàu (Fleet Management), với mục tiêu cốt tử là tối ưu hóa độ sẵn sàng (Availability), độ tin cậy (Reliability), và triệt tiêu thời gian dừng tàu chết đứng giữa tuyến (Downtime).
+### 1.2 Bài Học Từ Các Hệ Thống Công Nghiệp Thực Tế (Industrial Precedents)
+Kiến trúc của CompressorGuard tuân thủ chuẩn mực của các hệ thống quản lý tài sản công nghiệp (APM / EAM) hàng đầu:
+* **Siemens Senseye PdM:** Quản lý theo phân cấp `Fleet -> Train -> Subsystem (APU) -> Asset (Compressor)`; thực thi cơ chế **Chống quá tải cảnh báo (Alert Fatigue Suppression)** bằng cách lọc bỏ các xung nhiễu thoáng qua trước khi mở hồ sơ sự cố (`Operational Case`); đảm bảo bất biến *"Mỗi tài sản chỉ có tối đa 1 Case đang mở tại một thời điểm"*.
+* **IBM Maximo & Alstom HealthHub:** Gắn kết chặt chẽ giữa **Chẩn đoán kỹ thuật (Condition Monitoring)** và **Điều độ vận hành (Maintenance Dispatch)**: Chuyên viên điều độ không "sửa tàu bằng nút bấm trên màn hình", mà kiểm tra điều kiện an toàn phanh khí nén (`ActionGuard`), phát hành lệnh điều độ bảo trì (`Work Order`) về xưởng (`Depot Oriente`) vào khung giờ nghỉ ca đêm, và chỉ giải phóng tàu trở lại tuyến thương mại sau khi vượt qua bài kiểm tra **Nghiệm thu sau bảo trì (`Post-Maintenance Commissioning`)**.
 
 ---
 
 ### 1.3 Ba Lớp Dữ Liệu Phân Minh (Strict 3-Tier Data Separation)
-Một phát hiện kiến trúc sống còn là: **Tuyệt đối không trộn lẫn 3 lớp dữ liệu khác biệt về nguồn gốc (provenance)**:
+Để đảm bảo tính trung thực tuyệt đối của một sản phẩm công nghiệp, hệ thống tách biệt nghiêm ngặt 3 tầng dữ liệu:
 
-| Tầng Dữ Liệu | Thành Phần Đại Diện | Nguồn Gốc & Bản Chất | Không Được Làm Gì |
+| Tầng Dữ Liệu | Thành Phần Đại Diện | Nguồn Gốc & Bản Chất | Quy Tắc Bất Khả Xâm Phạm |
 |---|---|---|---|
-| **A. Business Context** (Asset Registry) | Fleet (Linha Azul), Train (#302), APU, Compressor (APU-COMP-01), Criticality, Location. | Sổ bộ tài sản vận tải, không phải dữ liệu cảm biến. | Không biến thành sensor telemetry. |
-| **B. Observed / Computed Operational State** | $\text{DV\_pressure} = 2.1856\text{ bar}$, $\text{Oil\_temp} = 74.97^\circ\text{C}$, $\text{regime} = \text{LOADED}$, $+23.75\sigma$, $+5.71\sigma$, IF score $= 0.382$. | Dữ liệu cảm biến đo đạc thực tế và các chỉ số suy luận từ động cơ phân tích. | Không trộn lẫn với ground truth lịch sử. |
-| **C. Validation Reference** (Historical Ground Truth) | Failure #3: Air Leak / High stress; Báo cáo bảo dưỡng thực tế từ đơn vị vận hành Lisbon Metro. | Hồ sơ kỹ thuật bảo dưỡng dùng để đối chứng, kiểm nghiệm tính đúng đắn của kịch bản lịch sử. | **Tuyệt đối không leak ngược** vào thuật toán phát hiện online. |
+| **A. Business & Fleet Context** (`AssetRegistry`) | Hạm đội (`Linha Azul`), các đoàn tàu (`TRAIN-301` .. `TRAIN-306`), cụm `APU`, máy nén, xưởng bảo trì (`Depot Oriente`), danh mục SOP Playbooks. | Sổ bộ quản lý tài sản và cấu hình vận hành lưu trong MongoDB. | Không biến thông tin tĩnh thành dữ liệu đo lường cảm biến. |
+| **B. Live Observed & Computed State** (`Telemetry & Analytics`) | Áp suất van xả `DV_pressure`, nhiệt độ dầu `Oil_temp`, áp suất bình phanh `TP3`, dòng mô-tơ `Motor_current`, chế độ `LOADED`/`OFF_LOAD`, điểm `Isolation Forest`, và **Causal Runtime Warning** (`elapsed_warning_minutes`, `brake_reservoir_tp3_bar`). | Dữ liệu cảm biến thực tế đi qua pipeline xử lý trực tuyến và MongoDB Aggregation Pipelines tại thời điểm $t \le t_{\text{now}}$. | **Tuyệt đối nhân quả (Strictly Causal):** Không bao giờ lấy mốc thời gian của tương lai ($t > t_{\text{now}}$) hiển thị lên trạng thái vận hành hiện tại. |
+| **C. Historical Validation & Knowledge Base** (`Fingerprints & Benchmark`) | Thư viện chữ ký lỗi lịch sử (`failure_fingerprints`) và Hồ sơ đối chứng khoa học (`ValidationReference`: Sự cố rò rỉ khí nén ngày 05–06/06/2020 với cửa sổ đối chứng `33h 52m`). | Dữ liệu lịch sử đã xác thực từ báo cáo bảo dưỡng Metro de Lisboa dùng để đối sánh mẫu lỗi (Cosine Similarity) và kiểm toán hiệu quả. | Không rò rỉ nhãn Ground Truth vào bộ phát hiện thời gian thực (Zero Look-Ahead Leakage). |
 
 ---
 
-### 1.4 Ba Tuyên Ngôn Bất Khả Chiến Bại (3 Killer Claims)
-Khi trình bày với bất kỳ ai (Ban Giám khảo, Khách hàng, hay AI agent kế nhiệm), đây là 3 thông điệp bắt buộc phải ghi nhớ:
+## PHẦN 2: GIẢI PHẪU CÁC "MÙI DEMO" ĐÃ LOẠI BỎ & KIẾN TRÚC PRODUCTION THỰC THỤ
 
-| # | Killer Claim | Ý Nghĩa Kỹ Thuật & Vận Hành Thực Chiến |
+Một sản phẩm IoT/Predictive Maintenance thường thất bại khi bước ra thực tế (hoặc trước giám khảo giàu kinh nghiệm sản phẩm) vì mang nặng tính "kịch bản dựng sẵn". Dưới đây là **6 thay đổi kiến trúc cốt lõi** biến CompressorGuard từ một bản demo thành một sản phẩm Production-Ready thực thụ:
+
+### 2.1 Từ "1 Thiết Bị Đơn Độc" $\longrightarrow$ "Hạm Đội Đa Đoàn Tàu Trung Thực (Multi-Train Historical Cohort Multiplexing)"
+* **Sai lầm của quy tắc cực đoan cũ:** Vì sợ tạo dữ liệu giả (`Math.random()`), quy tắc cũ cấm hoàn toàn việc mô phỏng hạm đội và chỉ hiển thị đúng `1 MONITORED ASSET` (`APU-COMP-01`). Một hệ thống tự nhận là "Fleet Command Platform" mà chỉ có 1 thiết bị duy nhất sẽ lập tức bị nhìn nhận là bản demo đồ án.
+* **Giải pháp Production trung thực 100% với dữ liệu:**
+  Tập dữ liệu `MetroPT-3` chứa **1,516,948 bản ghi thực tế kéo dài suốt 6 tháng** (từ tháng 2 đến tháng 8/2020), bao gồm nhiều giai đoạn vận hành bình thường, các xung nhiễu thoáng qua và 4 đợt suy thoái vật lý hoàn toàn khác nhau.
+  Thay vì sinh số ngẫu nhiên giả tạo, CompressorGuard sử dụng kỹ thuật **Historical Cohort Multiplexing**: ánh xạ các phân đoạn lịch sử thực tế khác nhau của `MetroPT-3.csv` thành các luồng telemetry đồng thời cho một cohort các đoàn tàu trên tuyến Linha Azul (hoặc cho phép chuyển đổi/giám sát song song các kịch bản thực tế):
+  - **Nhóm tàu vận hành khỏe mạnh (`Healthy Baseline — Tháng 02/2020`):** Máy nén đóng/ngắt chu kỳ `LOADED`/`OFF_LOAD` chuẩn mực, `DV_pressure ≈ -0.016 bar`, `Oil_temp ≈ 55°C`.
+  - **Tàu xuất hiện nhiễu thoáng qua được lọc tự động (`Transient Excursion — 04/06/2020 00:33:07`):** Áp suất van xả vọt lên thoáng qua trong 1 chu kỳ rồi tự hết $\rightarrow$ Hệ thống ghi nhận vào `anomaly_signals` với trạng thái `SUPPRESSED_TRANSIENT` và **không báo động giả**.
+  - **Tàu suy thoái van xả & quá nhiệt (`Failure #3 Air Leak — 05/06/2020`):** Suy thoái bền vững qua $\ge 3$ chu kỳ `LOADED` + kiểm chứng đa biến bởi `Isolation Forest`.
+  - **Tàu suy thoái chu kỳ tải cao (`Failure #1 High Duty Cycle — Tháng 04/2020`) & Nhiễm bẩn dầu (`Failure #4 Oil Contamination — Tháng 07/2020`).**
+  - **Tàu đang chạy nghiệm thu sau bảo trì (`Post-Maintenance Commissioning — 08/06/2020 16:05:00`).**
+  $\implies$ **Mọi con số cảm biến đều là vật lý thực 100% từ `MetroPT-3`**, nhưng người vận hành có một không gian điều hành đa kịch bản sống động như thật.
+
+---
+
+### 2.2 Từ "Biết Trước Tương Lai (`33h 52m` ngay lúc mới phát hiện)" $\longrightarrow$ "Cảnh Báo Nhân Quả Thời Gian Thực (Causal Runtime Warning) + Đối Chứng Hậu Kiểm (Counterfactual Benchmark)"
+* **Sai lầm cũ (Look-Ahead Bias):** Ngay lúc `09:50:39` ngày 05/06/2020 khi vừa phát hiện rò rỉ, màn hình đã hiện sẵn *"33h 52m trước khi còi LPS kêu vào 19:42 ngày mai"*. Trong đời thực, lúc 09:50 sáng ngày 05/06, không ai biết chính xác 19:42 tối ngày 06/06 rơ-le cơ học sẽ sập!
+* **Giải pháp Production (`src/engine/benchmark.py`):**
+  1. **Chỉ số Vận hành Thời gian thực (`runtime_warning` — Tuyệt đối nhân quả $t \le t_{\text{now}}$):**
+     - `is_warning_active`: `true`
+     - `elapsed_warning_minutes` / `elapsed_warning_formatted`: Thời gian đã phát hiện sớm kể từ lúc mở Case trong khi rơ-le cơ học `LPS` truyền thống vẫn im lặng (`legacy_lps_still_silent = true`).
+     - `brake_reservoir_tp3_bar`: Áp suất bình chứa khí nén chính hiện tại (ví dụ `8.74 bar`, còn cách ngưỡng sập phanh khẩn cấp `7.0 bar` một biên độ an toàn `+1.74 bar`).
+     - `projected_rul_window`: Ước lượng khoảng thời gian vận hành an toàn còn lại (`"24h - 36h (Safe for Scheduled Night Depot Swap)"`) để điều độ viên tự tin cho tàu chạy hết ca trước khi đưa vào xưởng.
+  2. **Chỉ số Đối chứng Lịch sử (`lead_time` & `ValidationReference`):**
+     - Đặt đúng vai trò là **Counterfactual Historical Benchmark**: Đối chứng với dữ liệu lịch sử khi không can thiệp, chứng minh thuật toán phát hiện sớm hơn rơ-le `LPS` đúng **2032 phút (`33h 52m`)**.
+
+---
+
+### 2.3 Từ "Nút Bấm Phép Thuật Nhảy Cóc 3 Ngày" $\longrightarrow$ "Quy Trình Điều Độ 2 Giai Đoạn (Triage/Work-Order Dispatch & Post-Maintenance Commissioning)"
+* **Sai lầm cũ:** Bấm nút `[ACTIVATE SAFE MODE]` lúc 10:15 ngày 05/06 làm thời gian nhảy vọt sang 16:05 ngày 08/06 và máy nén tự lành. Ngoài đời thực, không có phần mềm nào bấm nút mà thay được gioăng cao su bị rách trên tàu!
+* **Giải pháp Production:** Tách biệt rõ **Hành động Điều độ trên Tuyến** và **Quy trình Nghiệm thu sau khi Xưởng sửa chữa**:
+  - **Bước 1 — Điều độ Vận hành & Lập Lệnh Sửa Chữa (`Work Order Dispatch`):**
+    Operator xác nhận sự cố (`POST /api/case/acknowledge`), ghi chú bàn giao ca (`POST /api/case/notes`), và phát hành lệnh bảo trì (`POST /api/case/work-order`) gắn với quy trình chuẩn (`PB-APU-03-AIR-LEAK`) gửi tới xưởng `PMO-DEPOT-LISBON-01` cho khung giờ nghỉ đêm.
+  - **Bước 2 — Chế độ Vận hành Giới hạn & Nghiệm thu Sau Bảo trì (`Safe Mode & Commissioning Verification`):**
+    Trước khi kích hoạt chuyển nhánh nghiệm thu (`POST /api/action/safe-mode`), hàng rào `ActionGuard` kiểm tra **5 điều kiện an toàn thực tế** (bao gồm kiểm tra vật lý `BRAKE_RESERVOIR_PRESSURE_SAFE`: áp suất bình chính `TP3 >= 7.0 bar` và `LPS == 0`). Sau khi xưởng hoàn tất bảo trì (chuyển sang luồng dữ liệu nghiệm thu ngày `08/06/2020`), `RecoveryVerifier` tự động đếm **5/5 quan sát `LOADED` liên tiếp** đạt chuẩn (`DV_pressure < 0.05 bar`, `Oil_temp < 67°C`) trước khi cho phép kỹ sư ký đóng hồ sơ (`POST /api/case/close`).
+
+---
+
+### 2.4 Từ "Trình Phát Lại CSV Cứng Nhắc" $\longrightarrow$ "Luồng Stream Nền Độc Lập (Decoupled Background Stream Worker)"
+* **Sai lầm cũ:** Giao diện web phải tự gọi `POST /demo/tick` bằng `setInterval` ở trình duyệt, nếu đóng tab trình duyệt thì hệ thống đứng im.
+* **Giải pháp Production (`src/api/app.py`):**
+  Hệ thống tích hợp `_background_stream_worker` chạy ngầm độc lập trong `lifespan` của FastAPI Server. Khi luồng phát đang bật (`is_paused == False`), Server tự động đẩy dữ liệu theo nhịp **Dual-Clock** (`event_time` nguyên bản từ cảm biến + `simulation_time` điều tiết tốc độ), đi qua toàn bộ chuỗi `Regime -> Detectors -> Isolation Forest -> DecisionEngine -> MongoDB Persistence -> Datadog APM/Metrics`.
+
+---
+
+### 2.5 Từ "Auto-Pilot Tự Chạy" $\longrightarrow$ "Quản Trị Sự Cố Có Con Người Cầm Lái (Human-in-the-Loop Case Governance)"
+Trong hệ thống Production thật, phần mềm chỉ đề xuất và cung cấp bằng chứng; **quyền quyết định thuộc về con người (Operator/Dispatcher)**:
+1. **Tiếp nhận & Phân loại ưu tiên (`POST /api/case/acknowledge`):** Chuyển trạng thái tiếp nhận từ `acknowledged: false -> true`, gán mức độ ưu tiên (`P1-CRITICAL`, `P2-WARNING`) và định danh người chịu trách nhiệm (`operator_id`).
+2. **Sổ nhật ký bàn giao ca (`POST /api/case/notes`):** Ghi chú điều tra hiện trường vào sổ cái bất biến `case_events`.
+3. **Bác bỏ cảnh báo giả (`POST /api/case/false-positive`):** Nếu kỹ thuật viên xác nhận cảm biến vừa được hiệu chuẩn hoặc chỉ là nhiễu cơ học bất thường, Operator có quyền đóng Case dưới dạng `CLOSED_FALSE_POSITIVE` kèm lý do kiểm toán.
+4. **Đối sánh mẫu lỗi tự động (`Failure Fingerprint Matching`):** Hệ thống dùng MongoDB đối sánh vector độ lệch hiện tại với các sự cố trong quá khứ để gợi ý đúng mã quy trình sửa chữa (`SOP Playbook`).
+
+---
+
+## PHẦN 3: MIỀN VẬT LÝ, TẬP DỮ LIỆU METROPT-3 & CƠ CHẾ ĐA KỊCH BẢN
+
+### 3.1 Hồ Sơ Tập Dữ Liệu Thực Nghiệm UCI MetroPT-3
+* **Nguồn dữ liệu:** UCI Machine Learning Repository & *Nature Scientific Data* (2022) — Thu thập từ cụm cấp khí nén **Air Production Unit (APU)** trên đoàn tàu điện ngầm Metro de Lisboa (Bồ Đào Nha).
+* **Quy mô:** **1,516,948 dòng dữ liệu cảm biến** (15 kênh tín hiệu vật lý & điện tử) từ tháng 02/2020 đến tháng 08/2020.
+
+### 3.2 Bản Đồ 15 Kênh Cảm Biến Vật Lý Trên Cụm APU
+| Kênh Cảm Biến | Đơn Vị | Vai Trò Vật Lý & Ý Nghĩa Chẩn Đoán |
 |---|---|---|
-| **1** | **33 Giờ 52 Phút Confirmed Intervention Window** | Phát hiện suy thoái được xác nhận lúc **09:50:39 ngày 05/06/2020**, tạo ra cửa sổ can thiệp vận hành kéo dài đúng **2032 phút** (33h 52m) trước mốc cảnh báo rơ-le cơ học phản ứng thụ động (**19:42:19 ngày 06/06/2020**). Đây là khoảng thời gian quý giá để đưa tàu về xưởng sửa chữa ban đêm, tránh tàu chết đứng giữa đường hầm. |
-| **2** | **Bằng Chứng Đa Nguồn Có Nguồn Gốc (Evidence Provenance > Anomaly Score)** | Không yêu cầu người dùng "tin mù quáng vào điểm số AI". Hệ thống dọn ra chuỗi 4 bằng chứng có xuất xứ rõ ràng: Áp suất xả $+23.75\sigma$ ($2.18\text{ bar}$ vs $-0.016\text{ bar}$), Trôi dạt nhiệt độ dầu $+5.71\sigma$ ($74.97^\circ\text{C}$ vs $54.98^\circ\text{C}$), Bước nhảy kiên định 3 chu kỳ, và **Kiểm chứng đa biến độc lập bởi Isolation Forest** ($0.382 > 0.35$ trên 5 features có tải) đóng vai trò nâng cao độ tin cậy quyết định. |
-| **3** | **Kiểm Chứng Phục Hồi Thực Tế (Recovery Criteria Verified)** | Hành động kích hoạt Safe Mode được bảo vệ bởi `ActionGuard` 5 điều kiện, mô phỏng can thiệp an toàn và rẽ nhánh luồng dữ liệu sang phân đoạn thực tế sau bảo trì (ngày 08/06/2020). Hệ thống chỉ đóng Case khi và chỉ khi kiểm chứng đủ **5/5 quan sát lành mạnh liên tiếp trong chế độ `LOADED`** đạt chuẩn vật lý ($\text{DV} < 0.05\text{ bar}$, $\text{Oil} < 67^\circ\text{C}$). |
+| `DV_pressure` | `bar` | **Cảm biến chẩn đoán chính:** Áp suất tại van xả tháp làm khô khí (Air Dryer Discharge Valve). Khi máy nén đang bơm tải (`LOADED`), van xả phải đóng kín (`≈ -0.016 bar`). Khi gioăng van xả bị hở/rò rỉ, áp suất vọt lên `> 2.0 bar` (`+23.75σ`). |
+| `Oil_temp` | `°C` | **Cảm biến bằng chứng nhiệt động học:** Nhiệt độ dầu bôi trơn máy nén. Khi rò rỉ khí làm máy nén phải chạy bù tải liên tục, nhiệt độ dầu trôi dạt từ ngưỡng chuẩn `~55°C` lên `~75°C` (`+5.71σ`). |
+| `TP3` & `H1` | `bar` | **Cảm biến an toàn phanh khí nén:** Áp suất đầu ra máy nén (`TP3`) và bình chứa chính (`H1`). Phải duy trì `>= 7.0 bar` để đảm bảo an toàn hệ thống phanh khí nén và đóng mở cửa tàu. |
+| `Motor_current` & `COMP` | `A`, `0/1` | **Phân định chế độ vận hành (`OperatingRegime`):** Xác định máy nén đang chạy mang tải (`LOADED: Motor_current > 0.5A`), chạy không tải (`OFF_LOAD`), khởi động (`STARTING`) hay nghỉ (`OFF`). |
+| `LPS` | `0/1` | **Rơ-le áp suất thấp cơ học (Legacy Reactive Alert):** Chỉ bật lên `1` khi áp suất bình chứa chính `TP3` đã sập xuống dưới `7.0 bar` — lúc này đoàn tàu buộc phải dừng khẩn cấp và kéo khỏi đường ray. |
+| `TP2`, `Reservoirs`, `DV_electric`, `TOWERS`, `MPG`, `Pressure_switch`, `Oil_level`, `Caudal_impulses` | Đa dạng | Các kênh bổ trợ giám sát chu kỳ chuyển tháp sấy khí (`TOWERS`), mức dầu bôi trơn (`Oil_level`) và vector 5 chiều của mô hình `Isolation Forest`. |
+
+### 3.3 Bốn Kịch Bản Thực Nghiệm Trong Danh Mục Vận Hành (`SCENARIO_REGISTRY`)
+Hệ thống cung cấp sẵn 4 kịch bản thực tế trích xuất trực tiếp từ `MetroPT-3.csv` (truy vấn qua `GET /api/scenarios` và chuyển đổi qua `POST /api/operations/scenario`):
+1. **`failure_3` (Failure #3 — Air Leak & Thermal Drift, Tháng 06/2020):** Sự cố rò rỉ van xả tháp sấy khí kèm quá nhiệt dầu máy nén; bao gồm cả mốc nhiễu thoáng qua ngày 04/06 (`00:33:07`) và phân đoạn nghiệm thu sau bảo trì ngày 08/06 (`16:05:00`).
+2. **`failure_1` (Failure #1 — High Duty Cycle Air Leak, Tháng 04/2020):** Sự cố rò rỉ ống dẫn khí nén làm tăng vọt tỷ lệ chu kỳ mang tải (`Loaded Duty Cycle %`).
+3. **`failure_4` (Failure #4 — Oil Contamination & Thermal Stress, Tháng 07/2020):** Sự cố suy giảm chất lượng dầu bôi trơn gây áp lực nhiệt độ cao.
+4. **`healthy_baseline` (Healthy Revenue Service, Tháng 02/2020):** Phân đoạn vận hành thương mại bình thường dùng làm đối chứng không có cảnh báo giả.
 
 ---
 
-### 1.5 Giới Hạn Nghiêm Ngặt Về Phạm Vi (Strict Anti-Scope)
-Để bảo toàn tính thực chiến và sự trung thực trí tuệ tuyệt đối, hệ thống áp dụng các nguyên tắc cấm:
-* ❌ **CẤM LLM Chatbot:** Không làm trợ lý hỏi đáp hội thoại; chuyên viên vận hành cần hành động trong 5 giây, không ngồi chat.
-* ❌ **CẤM Fake Fleet Simulator:** Không tạo ra 50 đoàn tàu ảo ngẫu nhiên; giữ vững Vertical Slice sâu sắc trên tài sản đại diện `APU-COMP-01` gắn trong cây phân cấp hạm đội thực.
-* ❌ **CẤM Nhãn [🔴 LIVE] giả tạo:** Dữ liệu là viễn thám lịch sử MetroPT-3; màn hình hiển thị trung thực `[ LIVE SIMULATION · HISTORICAL DATA ]`.
-* ❌ **CẤM Fake SIL-2 & Cảm biến độ dốc giả:** Không bịa đặt cảm biến độ dốc ray hay cơ cấu chấp hành vật lý không có trong dataset; thay bằng `ActionGuard` chính sách can thiệp mô phỏng rõ ràng.
-* ❌ **CẤM Bày bừa biểu đồ đo lường thô:** Không hiển thị 15 biểu đồ sensor đồng thời trên màn hình chính gây quá tải thị giác.
+## PHẦN 4: LUỒNG CÔNG VIỆC HÀNG NGÀY CỦA OPERATOR (PRODUCTION OPERATOR WORKFLOWS)
 
----
-
-## PHẦN 2: HACKATHON STRATEGY & COMPARATIVE POST-MORTEM
-
-### 2.1 Bối Cảnh So Sánh Giữa Hai Dự Án
-Trong workspace phát triển, chúng ta sở hữu 2 codebase:
-1. `hackathon/` — **ThreatLens AI SOC Copilot** (Dự án hackathon trước đó).
-2. `iot-hackathon/` — **CompressorGuard** (Dự án đang phát triển cho MUGVN Hackathon 2026).
-
-Qua quá trình phân tích đối sánh sâu (Deep Post-Mortem), chúng ta rút ra những bài học sống còn về cách một dự án hackathon giành chiến thắng trước ban giám khảo.
-
----
-
-### 2.2 Vì Sao `hackathon/` (ThreatLens AI) Gây Ấn Tượng Mạnh?
-* **Bản chất kỹ thuật thực sự:** ThreatLens dùng mô hình Machine Learning khá đơn giản (Two-stage Logistic Regression) kết hợp với các luật YAML và MongoDB Atlas. Phần kỹ thuật toán học không quá phức tạp.
-* **Nhưng nó thắng ở đâu?** Nó thắng ở **Surface-First & Narrative-Driven**:
-  - Giao diện có tính hành động cực kỳ cao (Command Center, IP Blast Radius, Threat Investigator, Remediation Workflow).
-  - Nó biến một capability (phân tích log web) thành một **trải nghiệm hoàn chỉnh**:
-    $$\text{Ingest Logs} \longrightarrow \text{Correlation} \longrightarrow \text{Investigation} \longrightarrow \text{Evidence} \longrightarrow \text{Action}$$
-  - Khi xem demo 3 phút, Giám khảo liên tục có việc để làm: *Có alert $\rightarrow$ click $\rightarrow$ thấy bằng chứng $\rightarrow$ hiểu chuyện gì xảy ra $\rightarrow$ ấn nút xử lý*.
-
----
-
-### 2.3 Điểm Mù Ban Đầu Của `iot-hackathon/` (CompressorGuard)
-* **Sức nặng kỹ thuật vượt trội:** CompressorGuard sở hữu nền tảng toán học, vật lý nhiệt động lực, bộ lọc dữ liệu thực MetroPT-3 (1.5 triệu dòng) và phân loại regime rất sâu sắc.
-* **Nhược điểm cốt tử ban đầu:** Mắc phải hội chứng **"Engine is smart, trust me"**:
-  - Hệ thống chỉ có script dòng lệnh hoặc test suite chạy ngầm.
-  - Ban giám khảo không thể "cảm nhận" được sự nguy cấp của chiếc máy nén khí chỉ qua các dòng log terminal.
-  - Nguy cơ bị đánh đồng với một bài tập thống kê dữ liệu thời gian (Time-series benchmark) thay vì một hệ thống vận hành thực chiến.
-
----
-
-### 2.4 Định Luật Cốt Lõi Về Phân Tầng Sản Phẩm
-Một sai lầm phổ biến của kỹ sư khi thấy dự án chưa đủ thuyết phục là **viết thêm feature** (thêm chatbot, thêm mô hình deep learning, thêm dashboard). Đây là con đường dẫn đến thất bại. Hãy nhớ phân tầng:
-
-```
-[ Engineering ]  -->  [ Capability ]  -->  [ Product ]  -->  [ Demo Experience ]
-(Thuật toán,         (Phát hiện rò rỉ,     (Console giải quyết    (Kịch bản 90s
- toán học, DB)        tính delta áp suất)   vấn đề của Metro OP)   khiến judge thán phục)
-```
-
-> [!TIP]
-> **Định luật hackathon:**
-> $$\text{Feature} \neq \text{Capability} \neq \text{Product} \neq \text{Demo} \neq \text{Engineering}$$
-> CompressorGuard đã thừa **Engineering** và **Capability**. Điều duy nhất còn thiếu là đóng gói nó thành một **Product** với một **Demo Experience** không thể bị đánh bại.
-
----
-
-### 2.5 Năm Cổng Đánh Giá Của Ban Giám Khảo (5 Evaluation Gates)
-Khi giám khảo chấm điểm một dự án hackathon, họ vô thức đi qua 5 cổng theo thứ tự ưu tiên:
+Thay vì thiết kế theo một kịch bản trình diễn tuyến tính cứng nhắc, CompressorGuard được tổ chức xoay quanh **4 luồng công việc thực tế (Jobs-to-be-Done)** của Trung tâm Điều độ & Bảo trì Đường sắt:
 
 ```mermaid
 flowchart LR
-    G1["G1: Business Consequence<br/>(Hiểu trong 20s?)"] --> G2["G2: Detection Proof<br/>(Sớm hơn bao lâu?)"]
-    G2 --> G3["G3: Investigation Why<br/>(Bằng chứng vật lý?)"]
-    G3 --> G4["G4: Safe Response<br/>(Can thiệp thật không?)"]
-    G4 --> G5["G5: Technology Fit<br/>(MongoDB + Datadog?)"]
+    W1["1. Giám Sát & Lọc Nhiễu<br/>(Automated Noise Suppression)"] --> W2["2. Chẩn Đoán & Đối Sánh Mẫu Lỗi<br/>(Evidence & Fingerprint Match)"]
+    W2 --> W3["3. Điều Độ An Toàn & Lập Lệnh<br/>(ActionGuard & Work Order)"]
+    W3 --> W4["4. Nghiệm Thu Sau Bảo Trì<br/>(5/5 Loaded Commissioning)"]
 ```
 
-1. **Gate 1 — Business Consequence (20 giây đầu):** Giám khảo phải hiểu ngay: APU hỏng $\rightarrow$ mất phanh/cửa $\rightarrow$ đoàn tàu chết đứng trong hầm $\rightarrow$ đình trệ toàn bộ mạng lưới metro.
-2. **Gate 2 — Detection Proof:** Không phải claim suông: Hệ thống chỉ ra rò rỉ trước hệ thống cũ **33 giờ 52 phút**.
-3. **Gate 3 — Investigation Why:** Trả lời dứt khoát câu hỏi "Tại sao?": Dẫn chứng áp suất xả tăng vọt và nhiệt độ dầu bốc cao vượt baseline.
-4. **Gate 4 — Safe Response & Verified Recovery:** Kích hoạt Safe Mode và chứng minh hệ thống đã hồi phục bằng dữ liệu thực.
-5. **Gate 5 — Technology Fit:** Chứng minh MongoDB (Time Series, Aggregations) và Datadog (Metrics, Traces) là giải pháp tối ưu cho bài toán này, không phải gắn vào để đối phó đề bài.
+### Luồng 1: Giám Sát Luồng Telemetry & Chống Quá Tải Cảnh Báo (Alert Fatigue Protection)
+* Cảm biến công nghiệp ngoài đời thực thường xuyên có các xung nhiễu thoáng qua (ví dụ lúc chuyển van tháp sấy tại `2020-06-04 00:33:07`, áp suất vọt lên `6.046 bar` trong 1 mẫu rồi biến mất).
+* Nếu mở hồ sơ sự cố cho mọi xung áp suất đơn lẻ, điều độ viên sẽ bị ngập trong cảnh báo giả (Alert Fatigue).
+* **Cơ chế của CompressorGuard:**
+  - `TemporalStepDetector` kiểm tra tính bền vững qua $\ge 3$ quan sát liên tiếp trong chế độ `LOADED` (có tính đến khoảng hở thời gian $\Delta t$).
+  - Các xung đơn lẻ không đủ độ bền vững sẽ bị chặn lại, ghi vào collection `anomaly_signals` với trạng thái `SUPPRESSED_TRANSIENT`, đồng thời tăng bộ đếm `compressorguard.signals.suppressed_total` trên Datadog.
+  - Operator nhìn vào bảng thống kê `alert_fatigue_protection` (`GET /api/telemetry/analytics`) để biết hệ thống đã tự động lọc bỏ bao nhiêu nhiễu cảm biến.
+
+### Luồng 2: Điều Tra Bằng Chứng Đa Tầng & Chẩn Đoán Mẫu Lỗi (Evidence Provenance & Fingerprint Matching)
+Khi suy thoái vật lý thực sự diễn ra (ví dụ lúc `2020-06-05 09:50:39` và được kiểm chứng đa biến lúc `10:15:00`), hệ thống mở hồ sơ sự cố (`OperationalCase`) và cung cấp cho Operator:
+1. **4 Thẻ Bằng Chứng Có Xuất Xứ (`GET /api/evidence`):**
+   - `PressureAnomalyDetector`: Áp suất van xả `2.1856 bar` vs baseline `-0.0164 bar` (`+23.75σ` trong chế độ `LOADED`).
+   - `ThermalStressDetector`: Nhiệt độ dầu `74.97°C` vs baseline `54.98°C` (`+5.71σ`).
+   - `TemporalStepDetector`: Xác nhận bền vững `3/3` chu kỳ `LOADED` liên tiếp.
+   - `IsolationForestDetector`: Kiểm chứng đa biến độc lập trên 5 đặc trưng (`score = 0.382 > 0.35`).
+2. **Chẩn Đoán Tương Đồng Từ Lịch Sử (`GET /api/telemetry/analytics` -> `top_diagnosis`):**
+   - MongoDB truy vấn collection `failure_fingerprints`, tính độ tương đồng Cosine giữa vector trạng thái hiện tại và các mẫu lỗi lịch sử, chỉ ra khớp `> 95%` với mẫu **`FP-METROPT3-FAIL-03` (Rò rỉ van xả tháp sấy khí)** và đề xuất ngay quy trình **`SOP-APU-AIR-LEAK-03`**.
+
+### Luồng 3: Tiếp Nhận Hồ Sơ, Kiểm Tra An Toàn Phanh & Phát Hành Work Order
+Operator thực hiện quy trình điều độ chuẩn công nghiệp:
+1. **Acknowledge & Triage (`POST /api/case/acknowledge`):** Xác nhận tiếp nhận hồ sơ sự cố với mức ưu tiên `P1-CRITICAL`.
+2. **Ghi chú bàn giao ca (`POST /api/case/notes`):** Lưu thông tin phối hợp với đội kỹ thuật mặt đất vào sổ cái `case_events`.
+3. **Kiểm tra an toàn phanh khí nén (`GET /api/action/guard-status`):** Kiểm tra trực tiếp 5 chốt chặn của `ActionGuard`, đặc biệt là chốt số 4 (`BRAKE_RESERVOIR_PRESSURE_SAFE`): xác nhận áp suất bình chứa chính `TP3 = 8.74 bar >= 7.0 bar` và `LPS == 0`, đảm bảo đoàn tàu vẫn đủ áp lực phanh an toàn để hoàn thành lượt chạy về ga cuối.
+4. **Phát hành Lệnh Điều Độ Bảo Trì (`POST /api/case/work-order`):** Tạo lệnh `WorkOrder` chỉ định xưởng `PMO-DEPOT-LISBON-01` thay thế gioăng van xả trong khung giờ nghỉ đêm (`NIGHT_SHIFT_WINDOW`).
+
+### Luồng 4: Nghiệm Thu Kỹ Thuật Sau Sửa Chữa & Giải Phóng Tàu (`Commissioning & Case Closure`)
+* Khi đoàn tàu đã được bảo dưỡng tại xưởng và bước vào giai đoạn chạy thử nghiệm thu (`POST /api/action/safe-mode` chuyển sang phân đoạn sau bảo trì `2020-06-08 16:05:00`):
+* Hệ thống chuyển sang trạng thái `MITIGATING` $\rightarrow$ `VERIFYING_RECOVERY`.
+* `RecoveryVerifier` kiểm tra nghiêm ngặt từng mẫu đo trong chế độ `LOADED`:
+  - Áp suất xả `DV_pressure < 0.05 bar`
+  - Nhiệt độ dầu `Oil_temp < 67.0°C`
+  - Nếu bất kỳ mẫu nào vi phạm ở bước `4/5`, bộ đếm lập tức **reset về `0/5`**.
+* Khi đạt đủ **5/5 quan sát `LOADED` lành mạnh liên tiếp**, trạng thái chuyển sang `RESOLVED`, mở khóa cho phép Operator gọi `POST /api/case/close` để ký biên bản nghiệm thu và đưa tài sản về trạng thái `HEALTHY`.
 
 ---
 
-## PHẦN 3: PHYSICAL DOMAIN & GROUND TRUTH DATASET (METROPT-3)
+## PHẦN 5: KIẾN TRÚC MIỀN BACKEND, MÁY TRẠNG THÁI & HỢP ĐỒNG REST API
 
-### 3.1 Hồ Sơ Tập Dữ Liệu UCI MetroPT-3
-* **Nguồn dữ liệu:** Kho lưu trữ UCI Machine Learning Repository & Nature Scientific Data (2022).
-  - Dataset: *MetroPT-3 (Air Compressor)*.
-  - Thực tế thu thập: Hệ thống cung cấp khí nén (Air Production Unit - APU) trên đoàn tàu điện ngầm Metro de Lisboa (Bồ Đào Nha).
-* **Quy mô dữ liệu:**
-  - Tổng số bản ghi: **1,516,948 dòng dữ liệu cảm biến**.
-  - Tần số lấy mẫu gốc: **1 Hz** (1 giây/mẫu).
-  - Chu kỳ truyền từ xa ban đầu: Batch 5 phút qua sóng di động GSM lên máy chủ trung tâm.
-  - Kích thước: ~208 MB tệp CSV nguyên bản (`dataset/MetroPT3(AirCompressor).csv`).
-* **Đặc tính Ground Truth:**
-  - Không có nhãn bất thường cho từng dòng đơn lẻ (không có point-level synthetic labels).
-  - Có **Event-level Ground Truth** thông qua nhật ký bảo dưỡng thực tế của đơn vị vận hành tàu đô thị (Maintenance Reports).
-
----
-
-### 3.2 Hệ Thống Cảm Biến Của Air Production Unit (APU)
-Hệ thống APU bao gồm máy nén piston, tháp làm khô không khí (Air Dryer), bình lắng dầu và các van xả. Toàn bộ 15 trường dữ liệu được phân chia thành 4 nhóm nghiệp vụ:
-
-| Tên Cột Trong Dataset | Nhóm Thiết Bị | Đơn Vị | Ý Nghĩa Vật Lý & Vai Trò Trong Giám Sát |
-|---|---|---|---|
-| `timestamp` | Thời gian | YYYY-MM-DD HH:MM:SS | Dấu thời gian đo đạc thực tế của cảm biến |
-| `TP2` | Áp suất | bar | Áp suất tại bình trung gian (Intermediate Pressure) |
-| `TP3` | Áp suất | bar | Áp suất đầu ra của máy nén khí (Compressor Discharge Pressure) |
-| `H1` | Áp suất | bar | Áp suất bình chứa chính (Main Reservoir Pressure) |
-| `DV_pressure` | Áp suất xả | bar | **CẢM BIẾN CHỦ ĐẠO:** Áp suất van xả của tháp làm khô khí (Discharge Valve Pressure). Ở trạng thái bình thường mang tải, van đóng kín nên áp suất gần như bằng 0 (thực tế -0.016 bar). Khi van hở rò rỉ, áp suất xả tăng vọt lên > 2 bar. |
-| `Reservoirs` | Áp suất | bar | Áp suất tổng tại các bình trữ khí phụ |
-| `Oil_temp` | Nhiệt độ | °C | **CẢM BIẾN BẰNG CHỨNG:** Nhiệt độ dầu bôi trơn máy nén. Khi máy nén làm việc quá tải do rò rỉ khí, nhiệt độ dầu trôi dạt mạnh từ 54°C lên gần 75°C. |
-| `Motor_current` | Dòng điện | A | Cường độ dòng điện cấp cho mô-tơ máy nén. Dùng để xác định chế độ có tải (`> 0.5A`) hay không tải. |
-| `COMP` | Tín hiệu số | 0 / 1 | Trạng thái rơ-le điều khiển máy nén (Compressor Control Signal) |
-| `DV_electric` | Tín hiệu số | 0 / 1 | Tín hiệu điện kích hoạt van xả điện từ (Discharge Valve Solenoid) |
-| `TOWERS` | Tín hiệu số | 0 / 1 | Trạng thái van chuyển đổi tháp làm khô (Tháp 1 / Tháp 2) |
-| `MPG` | Tín hiệu số | 0 / 1 | Tín hiệu van điều áp chính (Main Pressure Governor) |
-| `LPS` | Còi cơ học | 0 / 1 | **LOW PRESSURE SWITCH:** Cảm biến rơ-le áp suất thấp cơ học. Bật lên 1 khi áp suất bình chính sập dưới ngưỡng an toàn tối thiểu (7.0 bar). Đây là ngưỡng cảnh báo truyền thống cũ. |
-| `Pressure_switch`| Tín hiệu số | 0 / 1 | Công tắc áp suất khí nén |
-| `Oil_level` | Mức dầu | 0 / 1 | Cảm biến phao báo mức dầu bôi trơn thấp |
-| `Caudal_impulses`| Lưu lượng | xung/s | Tín hiệu xung đo lưu lượng khí qua ống dẫn |
-
----
-
-### 3.3 Tầm Quan Trọng Tuyệt Đối Của Chế Độ Vận Hành (Operating Regimes)
-Một sai lầm cơ bản trong phân tích chuỗi thời gian công nghiệp là **tính toán baseline gộp chung mọi chế độ**. 
-Máy nén khí có chu kỳ đóng ngắt liên tục giữa 3 chế độ:
-
-1. **`LOADED` (Mang tải nạp khí):** Mô-tơ quay mạnh (`Motor_current > 0.5A`), van xả đóng, khí nén được bơm vào bình trữ `H1`. Áp suất `TP3` tăng lên ~9.0 bar.
-2. **`UNLOADED` (Chạy không tải):** Mô-tơ ngắt hoặc chạy không tải xả khí, áp suất giảm.
-3. **`STANDBY` / `OFF` (Nghỉ hoàn toàn):** Không có dòng điện tiêu thụ.
-
-> [!CAUTION]
-> **Quy tắc phân vùng (Regime Separation Invariant):**
-> Các ngưỡng vật lý và mô hình ML (Isolation Forest) **bắt buộc phải được đánh giá riêng biệt trong chế độ `LOADED`**. Nếu trộn lẫn dữ liệu `UNLOADED` hoặc `STANDBY`, phương sai sẽ bị bóp méo, gây ra hàng loạt cảnh báo giả (False Positives).
-
----
-
-### 3.4 Cơ Chế Suy Thoái Vật Lý Của Sự Cố Vàng (Thermodynamic Failure Breakdown)
-Vào đầu tháng 6/2020, một sự cố nghiêm trọng diễn ra trên đoàn tàu số hiệu APU-01 theo chuỗi phản ứng dây chuyền:
-
-```
-[Van Xả Hở Rò Rỉ] ──► [Áp Suất Xả DV_pressure Nhảy Vọt (+23.75σ)]
-         │
-         ▼
-[Máy Nén Phải Bơm Bù Liên Tục] ──► [Nhiệt Độ Dầu Oil_temp Bốc Cao (+5.71σ)]
-         │
-         ▼
-[Sau 33h 52m Chịu Đựng] ──► [Bình Trữ Khí Sập Áp, Rơ-le Cơ Học LPS=1 Bật Còi Báo Động]
-```
-
-1. **Giai đoạn bình thường (Normal Baseline):**
-   - Áp suất xả `DV_pressure` ở mức: **$-0.016 \pm 0.09\text{ bar}$**.
-   - Nhiệt độ dầu `Oil_temp` ở mức: **$54.98 \pm 3.5^\circ\text{C}$**.
-2. **Thời điểm khởi phát suy thoái (Onset Milestone): `2020-06-05 09:50:39`**
-   - Van xả của tháp làm khô khí bị hở (Mechanical pilot valve degradation).
-   - Áp suất tại cảm biến `DV_pressure` đột ngột nhảy vọt lên **$2.1856\text{ bar}$** (tương đương độ lệch khổng lồ **$+23.75\sigma$**).
-   - Nhiệt độ dầu máy nén `Oil_temp` bắt đầu leo dốc và đạt **$74.97^\circ\text{C}$** (**$+5.71\sigma$**).
-   - Mô hình Multivariate Isolation Forest ghi nhận anomaly score vọt lên **$0.382$** (vượt ngưỡng kiểm chứng $0.35$).
-3. **Thời điểm còi báo động cũ phát tác (Conventional Alert): `2020-06-06 19:42:19`**
-   - Sau gần 34 giờ máy nén gồng gánh trong tình trạng rò rỉ, lưu lượng nạp không còn bù đắp được lượng thoát khí.
-   - Áp suất bình chính sập, rơ-le cơ học nhảy: **`LPS = 1`**.
-   - Còi báo động trong buồng lái hú vang, tàu bị cưỡng chế kéo về Depot.
-4. **Khoảng thời gian dẫn trước (Early Lead Time):**
-   $$T_{\text{lead}} = T_{\text{LPS (19:42:19)}} - T_{\text{Onset (09:50:39)}} = 2032\text{ phút} = \mathbf{33\text{ giờ } 52\text{ phút}}.$$
-
----
-
-### 3.5 Dữ Liệu Phục Hồi Sau Bảo Trì (Post-Maintenance Recovery Ground Truth)
-Sau khi đoàn tàu được đưa vào xưởng kỹ thuật sửa chữa thay thế van xả bị rò rỉ:
-* **Thời điểm bắt đầu chuỗi dữ liệu sau bảo trì:** **`2020-06-08 16:05:00`**.
-* **Trạng thái vật lý được xác lập lại:**
-  - `DV_pressure` giảm về mức an toàn: **$-0.016\text{ bar}$** ($< 0.05\text{ bar}$).
-  - `Oil_temp` hạ nhiệt dần về mức an toàn: **$64.1^\circ\text{C}$** ($< 67.0^\circ\text{C}$).
-* **Cơ chế rẽ nhánh Replay Reversible Safe Mode:**
-  Khi chuyên viên vận hành nhấn `[ACTIVATE SAFE MODE]`, con trỏ phát dữ liệu của `ReplayEngine` sẽ rẽ nhánh (stream branching) sang phân đoạn `2020-06-08 16:05:00` để bắt đầu quá trình kiểm chứng phục hồi từ cảm biến thực tế.
-
----
-
-## PHẦN 4: PRODUCT THESIS & OPERATIONAL EXPERIENCE SPEC
-
-### 4.1 Triết Lý Thiết Kế Trải Nghiệm (Spec The Experience, Not The Interface)
-Một sai lầm rất lớn trong phát triển phần mềm hackathon là vội vàng code giao diện HTML/Tailwind/CSS trước khi chốt luồng nhận thức (Cognitive Flow). 
-Khi bạn nhảy vào code UI quá sớm, bạn sẽ tự thuyết phục bản thân rằng những nút bấm và bảng màu ngẫu nhiên là hợp lý, trong khi người dùng hoặc giám khảo nhìn vào lại thấy lộn xộn và không hiểu chuyện gì đang xảy ra.
-
-> [!IMPORTANT]
-> **Nguyên tắc vàng:**
-> *"Đặc tả trải nghiệm nhận thức, không đặc tả giao diện cơ học."*
-> Giám khảo không cần biết nút bấm nằm bên trái hay bên phải, bo góc bao nhiêu pixel. Giám khảo cần biết: **Họ phải trải qua những trạng thái tâm lý nào, theo thứ tự nào, và hệ thống chứng minh điều gì ở mỗi giây?**
-
----
-
-### 4.2 Tiến Trình Nhận Thức Trong 90 Giây (The 5 Judge Questions)
-Trong vòng 90 giây trình diễn live demo, màn hình console phải trả lời chính xác 5 câu hỏi xuất hiện trong tâm trí giám khảo mà không cần thuyết trình viên phải giải thích dài dòng:
-
-```
-[00:00 - 00:15]  1. TÔI LÀ AI & PHẠM VI NÀO? (WHO & WHERE?)
-                 └──► Fleet Operations Specialist, giám sát Metro Fleet -> Train #302 -> APU-COMP-01.
-
-[00:15 - 00:35]  2. ĐIỀU GÌ XẢY RA & DẪN TRƯỚC BAO LÂU? (WHAT & HOW EARLY?)
-                 └──► Confirmed degradation detected lúc 09:50:39 UTC. 
-                      Confirmed Intervention Window 33h 52m trước còi cơ học LPS!
-
-[00:35 - 00:55]  3. VÌ SAO PHẢI TIN? (WHY TRUST?)
-                 └──► 4 Bằng chứng có nguồn gốc rõ ràng (Pressure +23.75σ, Thermal +5.71σ, 
-                      Persistence 3 chu kỳ) + ML Isolation Forest độc lập xác nhận (0.382 > 0.35).
-
-[00:55 - 00:75]  4. TÔI CÓ THỂ LÀM GÌ? (WHAT CAN I DO?)
-                 └──► ActionGuard kiểm tra 5 điều kiện an toàn -> Kích hoạt Safe Mode mô phỏng 
-                      (Simulated Intervention) rẽ nhánh luồng dữ liệu sau bảo trì.
-
-[00:75 - 00:90]  5. NÓ CÓ HIỆU QUẢ THẬT KHÔNG? (DID IT WORK?)
-                 └──► Dữ liệu cảm biến thực đạt 5/5 observations có tải lành mạnh -> 
-                      Recovery criteria verified -> Operator ký đóng Case & giải phóng Asset!
-```
-
----
-
-### 4.3 Cây Phân Cấp Hạm Đội & Operations Landing Page (Fleet as Spine)
-Screen 01 được **giữ lại và nâng cấp** thành **Operations Landing Page**. Đây là nơi cung cấp góc nhìn hạm đội hoàn chỉnh, giúp chuyển đổi câu chuyện từ một cảnh báo sensor lẻ loi thành một bài toán vận hành tuyến đường sắt:
-
-```text
-OPERATIONS
-│
-├── FLEET (Hạm Đội Metro de Lisboa - Linha Azul)
-│    │
-│    └── TRAIN-302 (Đoàn tàu chở khách đang vận hành)
-│         │
-│         └── APU (Hệ thống cung cấp khí nén Air Production Unit)
-│              │
-│              └── APU-COMP-01 (Máy nén khí chính)
-│                   🔴 CRITICAL
-│                   CASE-20200605-01
-│                   33h 52m Confirmed Intervention Window
-│
-└── ACTIVE CASES (Hồ sơ sự cố đang hoạt động)
-     └── CASE-20200605-01 (Áp suất xả nhảy vọt, nhiệt độ dầu trôi dạt)
-```
-
-#### Loại bỏ KPI giả mạo: Thay thế "Fleet Health 98%" bằng Chỉ số Vận hành Trung thực
-Bỏ hoàn toàn con số vô căn cứ `Fleet Health: 98%` hay `74%`. Thay bằng **Counters Vận hành Đích thực**:
-* **Khi bình thường / đang quan sát nhiễu (00:33:07):**
-  `1 MONITORED ASSET | 0 ACTIVE CASES | 1 ASSET OBSERVING | REPLAY: FAILURE #3`
-* **Khi sự cố được xác nhận (09:50:39):**
-  `1 MONITORED ASSET | 1 ACTIVE CASE | 1 TRAIN AT RISK | 33h 52m CONFIRMED INTERVENTION WINDOW`
-
----
-
-### 4.4 Kiến Trúc Mô Phỏng Hai Đồng Hồ (Dual-Clock Live Simulation)
-Hệ thống giải quyết mâu thuẫn giữa "Trải nghiệm trực tiếp sinh động" và "Tính trung thực dữ liệu lịch sử" bằng mô hình **Hai Đồng Hồ Độc Lập**:
-
-```
-                 MetroPT-3 Historical Data
-                           │
-                           ▼
-                    ScenarioStream
-                           │
-                ┌──────────┴──────────┐
-                │                     │
-           EVENT TIME            SIMULATION TIME
-      2020-06-05 09:50:39 UTC    Wall-clock pacing (1x / 10x / 60x)
-                │                     │
-                └──────────┬──────────┘
-                           ▼
-                    CompressorGuard
-                           │
-              Detection / Evidence / Decision
-                           │
-                           ▼
-             UI Console & Datadog APM
-```
-
-1. **`event_time` (Dấu thời gian sự kiện):**
-   - Giữ nguyên $100\%$ timestamp đo đạc gốc trong tập dữ liệu viễn thám MetroPT-3 (`2020-06-05 09:50:39 UTC`).
-   - Sử dụng cho: Suy luận chuỗi thời gian, phát hiện khoảng hở (Gap Detection), tính toán Intervention Window ($33\text{h } 52\text{m}$), và đếm kiểm chứng phục hồi.
-   - **Tuyệt đối không bao giờ ghi đè `event_time` bằng `datetime.now()`!**
-2. **`simulation_time` (Thời gian mô phỏng):**
-   - Dùng để điều độ tốc độ truyền phát dòng dữ liệu (Pacing: 1x, 10x, 60x, Pause, Reset).
-   - Tốc độ phát sử dụng **$\Delta\text{event\_time}$ thực tế**: Nếu khoảng cách giữa 2 mẫu là $10\text{s}$, ở tốc độ $60\text{x}$ sẽ chờ $0.167\text{s}$; nếu có khoảng hở dữ liệu $90\text{s}$, hệ thống sẽ chờ $1.5\text{s}$. Điều này bảo toàn trọn vẹn ngữ nghĩa thời gian của bộ lọc temporal.
-3. **Nhãn giao diện trung thực:**
-   Thay vì ghi nhãn `[🔴 LIVE]` gây ngộ nhận là luồng IoT thời gian thực, giao diện hiển thị rõ ràng:
-   `[ LIVE SIMULATION · HISTORICAL DATA ] Scenario: Failure #3`.
-
----
-
-### 4.5 Bốn Tầng Phân Cấp Thông Tin & Ngăn Kéo Tham Chiếu (Validation Reference)
-
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│ TIER 1: PERIPHERAL AWARENESS (Nhận biết tức thì trong 3 giây)          │
-│ • Phạm vi hạm đội: Metro Fleet -> Train #302 -> APU-COMP-01            │
-│ • Trạng thái: CRITICAL DEGRADATION DETECTED                            │
-│ • Chỉ số anh hùng: 33H 52M CONFIRMED INTERVENTION WINDOW               │
-│ • Nút hành động: [ ACTIVATE SAFE MODE (SIMULATED INTERVENTION) ]       │
-├────────────────────────────────────────────────────────────────────────┤
-│ TIER 2: FACTUAL DECISION BASIS (Cơ sở ra quyết định trong 10 giây)     │
-│ • 4 Thẻ Bằng Chứng Kèm Nguồn Gốc (Provenance):                         │
-│     1. Áp suất xả: 2.18 bar (+23.75σ) [Source: PressureAnomalyDetector]│
-│     2. Nhiệt độ dầu: 74.97 °C (+5.71σ) [Source: ThermalDriftDetector]  │
-│     3. Độ trễ thời gian: Step Diff > 0.5 bar [Bền vững 3 chu kỳ LOADED]│
-│     4. Isolation Forest: 0.382 (> 0.35) [Role: Independent Corroboration]
-│ • Cột mốc đối chứng phản ứng thụ động: Conventional LPS Alert sau 33h 52m
-│ • Tiến trình phục hồi: 0/5 ──► 5/5 Observations lành mạnh trong LOADED │
-├────────────────────────────────────────────────────────────────────────┤
-│ TIER 3: VALIDATION REFERENCE DRAWER (Ngăn kéo đối chứng lịch sử)       │
-│ • Ground Truth Báo Cáo Bảo Dưỡng: Failure #3 — Air Leak / High stress  │
-│ • Thời điểm bảo dưỡng thực tế: 2020-06-08 (Thay thế van xả tháp sấy)   │
-│ • Nguyên tắc: Ground Truth chỉ dùng để đối chứng, KHÔNG leak vào detector!
-├────────────────────────────────────────────────────────────────────────┤
-│ TIER 4: BACKGROUND SUBSTANCE (Tầng ngầm: Telemetry & Observability)    │
-│ • 1.5 triệu bản ghi CSV MetroPT-3 nguyên bản                           │
-│ • Distributed Traces và metrics đẩy lên Datadog APM                    │
-└────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### 4.6 Thiết Kế Bố Cục Operations Command Console (Wireframe)
-
-```text
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│ COMPRESSORGUARD // OPERATIONS COMMAND CONSOLE       [ LIVE SIMULATION · HISTORICAL ]  │
-│ Scenario: Failure #3 (MetroPT-3)                     Event Time: 2020-06-05 09:50:39   │
-├────────────────────────────────────────────────────────────────────────────────────────┤
-│ [1 MONITORED ASSET]     [1 ACTIVE CASE]     [1 TRAIN AT RISK]     [33H 52M LEAD WINDOW]│
-├────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                        │
-│  OPERATIONAL CONTEXT: TRAIN-302 // APU // APU-COMP-01                     Regime: LOADED│
-│  ────────────────────────────────────────────────────────────────────────────────────  │
-│  🔴 CONFIRMED DEGRADATION DETECTED                  ⏱️ 33H 52M INTERVENTION WINDOW     │
-│     Detection: 2020-06-05 09:50:39 UTC              Conventional LPS: 2020-06-06 19:42 │
-│                                                                                        │
-├────────────────────────────────────────────────────────────────────────────────────────┤
-│  WHY WE BELIEVE IT (OPERATIONAL EVIDENCE PACK WITH PROVENANCE)                         │
-│                                                                                        │
-│  ┌───────────────────────┐  ┌───────────────────────┐  ┌────────────────────────────┐  │
-│  │ DISCHARGE PRESSURE    │  │ OIL TEMPERATURE       │  │ MULTIVARIATE CORROBORATION │  │
-│  │ 2.18 bar (+23.75σ)    │  │ 74.97 °C (+5.71σ)     │  │ Isolation Forest: 0.382    │  │
-│  │ [███████████████████] │  │ [████████████░░░░░]   │  │ Threshold: 0.350 (LOADED)  │  │
-│  │ Source: PressureDet   │  │ Source: ThermalDet    │  │ 5 Telemetry Features       │  │
-│  │ Method: Loaded Base   │  │ Method: Thermal Drift │  │ Role: Corroboration Only   │  │
-│  └───────────────────────┘  └───────────────────────┘  └────────────────────────────┘  │
-│                                                                                        │
-├────────────────────────────────────────────────────────────────────────────────────────┤
-│  ACTION GUARD & SIMULATED INTERVENTION                                                 │
-│                                                                                        │
-│  ActionGuard: [✓] Case Confirmed  [✓] Mitigation Recommended  [✓] No Conflicting Case │
-│  Policy Check: Simulation Mode Active | Post-Maintenance Replay Branch Available       │
-│                                                                                        │
-│  [⚡ ACTIVATE SAFE MODE (SIMULATED INTERVENTION)]          Current State: MITIGATING    │
-│                                                           Recovery: [✓][✓][✓][✓][✓]     │
-│                                                                                        │
-└────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## PHẦN 5: BACKEND DOMAIN ARCHITECTURE & ROADMAP
-
-### 5.1 Kiến Trúc Miền Đích (Target Operational Architecture)
-Hệ thống chuyển đổi từ luồng xử lý đơn tuyến sang kiến trúc phân cấp chuẩn công nghiệp:
-
-```text
-                          ASSET REGISTRY
-                               │
-                        Fleet ──► Train
-                               │
-                              APU
-                               │
-                           Compressor
-                               │
-                               ▼
-                        SCENARIO STREAM
-                               │
-                      historical event_time
-                               │
-                               ▼
-                        LIVE SIMULATOR
-                        (1x / 10x / 60x)
-                               │
-                               ▼
-                           TELEMETRY
-                               │
-                       OPERATING CONTEXT
-                       (LOADED / UNLOADED)
-                               │
-                   ┌───────────┼───────────┐
-                   ▼           ▼           ▼
-                Pressure    Thermal     Temporal
-                   └───────────┼───────────┘
-                               ▼
-                        EVIDENCE FUSION
-                               │
-                         ML CORROBORATION
-                      (IF on 5 LOADED features)
-                               │
-                               ▼
-                         DECISION ENGINE
-                               │
-                               ▼
-                          CASE CREATED
-                               │
-                      ┌────────┴────────┐
-                      ▼                 ▼
-                    ACTION           TIMELINE
-                 (ActionGuard)     (CaseEvent Ledger)
-                      │
-                 SIMULATION BRANCH
-             (Post-maintenance stream)
-                      │
-                      ▼
-                   RECOVERY
-                      │
-                      ▼
-                 VERIFICATION
-            (5/5 healthy LOADED obs)
-                      │
-                      ▼
-                 CASE CLOSED
-               (Asset Released)
-                      │
-                      ▼
-              OPERATIONAL IMPACT
-```
-
----
-
-### 5.2 Tám Bất Biến Bắt Buộc Của Hệ Thống (8 Mandatory Invariants)
-Bất kỳ ai chỉnh sửa mã nguồn backend đều **không được phép phá vỡ** 8 nguyên tắc sau:
-
-1. **Zero UI / HTML / CSS Code Trong Backend:** 100% mã nguồn trong `src/` là pure Python logic và REST API trả về JSON typed DTOs.
-2. **Zero Fake Telemetry:** 100% dữ liệu cảm biến lấy từ `dataset/MetroPT3(AirCompressor).csv`. Không viết công thức giả lập hạ nhiệt nhân tạo.
-3. **Phân Định 3 Lớp Dữ Liệu:** Business Context $\neq$ Observed Telemetry $\neq$ Validation Ground Truth.
-4. **Quy Tắc Quyết Định & Vai Trò ML:** 
-   $$\text{Pressure} + \text{Thermal} + \text{Temporal} \longrightarrow \text{Confirmed Degradation} \longrightarrow \text{Tạo Case}$$
-   Mô hình ML (Isolation Forest trên 5 features) đóng vai trò **kiểm chứng độc lập (Independent Corroboration)** làm tăng độ tin cậy quyết định; ML **không tự ý tạo Case khi thiếu bằng chứng vật lý**.
-5. **Hàng Rào ActionGuard:** Safe Mode chỉ được kích hoạt khi Case được xác nhận, hệ thống khuyến nghị can thiệp, không có case xung đột, và đang ở chế độ mô phỏng an toàn.
-6. **Kiểm Chứng Phục Hồi Khách Quan:** Đạt đủ 5 quan sát có tải liên tiếp ($\text{DV} < 0.05\text{ bar}$, $\text{Oil} < 67^\circ\text{C}$). Nếu vi phạm ở mẫu thứ 4/5, bộ đếm lập tức **reset về 0**!
-7. **Biên Niên Sử CaseEvent Bất Biến:** Mọi sự kiện từ lúc phát hiện, kiểm chứng ML, quyết định, can thiệp, còi cũ, cho đến hồi phục đều được ghi vào sổ cái append-only `CaseEvent`.
-8. **Tính Tất Định 100% (Deterministic Simulation):** Chạy 2 lượt mô phỏng độc lập từ đầu đến cuối cam kết kết quả trùng khớp $100\%$ không sai lệch.
----
-
-### 5.3 Chi Tiết Vòng Đời Hồ Sơ Sự Cố & Hàng Rào ActionGuard
+### 5.1 Máy Trạng Thái Vòng Đời Hồ Sơ Sự Cố (`IncidentLifecycleState`)
 
 ```mermaid
 stateDiagram-v2
-    [*] --> NONE: ScenarioStream Khởi Động
-    NONE --> OBSERVING: 00:33:07 (Xung áp suất 0.52 bar — Không mở Case)
-    OBSERVING --> DETECTED: 09:50:39 (DV_pressure > 2.0 bar bền vững 3 chu kỳ)
-    DETECTED --> INVESTIGATING: 10:15:00 (Nhiệt độ dầu leo thang + ML IF Corroboration > 0.35)
-    INVESTIGATING --> MITIGATING: POST /api/action/safe-mode (Vượt qua ActionGuard)
-    MITIGATING --> VERIFYING_RECOVERY: Tick đầu tiên của phân đoạn sau bảo trì (08/06 16:05+)
-    VERIFYING_RECOVERY --> VERIFYING_RECOVERY: Đang đếm observations lành mạnh (Reset về 0 nếu vi phạm)
-    VERIFYING_RECOVERY --> RESOLVED: Đủ 5/5 Observations lành mạnh liên tiếp trong LOADED
-    RESOLVED --> CLOSED: POST /api/case/close (Operator nghiệm thu & giải phóng Asset)
-    CLOSED --> [*]
+    [*] --> NONE: Khởi động luồng Telemetry
+    NONE --> NONE: Xung nhiễu thoáng qua (00:33:07) -> Ghi SUPPRESSED_TRANSIENT vào MongoDB
+    NONE --> DETECTED: Suy thoái vật lý bền vững >= 3 chu kỳ LOADED (09:50:39)
+    DETECTED --> RESOLVED: POST /api/case/false-positive (Operator Override kèm lý do audit)
+    DETECTED --> INVESTIGATING: ML Isolation Forest Corroboration > 0.35 (10:15:00)
+    INVESTIGATING --> INVESTIGATING: POST /api/case/acknowledge + POST /api/case/work-order (Lập lệnh xưởng)
+    INVESTIGATING --> MITIGATING: POST /api/action/safe-mode (Vượt qua 5 chốt ActionGuard)
+    MITIGATING --> VERIFYING_RECOVERY: Tiếp nhận luồng dữ liệu nghiệm thu sau bảo trì (08/06 16:05+)
+    VERIFYING_RECOVERY --> VERIFYING_RECOVERY: Đếm chu kỳ LOADED lành mạnh (Reset về 0 nếu vi phạm)
+    VERIFYING_RECOVERY --> RESOLVED: Đạt chuẩn 5/5 quan sát LOADED liên tiếp
+    RESOLVED --> NONE: POST /api/case/close (Ký nghiệm thu & Giải phóng tàu về tuyến)
 ```
 
-#### Hàng Rào Bảo Vệ An Toàn ActionGuard (Pre-flight Policy Checks)
-Khi chuyên viên vận hành gửi yêu cầu `POST /api/action/safe-mode`, `ActionGuard` sẽ kiểm định nghiêm ngặt 5 điều kiện chính sách trước khi cho phép rẽ nhánh:
-1. `case_confirmed`: Hồ sơ sự cố đang ở trạng thái hợp lệ (`DETECTED` hoặc `INVESTIGATING`).
-2. `mitigation_recommended`: `DecisionEngine` đã xác nhận khuyến nghị can thiệp dựa trên chuỗi bằng chứng nhiệt động học.
-3. `single_active_case`: Không có bất kỳ lệnh can thiệp nào khác đang thực thi song song trên tài sản `APU-COMP-01`.
-4. `simulation_mode_active`: Xác nhận hệ thống đang chạy trong môi trường mô phỏng an toàn (không gửi tín hiệu can thiệp vật lý giả mạo).
-5. `replay_branch_available`: Phân đoạn viễn thám sau bảo trì (`2020-06-08 16:05:00 UTC`) đã sẵn sàng nạp vào con trỏ phát.
+### 5.2 Năm Chốt Chặn An Toàn Của `ActionGuard` (`src/engine/action_guard.py`)
+Mọi yêu cầu `GET /api/action/guard-status` và `POST /api/action/safe-mode` đều đánh giá trực tiếp 5 điều kiện:
+1. **`CASE_CONFIRMED`:** Đang có hồ sơ sự cố mở ở trạng thái `DETECTED` hoặc `INVESTIGATING`.
+2. **`MITIGATION_RECOMMENDED`:** `DecisionEngine` đã khuyến nghị `EXECUTE_MITIGATION` (hội tụ cả bằng chứng vật lý và kiểm chứng đa biến ML).
+3. **`SINGLE_ACTIVE_CASE`:** Không có hồ sơ xung đột trên cùng thiết bị.
+4. **`BRAKE_RESERVOIR_PRESSURE_SAFE`:** Kiểm tra vật lý trực tiếp từ cảm biến: Áp suất bình chứa chính `tp3_bar >= 7.0 bar` và công tắc áp suất thấp `lps_active == 0` (đảm bảo an toàn phanh đoàn tàu).
+5. **`REPLAY_BRANCH_AVAILABLE`:** Phân đoạn dữ liệu nghiệm thu sau bảo trì sẵn sàng.
+
+### 5.3 Danh Mục Hợp Đồng REST API Đầy Đủ (`src/api/routes_product.py` & `src/api/routes_demo.py`)
+
+| Nhóm Nghiệp Vụ | Phương Thức & Endpoint | Chức Năng & Giá Trị Vận Hành |
+|---|---|---|
+| **Hạm Đội & Kịch Bản** | `GET /api/operations` | Tổng quan hạm đội, cây phân cấp tài sản (`Fleet -> Train -> APU -> Compressor`) và tóm tắt sự cố. |
+| | `GET /api/scenarios` | Danh mục 4 kịch bản thực nghiệm trong `MetroPT-3` và kịch bản đang kích hoạt. |
+| | `POST /api/operations/scenario` | Chuyển đổi kịch bản vận hành (`failure_3`, `failure_1`, `failure_4`, `healthy_baseline`). |
+| **Telemetry & MongoDB Analytics** | `GET /api/telemetry/window?limit=60` | Chuỗi điểm đo gần nhất kèm thống kê cửa sổ trượt (`rolling_avg_dv`, `rolling_std_dv`, `rolling_avg_oil_temp`) từ MongoDB `$setWindowFields`. |
+| | `GET /api/telemetry/analytics` | Phân tích chuyên sâu từ MongoDB `$facet`/`$group` (`loaded_duty_cycle_pct`, `regime_breakdown`, `min_tp3_bar`), đối sánh `failure_fingerprints` (`top_diagnosis`), và thống kê chống Alert Fatigue (`SUPPRESSED_TRANSIENT`). |
+| **Hồ Sơ Sự Cố & Bằng Chứng** | `GET /api/incident` (hoặc `/api/case`) | Hồ sơ sự cố kèm `runtime_warning` (nhân quả thời gian thực), `lead_time` (mốc đối chứng lịch sử), trạng thái `acknowledged`, `priority`, `work_order`. |
+| | `GET /api/evidence` | 4 thẻ bằng chứng vật lý & ML kèm `provenance` chi tiết. |
+| | `GET /api/case/events` (hoặc `/api/timeline`) | Sổ cái biên niên sử sự kiện append-only (`CaseEvent`). |
+| **Human-in-the-Loop Operator Actions** | `POST /api/case/acknowledge` | Operator tiếp nhận sự cố, gán mức ưu tiên (`P1-CRITICAL`) và ghi audit log. |
+| | `POST /api/case/notes` | Operator thêm ghi chú điều tra / bàn giao ca vào sổ cái sự cố. |
+| | `POST /api/case/work-order` | Phát hành lệnh điều độ bảo trì (`WorkOrder`) gắn với `playbook_id` gửi về xưởng. |
+| | `POST /api/case/false-positive` | Đóng hồ sơ sự cố dưới dạng cảnh báo giả (Operator Override) kèm lý do kiểm toán. |
+| **An Toàn & Nghiệm Thu Phục Hồi** | `GET /api/action/guard-status` | Kiểm tra trực tiếp 5 chốt chặn an toàn của `ActionGuard` (gồm áp suất phanh `TP3`). |
+| | `POST /api/action/safe-mode` | Kích hoạt chế độ an toàn và chuyển sang luồng kiểm định sau bảo trì (trả về HTTP 409 nếu vi phạm `ActionGuard`). |
+| | `GET /api/recovery` | Theo dõi tiến độ nghiệm thu `0/5 -> 5/5` quan sát `LOADED` lành mạnh liên tiếp. |
+| | `POST /api/case/close` | Ký biên bản đóng hồ sơ sau khi nghiệm thu `is_verified == true` (trả về HTTP 409 nếu chưa đủ 5/5). |
+| **Đối Chứng & Điều Khiển Luồng** | `GET /api/validation-reference` | Hồ sơ đối chứng Ground Truth từ báo cáo bảo dưỡng Metro de Lisboa. |
+| | `POST /demo/play`, `/pause`, `/speed`, `/tick`, `/jump`, `/reset`, `GET /demo/status` | Điều khiển tốc độ phát luồng nền (`_background_stream_worker`) và nhảy mốc kiểm thử nhanh. |
 
 ---
 
-### 5.4 Hợp Đồng REST API Chuẩn Hóa (Expanded Operational API Contracts)
+## PHẦN 6: KIẾN TRÚC NỀN TẢNG DỮ LIỆU VẬN HÀNH MONGODB ATLAS
 
-#### 1. `GET /api/operations` (Operations Landing Page & Fleet Scope)
-Trả về cấu trúc phân cấp hạm đội, số lượng tài sản, hồ sơ sự cố đang xử lý và rủi ro tác động:
-```json
-{
-  "fleet_id": "FLEET-METRO-AZUL",
-  "fleet_name": "Linha Azul Fleet",
-  "summary": {
-    "monitored_assets": 1,
-    "active_cases": 1,
-    "trains_at_risk": 1,
-    "confirmed_intervention_window": "33h 52m"
-  },
-  "asset_hierarchy": {
-    "train_id": "TRAIN-302",
-    "subsystem": "Air Production Unit (APU)",
-    "asset_id": "APU-COMP-01",
-    "asset_health": "CRITICAL",
-    "operating_regime": "LOADED",
-    "active_case_id": "CASE-20200605-01",
-    "operational_risk": "Pneumatic line pressure collapse risk. Stoppage in tunnel if unaddressed."
-  },
-  "simulation": {
-    "mode": "LIVE_SIMULATION",
-    "scenario": "Failure #3 (MetroPT-3)",
-    "event_time": "2020-06-05T09:50:39Z",
-    "speed": "60x",
-    "status": "RUNNING"
-  }
-}
-```
-
-#### 2. `GET /api/incident` (hoặc `/api/case` — Case Operational Dossier)
-Trả về tổng quan hồ sơ sự cố, bối cảnh tài sản và cửa sổ can thiệp xác nhận:
-```json
-{
-  "case_id": "CASE-20200605-01",
-  "asset_id": "APU-COMP-01",
-  "train_id": "TRAIN-302",
-  "fleet": "Linha Azul",
-  "phase": "INVESTIGATING",
-  "asset_health": "CRITICAL",
-  "operational_confidence": "HIGH",
-  "detection_milestone": {
-    "confirmed_detection_timestamp": "2020-06-05T09:50:39Z",
-    "conventional_lps_timestamp": "2020-06-06T19:42:19Z",
-    "confirmed_intervention_window_minutes": 2032,
-    "confirmed_intervention_window_formatted": "33h 52m"
-  },
-  "action_guard_status": {
-    "case_confirmed": true,
-    "mitigation_recommended": true,
-    "conflicts_cleared": true,
-    "can_dispatch_safe_mode": true
-  },
-  "summary": "Confirmed discharge valve leakage with severe thermal drift and multivariate ML corroboration."
-}
-```
-
-#### 3. `GET /api/evidence` (Evidence Pack With Provenance)
-Trả về 4 thẻ bằng chứng vật lý kèm thông tin xuất xứ (Provenance) chi tiết:
-```json
-{
-  "case_id": "CASE-20200605-01",
-  "operating_regime": "LOADED",
-  "evidence_pack": [
-    {
-      "code": "PRESSURE_SEVERE",
-      "signal_name": "Discharge Valve Pressure (DV_pressure)",
-      "observed_value": 2.1856,
-      "baseline_value": -0.0164,
-      "unit": "bar",
-      "sigma_deviation": 23.75,
-      "status": "CRITICAL",
-      "is_primary": true,
-      "provenance": {
-        "source": "PressureAnomalyDetector",
-        "method": "Loaded-regime baseline deviation",
-        "timestamp": "2020-06-05T09:50:39Z",
-        "regime": "LOADED"
-      }
-    },
-    {
-      "code": "THERMAL_STRESS_DRIFT",
-      "signal_name": "Compressor Oil Temperature (Oil_temp)",
-      "observed_value": 74.97,
-      "baseline_value": 54.98,
-      "unit": "°C",
-      "sigma_deviation": 5.71,
-      "status": "SEVERE",
-      "is_primary": false,
-      "provenance": {
-        "source": "ThermalDriftDetector",
-        "method": "Thermal drift cumulative threshold",
-        "timestamp": "2020-06-05T09:50:39Z",
-        "regime": "LOADED"
-      }
-    },
-    {
-      "code": "TEMPORAL_STEP_CONFIRMED",
-      "signal_name": "Temporal Step Persistence",
-      "observed_value": 2.202,
-      "baseline_value": 0.0,
-      "unit": "bar_diff",
-      "sigma_deviation": 0.0,
-      "status": "CONFIRMED",
-      "is_primary": false,
-      "provenance": {
-        "source": "TemporalStepDetector",
-        "method": "Consecutive loaded cycle persistence (3/3)",
-        "timestamp": "2020-06-05T09:50:39Z",
-        "regime": "LOADED"
-      }
-    },
-    {
-      "code": "MULTIVARIATE_CORROBORATION",
-      "signal_name": "Multivariate Isolation Forest",
-      "observed_value": 0.382,
-      "baseline_value": 0.35,
-      "unit": "score",
-      "sigma_deviation": 0.0,
-      "status": "CORROBORATED",
-      "is_primary": false,
-      "provenance": {
-        "source": "IsolationForestModel",
-        "method": "Multivariate boundary on 5 loaded features (DV, H1, Oil, Current, TP3)",
-        "timestamp": "2020-06-05T09:50:39Z",
-        "regime": "LOADED",
-        "role": "Independent corroboration (elevates mitigation confidence)"
-      }
-    }
-  ]
-}
-```
-
-#### 4. `GET /api/case/events` (Chronological CaseEvent Ledger)
-Trả về sổ cái biên niên sử sự kiện dạng append-only:
-```json
-{
-  "case_id": "CASE-20200605-01",
-  "events": [
-    {
-      "timestamp": "2020-06-04T00:33:07Z",
-      "event_type": "OBSERVATION",
-      "title": "Transient Pressure Excursion",
-      "detail": "Transient spike of 0.52 bar observed; thermal normal; case creation suppressed to prevent alert fatigue.",
-      "actor": "CompressorGuard Engine",
-      "source": "PressureAnomalyDetector",
-      "case_phase": "OBSERVING"
-    },
-    {
-      "timestamp": "2020-06-05T09:50:39Z",
-      "event_type": "CASE_CREATED",
-      "title": "Confirmed Degradation Detected",
-      "detail": "Discharge pressure 2.18 bar sustained across 3 loaded cycles (+23.75σ). Operational Case opened.",
-      "actor": "CompressorGuard Engine",
-      "source": "PressureAnomalyDetector",
-      "case_phase": "DETECTED"
-    },
-    {
-      "timestamp": "2020-06-05T10:15:00Z",
-      "event_type": "CORROBORATION",
-      "title": "Multivariate Corroboration Confirmed",
-      "detail": "Oil temp reached 74.97°C (+5.71σ); Isolation Forest score 0.382 > 0.35. Escalated to INVESTIGATING.",
-      "actor": "ML Pipeline",
-      "source": "IsolationForestModel",
-      "case_phase": "INVESTIGATING"
-    },
-    {
-      "timestamp": "2020-06-05T10:15:20Z",
-      "event_type": "ACTION",
-      "title": "Safe Mode Simulated Intervention",
-      "detail": "Operator verified ActionGuard conditions and executed simulated isolation. Stream branched to post-maintenance telemetry.",
-      "actor": "DISPATCHER-0941",
-      "source": "ActionGuard",
-      "case_phase": "MITIGATING"
-    },
-    {
-      "timestamp": "2020-06-06T19:42:19Z",
-      "event_type": "BENCHMARK_LPS",
-      "title": "Reactive Benchmark Reached",
-      "detail": "Mechanical Low Pressure Switch (LPS=1) tripped in historical unmitigated baseline. Confirmed lead time: 33h 52m.",
-      "actor": "Benchmark Tracker",
-      "source": "MetroPT-3 Baseline",
-      "case_phase": "MITIGATING"
-    },
-    {
-      "timestamp": "2020-06-08T16:05:50Z",
-      "event_type": "RECOVERY",
-      "title": "Recovery Criteria Verified",
-      "detail": "5/5 consecutive loaded observations verified (DV < 0.05 bar, Oil < 67°C).",
-      "actor": "RecoveryVerifier",
-      "source": "RecoveryCriteriaPolicy",
-      "case_phase": "RESOLVED"
-    }
-  ]
-}
-```
-
-#### 5. `POST /api/action/safe-mode`
-Thực thi can thiệp chế độ an toàn qua `ActionGuard`:
-```json
-{
-  "action_id": "ACT-SM-001",
-  "status": "ACTIVATED",
-  "execution_mode": "SIMULATION_BRANCH",
-  "target_state": "MITIGATING",
-  "stream_branch": {
-    "source": "METROPT-3_POST_MAINTENANCE",
-    "offset_timestamp": "2020-06-08T16:05:00Z"
-  }
-}
-```
-
-#### 6. `GET /api/recovery`
-Theo dõi tiến độ kiểm chứng phục hồi vật lý:
-```json
-{
-  "case_id": "CASE-20200605-01",
-  "is_recovering": true,
-  "is_verified": false,
-  "consecutive_healthy_observations": 4,
-  "target_healthy_observations": 5,
-  "criteria": {
-    "dv_pressure_max": 0.05,
-    "oil_temp_max": 67.0,
-    "required_regime": "LOADED"
-  }
-}
-```
-
-#### 7. `POST /api/case/close` (Case Sign-Off & Asset Release)
-Chỉ cho phép khi `recovery_verified == true`. Đóng hồ sơ sự cố và giải phóng tài sản về trạng thái giám sát nền:
-```json
-{
-  "case_id": "CASE-20200605-01",
-  "status": "CLOSED",
-  "asset_id": "APU-COMP-01",
-  "asset_health": "HEALTHY",
-  "closed_at": "2020-06-08T16:06:10Z",
-  "closed_by": "DISPATCHER-0941",
-  "summary": "Verified physical recovery after maintenance. Train released back to normal revenue service."
-}
-```
-*Lỗi từ chối:* Nếu gọi khi chưa xác nhận phục hồi (`is_verified == false`), API trả về **HTTP 409 Conflict** (`RECOVERY_NOT_VERIFIED`).
-
----
-
-## PHẦN 6: MASTER SPEC TECHNOLOGY BLUEPRINT (MONGODB & DATADOG)
-
-### 6.1 Kiến Trúc Tích Hợp MongoDB Atlas (Operational Data Platform)
-Trong CompressorGuard, MongoDB không đơn thuần là nơi chứa dữ liệu tĩnh; nó là nền tảng xử lý dữ liệu vận hành đa phương thức (Multimodal Operational Platform) giải quyết đồng thời chuỗi thời gian, tài liệu sự cố và tìm kiếm vector.
+Trong CompressorGuard, MongoDB đóng vai trò là **Nền tảng Dữ liệu Vận hành Chính (Primary Operational Data Platform)** đáp ứng trọn vẹn cả 4 yêu cầu bắt buộc và 4 yêu cầu khuyến khích của Hackathon:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                               MONGODB ATLAS ARCHITECTURE                               │
+│                      MONGODB ATLAS OPERATIONAL ARCHITECTURE (v3.0)                     │
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │ 1. TIME SERIES COLLECTION: `measurements`                                              │
-│    • timeField: "timestamp"                                                            │
-│    • metaField: "metadata" -> { asset_id: "APU-COMP-01", line: "Linha Azul" }         │
-│    • granularity: "seconds"                                                            │
-│    • Aggregation Pipeline: $setWindowFields tính rolling baseline, delta, sigma.        │
-│    • TTL (expireAfterSeconds): Tự động dọn dẹp telemetry thô sau 7 ngày.              │
+│    • timeField: "timestamp" (Historical event_time — KHÔNG đặt TTL trên trường này!)   │
+│    • metaField: "metadata" -> { asset_id: "APU-COMP-01", scenario_id: "failure_3" }    │
+│    • granularity: "seconds" + field `ingested_at` (wall-clock UTC)                     │
+│    • Index: `idx_measurements_timestamp` tăng tốc truy vấn chuỗi thời gian.            │
 ├────────────────────────────────────────────────────────────────────────────────────────┤
-│ 2. DOCUMENT COLLECTIONS (ACID & Relational Context)                                    │
-│    • `incidents`: Lưu trữ vòng đời sự cố, lead time, audit logs của thao tác Safe Mode.│
-│    • `evidence_records`: Lưu snapshot 4 thẻ bằng chứng vật lý tại thời điểm phát hiện. │
-│    • `maintenance_history`: Nhật ký bảo dưỡng thực tế từ đơn vị vận hành Lisbon Metro. │
+│ 2. EVENT STREAM & TTL COLLECTION: `anomaly_signals`                                    │
+│    • Lưu mọi tín hiệu cảnh báo từ các detector (bao gồm xung nhiễu 00:33:07 bị chặn   │
+│      với trạng thái `SUPPRESSED_TRANSIENT` để chứng minh chống Alert Fatigue).         │
+│    • Quản lý vòng đời tự động (`expireAfterSeconds: 604800` — 7 ngày) đặt an toàn trên │
+│      trường `ingested_at` (tránh bẫy xóa nhầm dữ liệu lịch sử năm 2020).               │
 ├────────────────────────────────────────────────────────────────────────────────────────┤
-│ 3. VECTOR SEARCH COLLECTION: `incident_embeddings` (P1)                                │
-│    • Vector Index: 384 dimensions (cosine similarity)                                  │
-│    • Tìm kiếm các sự cố rò rỉ van tương tự trong lịch sử hạm đội.                     │
+│ 3. DOCUMENT & LEDGER COLLECTIONS: `operational_cases` & `case_events`                  │
+│    • `operational_cases`: Lưu trữ vòng đời Case, Acknowledge, Priority, Work Order.    │
+│    • `case_events`: Sổ cái biên niên sử append-only cho mọi quyết định máy & người.    │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ 4. DIAGNOSTIC KNOWLEDGE COLLECTION: `failure_fingerprints`                             │
+│    • Lưu trữ vector đặc trưng của các mẫu hỏng hóc chuẩn (`FP-METROPT3-FAIL-03`,       │
+│      `FP-METROPT3-FAIL-01`, `FP-METROPT3-FAIL-04`) kèm `recommended_playbook`.         │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Pipeline Phân Tích Cửa Sổ Bằng `$setWindowFields`:
-Để chứng minh năng lực vượt trội của MongoDB đối với dữ liệu chuỗi thời gian, hệ thống sử dụng aggregation pipeline tính toán độ lệch chuẩn và giá trị trung bình động (Rolling Stats) trực tiếp trên cơ sở dữ liệu:
-```javascript
-db.measurements.aggregate([
-  { $match: { "metadata.asset_id": "APU-COMP-01" } },
-  {
-    $setWindowFields: {
-      partitionBy: "$metadata.asset_id",
-      sortBy: { timestamp: 1 },
-      output: {
-        rolling_avg_dv: {
-          $avg: "$dv_pressure_bar",
-          window: { range: [-600, 0], unit: "second" } // Cửa sổ trượt 10 phút
-        },
-        rolling_std_dv: {
-          $stdDevSamp: "$dv_pressure_bar",
-          window: { range: [-600, 0], unit: "second" }
-        }
-      }
-    }
-  },
-  {
-    $project: {
-      timestamp: 1,
-      dv_pressure_bar: 1,
-      rolling_avg_dv: 1,
-      sigma_deviation: {
-        $divide: [
-          { $subtract: ["$dv_pressure_bar", "$rolling_avg_dv"] },
-          { $cond: [{ $eq: ["$rolling_std_dv", 0] }, 1, "$rolling_std_dv"] }
-        ]
-      }
-    }
-  }
-])
-```
-
-#### Luận Điểm Bảo Vệ Trước Giám Khảo: *"Tại sao phải dùng MongoDB?"*
-> *"Nếu chỉ cần vẽ biểu đồ cảm biến, người ta dùng cơ sở dữ liệu time-series đơn giản. Nhưng trong điều hành sự cố khẩn cấp của hạm đội, chuyên viên không chỉ nhìn điểm dữ liệu lẻ loi. Họ cần kết hợp **chuỗi thời gian vận hành tần số cao**, **trạng thái sự cố đa tầng**, **nhật ký audit thao tác an toàn**, và **lịch sử bảo dưỡng tương đồng** trong cùng một nền tảng dữ liệu duy nhất. MongoDB cho phép mô hình hóa cả 4 khía cạnh này với hiệu năng vượt trội và tính linh hoạt tuyệt đối."*
+### Ba Aggregation Pipelines Hoạt Động Trực Tiếp Trong Runtime (`src/storage/repository.py`)
+1. **Pipeline #1 — Window Functions (`$setWindowFields` trong `get_rolling_stats`):**
+   Tính toán giá trị trung bình trượt (`rolling_avg_dv`, `rolling_avg_oil_temp`) và độ lệch chuẩn trượt (`rolling_std_dv`) trên cửa sổ thời gian `-600s` phân vùng theo `$metadata.asset_id`.
+2. **Pipeline #2 — Multi-Facet Regime & Duty Cycle Profiler (`$facet` + `$group` trong `get_regime_duty_cycle_analytics`):**
+   Phân tích đồng thời hai nhánh (`by_regime` và `overall_extremes`) để tính tỷ lệ phần trăm chu kỳ mang tải (`loaded_duty_cycle_pct`), thống kê áp suất/nhiệt độ theo từng chế độ vận hành, biên độ an toàn bình phanh (`min_tp3_bar`), và tổng hợp số lượng cảnh báo nhiễu đã bị chặn (`suppressed_transient_spikes_count`).
+3. **Pipeline #3 — Failure Fingerprint Similarity Matching (`match_failure_fingerprint`):**
+   Chấm điểm độ tương đồng Cosine giữa vector bất thường hiện tại (`dv_sigma`, `oil_sigma`, `if_score`, `loaded_duty_pct`) và thư viện `failure_fingerprints` trong MongoDB để xếp hạng chẩn đoán nguyên nhân gốc (`top_diagnosis`) và đề xuất quy trình xử lý (`recommended_playbook`).
 
 ---
 
-### 6.2 Kiến Trúc Giám Sát Datadog (Unified Observability Control Plane)
-Datadog đóng vai trò là bảng điều khiển quan sát tổng thể (Observability Control Plane) kết nối metrics, distributed traces và structured logs thành một thể thống nhất:
+## PHẦN 7: KIẾN TRÚC GIÁM SÁT HỢP NHẤT & AI OBSERVABILITY VỚI DATADOG
 
-```
-FastAPI Domain API ──► dd-trace (APM) ──────► Datadog Traces (/api/incident, /api/evidence)
-       │
-       ├──► DogStatsD (Metrics) ─────► Datadog Gauges (dv_pressure, oil_temp, lead_time)
-       │
-       └──► JSON Log Formatter ──────► Datadog Logs (với dd.trace_id correlation)
-```
+Datadog là **Bảng Điều Khiển Quan Sát Hợp Nhất (Unified Observability Control Plane)** kết nối chặt chẽ **Metrics**, **APM Distributed Traces**, **Structured JSON Logs**, và **AI/ML Observability**:
 
-#### 1. Custom Metrics Qua DogStatsD:
-* `compressorguard.telemetry.dv_pressure_bar`: Áp suất van xả thời gian thực.
-* `compressorguard.telemetry.oil_temp_c`: Nhiệt độ dầu máy nén.
-* `compressorguard.ml.anomaly_score`: Điểm số bất thường của Isolation Forest.
-* `compressorguard.incident.lead_time_seconds`: Thời gian phát hiện sớm (cố định ở mức 121,920 giây = 33h 52m khi có sự cố).
-* `compressorguard.recovery.consecutive_observations`: Bộ đếm tiến trình phục hồi vật lý ($0 \rightarrow 5$).
+### 7.1 Custom DogStatsD Metrics & AI Observability (`src/observability/metrics.py`)
+* **Physical Telemetry Gauges:**
+  - `compressorguard.telemetry.dv_pressure_bar`: Áp suất van xả (`bar`).
+  - `compressorguard.telemetry.oil_temp_c`: Nhiệt độ dầu máy nén (`°C`).
+  - `compressorguard.telemetry.tp3_bar`: Áp suất bình chứa khí nén chính (`bar` — giám sát an toàn phanh).
+  - `compressorguard.telemetry.lps_active`: Trạng thái công tắc áp suất thấp cơ học (`0` / `1`).
+* **AI / ML Observability Signals:**
+  - `compressorguard.ml.anomaly_score`: Điểm số bất thường đa biến của mô hình `IsolationForestDetector`.
+  - `compressorguard.ml.inference_latency_ms`: Độ trễ suy luận của mô hình ML trên mỗi tick (`ms`).
+  - `compressorguard.ml.physics_agreement`: Chỉ số đồng thuận giữa mô hình AI/ML và các bộ phát hiện nhiệt động học vật lý (`1.0` = đồng thuận, `0.0` = phân kỳ / cảnh báo trôi dạt mô hình).
+* **Operational & Alert Hygiene Counters:**
+  - `compressorguard.signals.suppressed_total`: Bộ đếm số lần chặn xung nhiễu thoáng qua (chứng minh hiệu quả chống Alert Fatigue).
+  - `compressorguard.incident.elapsed_warning_seconds`: Thời gian phát hiện sớm thực tế đã trôi qua kể từ lúc mở Case (Causal Runtime Metric).
+  - `compressorguard.incident.lead_time_seconds`: Chỉ số đối chứng lịch sử (`121,920s` = `33h 52m`).
+  - `compressorguard.recovery.consecutive_observations`: Bộ đếm tiến trình nghiệm thu phục hồi vật lý (`0 -> 5`).
 
-#### 2. APM & Distributed Tracing (`dd-trace`):
-* Tự động instrument ứng dụng FastAPI (`ddtrace-run uvicorn ...`).
-* Đo đạc chính xác thời gian phản hồi (latency) của các thao tác nghiệp vụ quan trọng:
-  - Endpoint `/api/incident` ($< 15\text{ms}$).
-  - Endpoint `/api/evidence` ($< 25\text{ms}$).
-  - Thao tác chuyển đổi trạng thái `/api/action/safe-mode` ($< 50\text{ms}$).
+### 7.2 APM Distributed Tracing & Structured Log Correlation (`src/observability/tracer.py` & `logger.py`)
+* **APM Trace Hierarchy:** Mỗi request HTTP và mỗi nhịp `IncidentLifecycleManager.tick()` đều tạo cây span chi tiết:
+  `fastapi.request` / `lifecycle.tick` $\rightarrow$ `engine.regime_classify` $\rightarrow$ `engine.physics_detectors` $\rightarrow$ `ml.isolation_forest.evaluate` $\rightarrow$ `engine.decision_fusion` $\rightarrow$ `mongodb.persist_tick`.
+* **Log Correlation:** `DatadogJSONFormatter` tự động tiêm `dd.trace_id`, `dd.span_id`, `asset_id`, `case_id` vào mọi bản ghi JSON log khi phát hiện sự cố, khi chặn nhiễu, và khi Operator thao tác.
 
-#### 3. Log Management Tương Quan Với Trace ID:
-Mọi log ghi nhận sự kiện vòng đời (`DETECTED`, `MITIGATING`, `RESOLVED`) đều được xuất dưới dạng JSON có gắn `dd.trace_id` và `dd.span_id`:
-```json
-{
-  "timestamp": "2026-10-08T00:30:00Z",
-  "level": "INFO",
-  "message": "Safe mode activated. Branching replay stream to post-maintenance telemetry.",
-  "incident_id": "APU-INC-20200605-01",
-  "asset_id": "APU-COMP-01",
-  "dd.trace_id": "18446744073709551615",
-  "dd.span_id": "9223372036854775807"
-}
-```
-
-#### 4. Datadog Monitors & Alerts:
-* **Monitor 1 (Early Warning):** Cảnh báo khi $\text{DV\_pressure} > 2.0\text{ bar}$ liên tục trong chế độ `LOADED` $\rightarrow$ Gửi webhook kích hoạt Incident Engine.
-* **Monitor 2 (Recovery Audit):** Kích hoạt thông báo thành công khi `compressorguard.recovery.consecutive_observations == 5`.
+### 7.3 Dashboard (8 Widgets) & Monitors (3 Monitors) (`datadog/dashboard.json` & `datadog/monitors.json`)
+* **Dashboard 8 Widgets:** Bao quát trọn vẹn từ áp suất/nhiệt độ vật lý, áp suất bình phanh `tp3_bar`, điểm số AI/ML & độ đồng thuận vật lý (`ml.physics_agreement`), bộ đếm chặn nhiễu Alert Fatigue, cửa sổ cảnh báo sớm, tiến độ nghiệm thu 5/5, luồng log tương quan trace, đến độ trễ APM & ML inference.
+* **3 Monitors Cảnh Báo:**
+  1. `[CompressorGuard] Early Warning Pressure Breach (DV_pressure > 2.0 bar in LOADED Regime)`.
+  2. `[CompressorGuard AI Observability] Isolation Forest & Physics Detector Divergence (Model / Sensor Drift)` (`avg(last_5m):compressorguard.ml.physics_agreement < 0.5`).
+  3. `[CompressorGuard] Post-Maintenance Recovery Criteria Verified (5/5 healthy LOADED observations)`.
 
 ---
 
-## PHẦN 7: STRATEGIC ROADMAP & RULES OF ENGAGEMENT CHO AI TIẾP THEO
+## PHẦN 8: MÔ HÌNH KINH TẾ ĐƯỜNG SẮT & GIÁ TRỊ VẬN HÀNH (RAIL ECONOMICS)
 
-### 7.1 Lộ Trình Triển Khai Đóng Băng (Prioritized Implementation Roadmap)
+> **Tài liệu đặc tả chi tiết:** [`docs/RAIL_ECONOMICS_AND_VALUE_MODEL.md`](file:///d:/Code/Projects/self-projects/iot-hackathon/docs/RAIL_ECONOMICS_AND_VALUE_MODEL.md)
 
-```mermaid
-flowchart TD
-    P0["P0: Product Truth & Semantic Integrity<br/>[ BẮT BUỘC TRƯỚC HẾT ]<br/>- Replay 00:33 transient excursion thật<br/>- Dual-clock ScenarioStream & Delta-event-time<br/>- Confirmed case = Pressure + Thermal + Temporal<br/>- ML Isolation Forest đóng vai trò Corroboration<br/>- Dynamic 33h52 intervention window<br/>- Bằng chứng có Provenance & CaseEvent ledger<br/>- Gán nhãn trung thực Live Simulation"]
-    P1["P1: Product Completeness & Integration<br/>[ BƯỚC TIẾP THEO ]<br/>- Asset/Fleet Hierarchy & /api/operations<br/>- ActionGuard 5 checks & Simulation Branch<br/>- POST /api/case/close sau verified recovery<br/>- Validation Reference Drawer đối chứng<br/>- MongoDB Atlas Time Series & Collections<br/>- Datadog APM Traces, Logs & DogStatsD"]
-    P2["P2: Presentation & Hackathon Pitching<br/>[ BƯỚC HOÀN THIỆN ]<br/>- Visual design & 90s cognitive rehearsal<br/>- Chart micro-interactions & pitch script"]
-
-    P0 --> P1
-    P1 --> P2
-```
-
-| Cấp Độ Ưu Tiên | Hạng Mục Công Việc | Ý Nghĩa Chiến Lược & Tiêu Chuẩn Nghiệm Thu |
-|---|---|---|
-| **P0 — Product Truth** (Chân lý sản phẩm) | 1. Early excursion replay thật (`00:33:07`).<br/>2. Ngữ nghĩa thời gian chuẩn xác (`event_time` vs `simulation_time`).<br/>3. ML không tự ý tạo Case (chỉ độc lập kiểm chứng).<br/>4. Confirmed case = Áp suất + Nhiệt + Bước nhảy chu kỳ.<br/>5. Runtime LPS milestone & Dynamic 33h52 intervention window.<br/>6. Evidence provenance đầy đủ (Source, Method, Timestamp, Regime).<br/>7. Sổ cái sự kiện `CaseEvent` append-only.<br/>8. Không nhận vơ phán đoán root-cause vô căn cứ.<br/>9. Gán nhãn `[ LIVE SIMULATION · HISTORICAL DATA ]`. | Đảm bảo hệ thống đạt độ tin cậy tuyệt đối trước giám khảo kỹ thuật. Loại bỏ mọi dấu hiệu "hardcoded fake demo". |
-| **P1 — Product Completeness** (Độ hoàn chỉnh sản phẩm) | 10. Cây phân cấp tài sản `Fleet -> Train -> APU -> Compressor`.<br/>11. Endpoint `/api/operations` phục vụ Operations Landing Page.<br/>12. Chiếu đơn vị nghiệp vụ Active Case (Single Active Case Invariant).<br/>13. Hàng rào chính sách `ActionGuard` 5 điều kiện.<br/>14. Đóng Case `/api/case/close` sau khi kiểm chứng 5/5 observations.<br/>15. Tích hợp MongoDB Atlas lưu trữ time-series & collections.<br/>16. Tích hợp Datadog APM, DogStatsD và log correlation.<br/>17. Ngăn kéo đối chứng lịch sử (Validation Reference Drawer). | Đưa sản phẩm lên đẳng cấp Industrial Operations Platform tương đương Siemens Senseye, IBM Maximo, Alstom HealthHub. |
-| **P2 — Presentation** (Trình diễn & Pitching) | 18. Thiết kế giao diện Frontend sắc sảo, tối giản.<br/>19. Chuyển động animation & pacing 1x / 10x / 60x.<br/>20. Kịch bản thuyết trình 90 giây theo 5 Cổng Đánh Giá (G1 - G5). | Tối ưu hóa ấn tượng ban đầu và cảm xúc của giám khảo trong 90 giây trình diễn. |
-
----
-
-### 7.2 Quy Tắc Ứng Xử Bất Khả Xâm Phạm Cho AI Kế Tiếp (Rules of Engagement)
-
-Khi bạn (AI kế tiếp) nhận nhiệm vụ tiếp tục phát triển codebase này, bạn **PHẢI** tuân thủ nghiêm ngặt các quy tắc sau:
-
-1. **Tôn trọng tính toàn vẹn của mã nguồn đã kiểm thử:**
-   - Trước khi sửa bất kỳ file nào trong `src/engine/` hoặc `src/api/`, phải chạy lệnh:
-     ```bash
-     python -m pytest tests/test_api_vertical_slice.py tests/test_deterministic_replay.py -v
-     ```
-   - Nếu test fail, bạn đang vi phạm kiến trúc. Phải hoàn nguyên (revert) ngay.
-2. **Tuyệt đối không bịa đặt số liệu (Zero Fake Data):**
-   - Mọi dữ liệu sensor phải bắt nguồn từ `ScenarioStream` đọc từ file CSV thực tế.
-   - Không được viết hàm giả lập kiểu `temp = temp - 1` để lừa giao diện. Phải sử dụng stream branching sang phân đoạn sau bảo trì ngày 08/06/2020.
-3. **Phân biệt rạch ròi 3 tầng dữ liệu:**
-   - Không bao giờ biến thông tin tài sản (`AssetRegistry`) thành sensor telemetry.
-   - Không bao giờ để dữ liệu báo cáo sự cố lịch sử (Ground Truth Failure #3) rò rỉ ngược vào detector online.
-4. **Tuân thủ hợp đồng REST API mở rộng:**
-   - Giao tiếp qua các endpoints nghiệp vụ chuẩn (`/api/operations`, `/api/incident`, `/api/evidence`, `/api/case/events`, `/api/recovery`, `/api/action/safe-mode`, `/api/case/close`).
-   - Xử lý đúng mã lỗi **HTTP 409 Conflict** khi người dùng vi phạm `ActionGuard` hoặc cố đóng Case trước khi xác nhận phục hồi.
-5. **Appendable Single Source of Truth:**
-   - Khi hoàn thành tích hợp hoặc bổ sung tính năng mới, hãy **cập nhật bổ sung trực tiếp vào `master_context.md`** để duy trì ngữ cảnh xuyên suốt.
-
----
-
-## PHẦN 8: RAIL ECONOMICS & OPERATIONAL VALUE MODEL (NORMATIVE)
-
-> **Tài liệu đặc tả chi tiết đi kèm:** [`docs/RAIL_ECONOMICS_AND_VALUE_MODEL.md`](file:///d:/Code/Projects/self-projects/iot-hackathon/docs/RAIL_ECONOMICS_AND_VALUE_MODEL.md)
-
-### 8.1 Bộ Ba Bất Biến Về Tính Trung Thực Trí Tuệ (Observed ≠ Modeled ≠ Verified)
-CompressorGuard loại bỏ hoàn toàn các con số tài chính bịa đặt (fake dollars) và phân định rạch ròi 3 tầng thông tin:
-1. **OBSERVED (Cảm biến đo lường thực tế):**  
-   Lead time phát hiện sớm $33\text{h } 52\text{m}$ (2032 phút) được suy dẫn tất định từ mốc khởi phát `2020-06-05 09:50:39` và mốc còi cơ học LPS nhảy `2020-06-06 19:42:19`. Không suy diễn, không làm tròn giả tạo.
-2. **MODELED (Mô hình kịch bản kinh tế có giả định minh bạch):**  
-   Không tuyên bố *"hệ thống tiết kiệm €18,500"*. Thay vào đó, cung cấp **Configurable Value Model**:
+1. **OBSERVED (Quan sát thực nghiệm):** Phát hiện suy thoái lúc `2020-06-05 09:50:39` trong khi áp suất bình phanh chính `TP3` vẫn ở mức an toàn (`8.74 bar`), tạo ra cửa sổ đối chứng lịch sử **33 giờ 52 phút (`2032 phút`)** trước khi rơ-le cơ học `LPS=1` kích hoạt vào `2020-06-06 19:42:19`.
+2. **MODELED (Mô hình kinh tế có tham số cấu hình minh bạch):**
    $$\text{Avoided Downtime Value} = T_{\text{avoided\_downtime\_hours}} \times C_{\text{downtime\_cost\_per\_hour}}$$
-   Giao diện hiển thị nhãn bắt buộc: `Estimated Avoided Cost (Scenario Model)`.
-3. **VERIFIED (Kiểm chứng phục hồi thực tế từ sensor):**  
-   Xác nhận phục hồi vật lý dựa trên 5/5 observations lành mạnh liên tiếp trong chế độ `LOADED` từ phân đoạn sau bảo trì ngày `2020-06-08 16:05:00`.
-
-### 8.2 7 Nhóm Giá Trị (Value Pools) Của Bảo Dưỡng Dự Đoán Đầu Máy Toa Xe
-1. **Avoided Downtime:** Giảm nguy cơ tàu chết máy giữa hầm, tê liệt tuyến metro (NIST: PdM giảm 52.7% unplanned downtime so với reactive; DOE: giảm 35-45% downtime).
-2. **Lower Maintenance Cost:** Thay thế gioăng van xả sớm (€450) thay vì đại tu toàn bộ cụm máy nén khi quá nhiệt bó kẹt (€15,000+).
-3. **Avoided Emergency & Overtime Labor:** 33h 52m cho phép lên lịch điều độ tàu vào xưởng trong ca đêm (non-revenue window), loại bỏ chi phí gọi thợ khẩn cấp và tăng ca.
-4. **Spare Parts Optimization:** Chủ động điều chuyển van xả pilot từ kho trung tâm, triệt tiêu phí giao hàng hỏa tốc.
-5. **Fleet Availability ("Shadow Fleet"):** Giữ nhiều đoàn tàu sẵn sàng vận hành hơn vào giờ cao điểm (+30% availability theo benchmark SNCF).
-6. **Asset Lifetime / CapEx Deferral:** Ngăn dầu bôi trơn cháy sém ($>74.9^\circ\text{C}$), kéo dài tuổi thọ cụm APU.
-7. **Service & Safety Risk Avoidance:** Bảo toàn áp suất phanh khí nén an toàn SIL-2, tránh tiền phạt hợp đồng dịch vụ công ích.
-
-### 8.3 Hệ Thống Benchmark Ngành Đường Sắt Thực Tế
-- **MetroPT-3 (Nature 2022):** Failure #3 thực tế khiến đoàn tàu mất áp lực khí nén và phải kéo khỏi đường ray (*train had to be removed from tracks*).
-- **Hanoi Metro (Tuyến 2A):** Doanh thu vé 97.78 tỷ VNĐ (2025), 1.756M train-km, 13.68M lượt khách $\rightarrow$ Chi phí rủi ro doanh thu ~55,650 VNĐ/train-km. Định mức bảo dưỡng 1.0–1.5% nguyên giá TSCĐ.
-- **SNCF (Pháp):** 1,100+ đoàn tàu IoT $\rightarrow$ Breakdowns giảm 50–66%, chi phí bảo dưỡng giảm 20%, số lần vào xưởng giảm 30%, độ sẵn sàng tăng +30%.
-- **Alstom HealthHub:** Giảm downtime đoàn tàu tới -30%, chi phí vật tư -20%, lỗi tái diễn -50%.
-- **Shanghai Metro (Tuyến 17):** Nghiên cứu chuyên biệt RCM tối ưu hóa chi phí O&M cụm cấp khí nén VV120 Air Supply Units.
-
-### 8.4 Cây Phân Cấp Tài Sản & Phễu Vận Hành (Case-Centric)
-- **Asset Hierarchy:** `FLEET` (Hạm đội Blue Line) $\rightarrow$ `TRAIN` (Đoàn tàu #302) $\rightarrow$ `APU` (Cụm cấp khí nén) $\rightarrow$ `COMPRESSOR` (Máy nén `APU-COMP-01`).
-- **Phễu Lọc Giá Trị:** Anomaly Spikes $\rightarrow$ Threshold Excursions $\rightarrow$ Confirmed Degradation $\rightarrow$ Actionable Operational Case $\rightarrow$ Safe Mode $\rightarrow$ Verified Recovery $\rightarrow$ Measurable Value.
-- **Explainability là Động Cơ Kinh Tế:** Tiết kiệm 17 phút điều tra kỹ thuật mỗi sự cố (từ 20 phút xuống 3 phút nhờ 4 thẻ bằng chứng vật lý).
+   Chuyển đổi từ **Sửa chữa khẩn cấp giữa tuyến (Unplanned In-Tunnel Breakdown)** sang **Bảo dưỡng theo lịch tại xưởng ca đêm (Scheduled Night Depot Swap)**, tiết kiệm chi phí đại tu cụm máy nén và ngăn ngừa ùn tắc dây chuyền toàn tuyến metro.
+3. **VERIFIED (Kiểm chứng phục hồi thực tế):** Chỉ đóng vòng lặp sự cố khi kiểm chứng đủ **5/5 quan sát `LOADED` liên tiếp** đạt chuẩn vật lý sau bảo trì.
 
 ---
-*Tài liệu được cập nhật và bổ sung bởi Antigravity Agentic Assistant — MUGVN Hackathon 2026.*
 
+## PHẦN 9: QUY TẮC BẤT BIẾN KỸ THUẬT & CÁC BẪY ĐÃ KHẮC PHỤC
+
+1. **The MongoDB 2020 Historical TTL Trap (Đã khắc phục triệt để):**
+   - **Bẫy:** Nếu đặt `expireAfterSeconds` trên trường `timestamp` (`2020-06-05`) của collection `measurements`, tiến trình dọn dẹp TTL của MongoDB sẽ xóa sạch toàn bộ dữ liệu lịch sử ngay khi vừa insert!
+   - **Bất biến:** Collection `measurements` chỉ đánh index thường (`idx_measurements_timestamp`) trên `timestamp`. Chính sách tự động dọn dẹp TTL (`expireAfterSeconds = 604800` — 7 ngày) chỉ được đặt trên trường thời gian thực **`ingested_at` (wall-clock UTC)** của collection `anomaly_signals`.
+2. **Temporal Gap Integrity (~331 khoảng hở > 30s trong MetroPT-3):**
+   - `TemporalStepDetector` kiểm tra $\Delta t$ thực tế giữa các mẫu và tính liên tục của chế độ `LOADED`, không đếm mẫu mù quáng qua các khoảng đứt quãng truyền thông.
+3. **Deterministic Simulation Invariant:**
+   - Hai lượt chạy mô phỏng độc lập từ đầu đến cuối qua `IncidentLifecycleManager` cam kết cho ra kết quả `run_a == run_b` trùng khớp 100% (`tests/test_deterministic_replay.py`).
+
+---
+
+## PHẦN 10: DANH MỤC ADR (001–018) & TRẠNG THÁI HANDOFF HỆ THỐNG
+
+### 10.1 Tóm Tắt Các Quyết Định Kiến Trúc Trọng Tâm (ADR-001 đến ADR-018)
+- **ADR-001 (Evidence Before Policy):** Detectors chỉ phát ra quan sát (`DetectorResult`); `DecisionEngine` là cơ quan ra quyết định duy nhất.
+- **ADR-002 (Machine Learning as Corroborator with AI Observability):** Isolation Forest ($IF > 0.35$ trên 5 features `LOADED`) đóng vai trò kiểm chứng đa biến độc lập, đi kèm metric giám sát độ đồng thuận vật lý (`ml.physics_agreement`) trên Datadog.
+- **ADR-005 (MongoDB 4-Collection Operational Platform):** Kết hợp Time Series (`measurements`), Event TTL (`anomaly_signals`), Case Ledger (`operational_cases`, `case_events`), và Diagnostic Library (`failure_fingerprints`) cùng 3 Aggregation Pipelines hoạt động trực tiếp.
+- **ADR-008 (Causal Runtime Warning vs. Counterfactual Benchmark):** Tách bạch hoàn toàn chỉ số cảnh báo sớm tính đến hiện tại (`runtime_warning`) và mốc đối chứng lịch sử `33h 52m` (`lead_time`), triệt tiêu hoàn toàn lỗi Look-Ahead Bias.
+- **ADR-011 (Physical Safety ActionGuard):** Kiểm định 5 chốt chặn bao gồm áp suất bình chứa phanh khí nén thực tế (`tp3_bar >= 7.0 bar` và `lps_active == 0`).
+- **ADR-015 (Decoupled Background Stream Worker):** FastAPI `lifespan` tự động vận hành luồng phát dữ liệu khi unpaused.
+- **ADR-017 (Two-Stage Maintenance & Human-in-the-Loop Governance):** Hỗ trợ đầy đủ `Acknowledge`, `Shift Handover Notes`, `Work Order Dispatch` (Giai đoạn 1), `False-Positive Override`, `Safe Mode Commissioning` (Giai đoạn 2), và `Case Closure`.
+- **ADR-018 (Multi-Scenario Historical Cohort Multiplexing):** Loại bỏ quy tắc cực đoan "chỉ 1 kịch bản cố định"; cho phép vận hành và chuyển đổi linh hoạt giữa 4 kịch bản thực nghiệm trong `MetroPT-3` (`failure_3`, `failure_1`, `failure_4`, `healthy_baseline`) mà không dùng bất kỳ dữ liệu giả tạo nào.
+
+### 10.2 Trạng Thái Hiện Tại Của Dự Án
+- **Bước 1 (Đặc tả Kiến trúc Sản phẩm `master_context.md` & Cấu hình Datadog):** Đã được chuẩn hóa toàn diện từ Phần 1 đến Phần 10, loại bỏ mọi quy tắc cực đoan gây "mùi kịch bản demo".
+- **Bước 2 (Nền tảng Backend v3.0 — MongoDB 3 Aggregation Pipelines, Datadog AI Observability & APM/Logs, Human-in-the-Loop REST APIs):** Đã hoàn thiện 100%, vượt qua **102/102 bài kiểm thử pytest** và **5/5 cổng đánh giá (`G1–G5`)**.
+- **Bước 3 (Giao diện Frontend `src/static/`):** Đang tạm bỏ qua theo yêu cầu, sẵn sàng được xây dựng trên nền tảng REST API v3.0 bất cứ khi nào cần thiết.
+
+---
+*Tài liệu được biên soạn và chuẩn hóa bởi Principal Product Architect / Antigravity Agentic Assistant — MUGVN Hackathon 2026.*

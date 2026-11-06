@@ -1,6 +1,6 @@
 # CompressorGuard: Product & UX Specification (Operations Command Platform)
 
-> **Document Version:** 2.3 (Fleet-Centric Case Architecture & Dual-Clock Live Simulation)  
+> **Document Version:** 3.0 (Production-Ready Operations Console & Human-in-the-Loop Governance)  
 > **Target:** Operations Command Platform for Critical Rail Fleet Assets  
 > **Core Promise:** **Detect earlier → Prove why → Act safely → Verify recovery.**
 
@@ -8,190 +8,253 @@
 
 ## 1. Product Thesis (The North Star)
 
-* **Category:** Operations Command Platform for Rail Fleet Critical Physical Assets (Not an IoT dashboard, not an anomaly scoring utility).
-* **Target User & Persona:** Fleet Operations Specialist responsible for Lisbon Metro train lines (Linha Azul).
+* **Category:** Production-Grade Operations Command Platform for Rail Fleet Critical Physical Assets (Not an auto-pilot slideshow, not a flat IoT sensor dump, not an unverified anomaly scoring utility).
+* **Target User & Persona:** Fleet Operations Specialist / Rail Transit Dispatcher responsible for Lisbon Metro train lines (`Linha Azul`).
 * **The Business & Operational Spine:**
-  $$\text{Fleet} \longrightarrow \text{Train} \longrightarrow \text{APU} \longrightarrow \text{Compressor} \longrightarrow \text{Case} \longrightarrow \text{Evidence} \longrightarrow \text{Decision} \longrightarrow \text{Action} \longrightarrow \text{Recovery} \longrightarrow \text{Operational Outcome}$$
-  - **Fleet:** Where leadership and dispatch understand transit service continuity.
-  - **Asset:** Where physical component degradation occurs.
-  - **Case:** The structured unit of operational work assigned to a dispatcher.
-  - **Evidence:** The thermodynamic provenance that earns operator trust.
-  - **Decision & Action:** Policy-governed safe simulation intervention (`ActionGuard`).
-  - **Verification:** Proof of telemetry stabilization before closing the case and releasing the asset.
+  $$\text{Fleet} \longrightarrow \text{Train} \longrightarrow \text{APU} \longrightarrow \text{Compressor} \longrightarrow \text{Case} \longrightarrow \text{Evidence} \longrightarrow \text{Triage \& Playbook} \longrightarrow \text{ActionGuard} \longrightarrow \text{Recovery} \longrightarrow \text{Sign-Off}$$
+  - **Fleet:** Where leadership and dispatch monitor transit service continuity across active trainsets.
+  - **Asset:** Where physical component degradation occurs and telemetry is sampled every 10 seconds.
+  - **Case:** The structured, single-instance unit of operational work assigned to and acknowledged by a dispatcher.
+  - **Evidence:** The 4-signal thermodynamic & multivariate provenance that earns operator trust.
+  - **Triage & Action:** Human-in-the-Loop acknowledgment, maintenance work-order drafting, and policy-governed safe simulation intervention (`ActionGuard`).
+  - **Verification & Sign-Off:** Proof of telemetry stabilization across 5 consecutive `LOADED` observations before operator root-cause sign-off and asset release.
 * **Strict Separation of 3 Data Layers:**
-  1. **Layer A — Business Context (Asset Registry):** Fleet, Train, APU, Compressor, Criticality, Line Assignment.
-  2. **Layer B — Observed Telemetry & Computed State:** Sensor facts, sigmas, regimes, corroboration scores.
-  3. **Layer C — Validation Reference (Ground Truth):** Maintenance reports (Failure #3 Air Leak) used strictly to validate historical scenarios, never leaked into online detectors.
+  1. **Layer A — Business Context (Asset Registry):** Fleet, Train, APU, Compressor, Criticality, Line Assignment, Depot.
+  2. **Layer B — Observed Telemetry & Computed State:** Real-time rolling sensor facts, sigmas, operating regimes (`LOADED` vs `UNLOADED`), detector states, and corroboration scores.
+  3. **Layer C — Validation Reference (Ground Truth):** Historical maintenance reports (`Failure #3 Air Leak`) isolated in an on-demand Audit Drawer, strictly decoupled from online detectors.
+* ** strict Separation of Product UI vs. Simulation Harness:**
+  - **Primary Product UI:** 100% authentic Industrial Operations Console. No hardcoded telemetry values, no pitch-deck paragraphs, and no "jump to milestone" buttons cluttering the main navigation header.
+  - **Collapsible Replay Studio Drawer:** All simulation transport controls (`Play/Pause`, `Step 10s`, `Speed 1x..300x`, `Scenario Selector`, and `Diagnostic Bookmarks`) live inside a collapsible bottom-right developer/demo drawer (`🎛️ Replay Studio` / `Shift+S`).
 * **The 3 Unforgettable Claims:**
   1. **33 hours 52 minutes Confirmed Intervention Window:** Calculated deterministically from confirmed degradation detection (`2020-06-05 09:50:39 UTC`) to reactive Low Pressure Switch alert (`2020-06-06 19:42:19 UTC`).
   2. **Evidence Provenance > Anomaly Score:** 4-signal structured cross-sensor thermodynamics with explicit source provenance: Pressure ($+23.75\sigma$), Thermal drift ($+5.71\sigma$), Temporal 3-cycle step persistence, plus **Multivariate Isolation Forest (5 features in LOADED regime) as independent corroboration**.
-  3. **Closed-Loop Recovery Verification:** Operator action verified by `ActionGuard` branches to real post-maintenance telemetry (June 8, 2020 16:05:00 UTC); Case is closed only when 5 consecutive healthy LOADED observations are verified.
+  3. **Closed-Loop Recovery Verification:** Operator playbook execution verified by `ActionGuard` branches to real post-maintenance telemetry (`2020-06-08 16:05:00 UTC`); Case can be signed off and closed only when 5 consecutive healthy `LOADED` observations are verified.
 * **Strict Anti-Scope (Noise to Avoid):**
+  - No hardcoded telemetry numbers or hardcoded `✓ PASS` checklists in frontend templates.
+  - No exposed demo/milestone jump bars inside the primary operator header.
   - No LLM Chatbots or conversational Q&A widgets.
-  - No synthetic 50-train random simulators.
   - No fake `[🔴 LIVE]` badges (labeled honestly as `[ LIVE SIMULATION · HISTORICAL DATA ]`).
   - No fake SIL-2 or track gradient sensors.
-  - No raw 15-sensor metric dumping on primary operator screens.
 
 ---
 
-## 2. Cognitive Progression (The 5 Judge Questions)
+## 2. Cognitive & Operational Workflow (Human-in-the-Loop Progression)
 
-A judge looking at the system must have their questions answered in this exact sequence without reading a manual:
-
-```
-[00:00 - 00:15]  1. WHO AM I & WHAT SCOPE?
-                 └──► Fleet Operations Specialist guarding Metro Fleet -> Train #302 -> APU-COMP-01.
-
-[00:15 - 00:35]  2. WHAT CHANGED & HOW EARLY?
-                 └──► Confirmed degradation detected at 09:50:39 UTC.
-                      Confirmed Intervention Window: 33h 52m ahead of mechanical LPS alert!
-
-[00:35 - 00:55]  3. WHY TRUST THE SYSTEM?
-                 └──► 4 Provenance-backed Evidence Cards (Pressure, Thermal, Persistence) +
-                      Independent Multivariate ML Corroboration (IF score 0.382 > 0.35 on 5 loaded features).
-
-[00:55 - 00:75]  4. WHAT CAN I DO?
-                 └──► ActionGuard validates 5 safety checks -> Dispatches Simulated Safe Mode
-                      intervention, branching to real post-maintenance telemetry.
-
-[00:75 - 00:90]  5. DID IT WORK?
-                 └──► Telemetry satisfies recovery criteria (5/5 healthy LOADED observations verified) ->
-                      Operator signs off Case -> Asset released back to revenue service!
-```
-
----
-
-## 3. Information Hierarchy (Progressive Disclosure)
-
-The experience is strictly partitioned into 4 tiers of disclosure:
+An operator or technical evaluator interacting with the console experiences a real, data-driven command workflow:
 
 ```text
-┌────────────────────────────────────────────────────────────────────────┐
-│ TIER 1: PERIPHERAL AWARENESS (Visible in 3 seconds)                    │
-│ • Operational Scope: Lisbon Metro (Linha Azul) -> Train #302 -> APU-COMP-01│
-│ • Live Simulation Header: [ LIVE SIMULATION · HISTORICAL DATA ]        │
-│ • Operational Counters: 1 MONITORED ASSET | 1 ACTIVE CASE | 1 TRAIN RISK│
-│ • Hero Metric: 33H 52M CONFIRMED INTERVENTION WINDOW                   │
-│ • Primary Call-to-Action: [ ACTIVATE SAFE MODE (SIMULATED INTERVENTION) ]│
-├────────────────────────────────────────────────────────────────────────┤
-│ TIER 2: FACTUAL DECISION BASIS (Visible in 10 seconds)                 │
-│ • 4 Co-located Evidence Cards with Provenance:                         │
-│     1. Discharge Pressure: 2.18 bar (+23.75σ) [Source: PressureDetector]│
-│     2. Oil Temperature: 74.97 °C (+5.71σ) [Source: ThermalDetector]     │
-│     3. Temporal Step Persistence: 3/3 Loaded Cycles [Source: Temporal]  │
-│     4. Multivariate Isolation Forest: 0.382 (>0.35) [Role: Corroboration]│
-│ • Conventional Benchmark Milestone: LPS=1 expected at T-33h 52m       │
-│ • Recovery Tracker: 0/5 -> 5/5 Consecutive Healthy LOADED Observations │
-├────────────────────────────────────────────────────────────────────────┤
-│ TIER 3: VALIDATION REFERENCE & DETAILED AUDIT (On-Demand Drawer)        │
-│ • Historical Ground Truth Report: Failure #3 — Air Leak / High Stress   │
-│ • Maintenance Action: June 8, 2020 replacement of desiccant drain valve│
-│ • Principle: Online facts decide; Historical ground truth validates.   │
-├────────────────────────────────────────────────────────────────────────┤
-│ TIER 4: BACKGROUND SUBSTANCE (Internal Telemetry & APM Logs)           │
-│ • 1.5 million raw CSV sensor points via ScenarioStream                 │
-│ • Dual-clock pacing engine (event_time vs simulation_time)             │
-│ • Datadog APM distributed traces and DogStatsD gauges                  │
-└────────────────────────────────────────────────────────────────────────┘
+[STAGE 1: CONTINUOUS FLEET MONITORING & NOISE SUPPRESSION]
+ └──► Operator views live multi-channel strip charts (DV_pressure, Oil_temp, Motor_current)
+      and the Filterable Fleet Asset Grid.
+ └──► At 2020-06-04 00:33:07 UTC, a transient pressure spike occurs in LOADED regime.
+      Temporal persistence is 1/3 (< 3 required) and thermal drift is absent.
+      Engine logs a SUPPRESSED entry to the Real-Time Anomaly Watchlist. Zero false cases opened.
+
+[STAGE 2: CASE DETECTION & OPERATOR TRIAGE]
+ └──► At 2020-06-05 09:50:39 UTC, DV_pressure breach (> 2.0 bar) persists across 3 consecutive
+      LOADED cycles. Engine opens CASE-20200605-01 (Phase: DETECTED, Status: UNACKNOWLEDGED)
+      and computes the 33h 52m Confirmed Intervention Window.
+ └──► Operator clicks [ Acknowledge & Claim Case ], assigns priority P1-CRITICAL, and inspects
+      the 3-Pane Case Investigation Workbench.
+ └──► At this point (09:50:39), Dynamic ActionGuard shows 4/5 checks PASS and 1/5 FAIL
+      (MITIGATION_RECOMMENDED = FAIL, awaiting multivariate corroboration).
+
+[STAGE 3: MULTIVARIATE CORROBORATION & PLAYBOOK PREPARATION]
+ └──► At 2020-06-05 10:15:00 UTC, cumulative Oil_temp drift (+5.71σ) and Multivariate
+      Isolation Forest (score 0.382 > 0.35 on 5 loaded features) corroborate the physical fault.
+ └──► Case escalates to INVESTIGATING. Dynamic ActionGuard updates live to 5/5 PASS.
+ └──► Operator logs a forensic note, selects Playbook SOP-APU-ISO-04 (Dryer Tower Isolation),
+      assigns Depot Oriente, and dispatches [ Execute Safe Mode Intervention ].
+
+[STAGE 4: CLOSED-LOOP RECOVERY VERIFICATION & SIGN-OFF]
+ └──► Stream branches to real post-maintenance telemetry (2020-06-08 16:05:00 UTC).
+      RecoveryVerifier evaluates consecutive LOADED samples against DV < 0.05 bar & Oil < 67.0 °C.
+ └──► Live Recovery Table populates Sample #1 through Sample #5 -> Status: RESOLVED (5/5 Verified).
+ └──► Operator selects Confirmed Root Cause (Desiccant Drain Valve Leak), enters sign-off notes,
+      and clicks [ Sign Off & Close Case ] -> Asset APU-COMP-01 returns to HEALTHY service.
 ```
 
 ---
 
-## 4. Formal Case Lifecycle & ActionGuard
+## 3. Information Hierarchy & High-Density Workspace Layout
 
-The operational Case follows a strict, finite state machine:
+The UI is organized into a clean, high-density **Industrial Dark Operations Console** with 4 tiers of information disclosure:
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ TIER 1: GLOBAL COMMAND BAR & KPI STRIP (Immediate Operational Posture)                 │
+│ • Breadcrumb Scope: Linha Azul Fleet / Train #302 / SUB-APU-01 / APU-COMP-01           │
+│ • Honest Stream Badge: [ LIVE SIMULATION · HISTORICAL DATA · 0.1 Hz ]                  │
+│ • Live Dynamic KPIs: Monitored Assets | Active Cases | Observing | Regime | Lead Time  │
+│ • Utility Triggers: [ Shift: DISPATCHER-0941 ] [ 🗄️ Validation Ref ] [ 🎛️ Replay Studio ]│
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ TIER 2: 3-PANE CASE INVESTIGATION WORKBENCH (Primary Operator Workspace)               │
+│ • LEFT PANE (3 cols) — Case Context & 4-Signal Evidence Provenance Cards:              │
+│     Live values, baselines, sigmas, and detector provenance (Pressure, Thermal,        │
+│     Temporal Persistence, and 5-Feature Isolation Forest Corroboration).               │
+│ • CENTER PANE (5 cols) — Synchronized Multi-Sensor Strip Charts & Recovery Monitor:    │
+│     Rolling time-series chart with LOADED regime shading + Live 5/5 Recovery Table.    │
+│ • RIGHT PANE (4 cols) — Operator Command Console, Live ActionGuard & Audit Stream:     │
+│     Acknowledge button, Forensic Note input, Live 5-Check ActionGuard Gate (PASS/FAIL),│
+│     SOP Playbook & Work Order selector, Safe Mode trigger, Sign-Off form, & CaseEvents.│
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ TIER 3: ON-DEMAND DRAWERS (Strictly Isolated from Operational Telemetry)               │
+│ • Drawer A — Validation Reference Drawer: UCI MetroPT-3 Failure #3 ground truth audit. │
+│ • Drawer B — Replay & Scenario Studio Drawer: Play/Pause, Step, Speed (1x..300x),      │
+│   Scenario Switcher (Failure #3, #1, #4, Healthy), and Diagnostic Bookmarks.           │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ TIER 4: DATA & OBSERVABILITY BACKBONE                                                  │
+│ • 1.5M raw CSV sensor points via HistoricalScenarioStream & ReplayEngine               │
+│ • MongoDB Atlas Time Series (`measurements`) & Document Store (`operational_cases`)    │
+│ • Datadog APM distributed traces and DogStatsD operational metrics                     │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. Formal Case Lifecycle, Human-in-the-Loop Governance & ActionGuard
+
+The operational Case follows a strict state machine combining automated physics detection with explicit operator governance:
 
 ```mermaid
 stateDiagram-v2
     [*] --> NONE: ScenarioStream Initialized
-    NONE --> OBSERVING: 00:33:07 (Transient 0.52 bar spike; Case suppressed)
-    OBSERVING --> DETECTED: 09:50:39 (DV > 2.0 bar sustained across 3 loaded cycles)
+    NONE --> OBSERVING: 00:33:07 (Transient spike; 1/3 cycles -> Auto-suppressed in Watchlist)
+    OBSERVING --> DETECTED: 09:50:39 (DV > 2.0 bar sustained across 3 loaded cycles -> Case Opened)
+    DETECTED --> DETECTED: POST /api/case/acknowledge (Operator claims case & sets P1 priority)
     DETECTED --> INVESTIGATING: 10:15:00 (Thermal drift + ML IF corroboration > 0.35)
-    INVESTIGATING --> MITIGATING: POST /api/action/safe-mode (ActionGuard verified)
+    INVESTIGATING --> INVESTIGATING: POST /api/case/work-order (Operator selects SOP & Depot)
+    INVESTIGATING --> MITIGATING: POST /api/action/safe-mode (ActionGuard 5/5 PASS verified)
     MITIGATING --> VERIFYING_RECOVERY: First tick of post-maintenance stream (08/06 16:05+)
-    VERIFYING_RECOVERY --> VERIFYING_RECOVERY: Counting healthy observations (Breach -> reset to 0)
+    VERIFYING_RECOVERY --> VERIFYING_RECOVERY: Evaluating LOADED samples (Violation -> reset 0/5)
     VERIFYING_RECOVERY --> RESOLVED: 5/5 Consecutive healthy LOADED observations verified
-    RESOLVED --> CLOSED: POST /api/case/close (Dispatcher sign-off & asset release)
+    RESOLVED --> CLOSED: POST /api/case/close (Operator root-cause sign-off & asset release)
     CLOSED --> [*]
 ```
 
-### ActionGuard Pre-Flight Checks:
-1. `case_confirmed`: Current phase is `DETECTED` or `INVESTIGATING`.
-2. `mitigation_recommended`: DecisionEngine recommends mitigation based on multi-sensor evidence.
-3. `no_conflicting_case`: Asset has no parallel active cases (Single Active Case Invariant).
-4. `simulation_mode_active`: Confirms execution in safe simulated intervention mode.
-5. `replay_branch_available`: Post-maintenance telemetry segment is loaded and verified.
+### Dynamic ActionGuard Pre-Flight Checks (`GET /api/action/guard-status`):
+Unlike static UI mockups, the console evaluates and renders the live status (`PASS` vs `FAIL`) of all 5 checks at every tick:
+1. `CASE_CONFIRMED`: Current lifecycle state is `DETECTED` or `INVESTIGATING`.
+2. `MITIGATION_RECOMMENDED`: `DecisionEngine` recommends `EXECUTE_MITIGATION` (requires multi-sensor persistence + ML corroboration; evaluates to `FAIL` at `09:50:39` and transitions to `PASS` at `10:15:00`).
+3. `SINGLE_ACTIVE_CASE`: Asset has no conflicting open cases (`conflicting_cases_count == 0`).
+4. `SIMULATION_MODE`: Confirms execution within the audit-controlled simulation boundary.
+5. `REPLAY_BRANCH_AVAILABLE`: Post-maintenance telemetry segment (`2020-06-08 16:05:00 UTC`) is indexed and ready.
 
 ---
 
 ## 5. Domain REST API Contracts
 
-### 5.1 `GET /api/operations` (Operations Landing Page & Fleet Context)
+### 5.1 `GET /api/operations` (Fleet Operations & Asset Matrix)
 ```json
 {
-  "fleet_id": "FLEET-METRO-AZUL",
-  "fleet_name": "Linha Azul Fleet",
-  "summary": {
-    "monitored_assets": 1,
-    "active_cases": 1,
-    "trains_at_risk": 1,
+  "fleet": {
+    "fleet_id": "FLEET-METRO-01",
+    "name": "Metro Fleet (Linha Azul)",
+    "operator_name": "Metro do Porto / CP",
+    "depot_location": "Depot Oriente"
+  },
+  "train": {
+    "train_id": "TRAIN-302",
+    "model": "Series 300 EMU",
+    "service_status": "REVENUE_SERVICE"
+  },
+  "subsystem": {
+    "subsystem_id": "SUB-APU-01",
+    "name": "Air Production Unit"
+  },
+  "asset": {
+    "asset_id": "APU-COMP-01",
+    "name": "Air Compressor Unit #01",
+    "criticality": "CRITICAL",
+    "discharge_valve_model": "Knorr-Bremse LP49"
+  },
+  "operations_summary": {
+    "monitored_assets_count": 1,
+    "active_cases_count": 1,
+    "assets_observing_count": 0,
+    "scenario_name": "Failure #3 - Air Leak",
+    "simulation_mode": "LIVE_SIMULATION",
     "confirmed_intervention_window": "33h 52m"
   },
-  "asset_hierarchy": {
-    "train_id": "TRAIN-302",
-    "subsystem": "Air Production Unit (APU)",
+  "active_case": {
+    "incident_id": "APU-INC-20200605-01",
     "asset_id": "APU-COMP-01",
+    "lifecycle_state": "INVESTIGATING",
     "asset_health": "CRITICAL",
-    "operating_regime": "LOADED",
-    "active_case_id": "CASE-20200605-01",
-    "operational_risk": "Pneumatic line pressure collapse risk. Train stoppage in tunnel if unaddressed."
-  },
-  "simulation": {
-    "mode": "LIVE_SIMULATION",
-    "scenario": "Failure #3 (MetroPT-3)",
-    "event_time": "2020-06-05T09:50:39Z",
-    "speed": "60x",
-    "status": "RUNNING"
+    "operational_confidence": "HIGH",
+    "acknowledged": true,
+    "acknowledged_by": "DISPATCHER-0941",
+    "selected_playbook": "SOP-APU-ISO-04"
   }
 }
 ```
 
-### 5.2 `GET /api/incident` (or `/api/case` — Case Dossier)
+### 5.2 `GET /api/telemetry/window?limit=60` (Live Rolling Time-Series Window)
 ```json
 {
-  "case_id": "CASE-20200605-01",
   "asset_id": "APU-COMP-01",
-  "train_id": "TRAIN-302",
-  "fleet": "Linha Azul",
-  "phase": "INVESTIGATING",
-  "asset_health": "CRITICAL",
-  "operational_confidence": "HIGH",
-  "detection_milestone": {
-    "confirmed_detection_timestamp": "2020-06-05T09:50:39Z",
-    "conventional_lps_timestamp": "2020-06-06T19:42:19Z",
-    "confirmed_intervention_window_minutes": 2032,
-    "confirmed_intervention_window_formatted": "33h 52m"
+  "scenario_id": "failure_3",
+  "current_event_time": "2020-06-05T09:50:39Z",
+  "baselines": {
+    "dv_pressure_loaded_mean": -0.0164,
+    "dv_pressure_severe_threshold": 2.0,
+    "oil_temp_loaded_mean": 54.98,
+    "oil_temp_severe_threshold": 74.0,
+    "if_corroboration_threshold": 0.35
   },
-  "action_guard_status": {
-    "case_confirmed": true,
-    "mitigation_recommended": true,
-    "conflicts_cleared": true,
-    "can_dispatch_safe_mode": true
-  },
-  "summary": "Confirmed discharge valve leakage with severe thermal drift and multivariate ML corroboration."
+  "points": [
+    {
+      "timestamp": "2020-06-05T09:50:39Z",
+      "regime": "LOADED",
+      "dv_pressure_bar": 2.1856,
+      "oil_temp_c": 74.97,
+      "motor_current_a": 6.84,
+      "tp2_bar": 8.91,
+      "tp3_bar": 8.74,
+      "h1_bar": -0.012,
+      "lps_active": 0.0,
+      "if_anomaly_score": 0.382
+    }
+  ]
 }
 ```
 
-### 5.3 `GET /api/evidence` (Evidence Pack With Provenance)
+### 5.3 `GET /api/incident` (or `/api/case` — Active Case Dossier)
 ```json
 {
-  "case_id": "CASE-20200605-01",
-  "operating_regime": "LOADED",
+  "incident_id": "APU-INC-20200605-01",
+  "asset_id": "APU-COMP-01",
+  "lifecycle_state": "INVESTIGATING",
+  "asset_health": "CRITICAL",
+  "operational_confidence": "HIGH",
+  "acknowledged": true,
+  "acknowledged_by": "DISPATCHER-0941",
+  "priority": "P1-CRITICAL",
+  "work_order": {
+    "work_order_id": "WO-20200605-302",
+    "playbook_id": "SOP-APU-ISO-04",
+    "target_depot": "Depot Oriente",
+    "status": "READY_FOR_DISPATCH"
+  },
+  "lead_time": {
+    "lead_time_minutes": 2032,
+    "lead_time_formatted": "33h 52m",
+    "conventional_alert_timestamp": "2020-06-06T19:42:19Z",
+    "earliest_detection_timestamp": "2020-06-05T09:50:39Z"
+  },
+  "summary": "Confirmed severe step degradation in DV_pressure with thermal stress drift."
+}
+```
+
+### 5.4 `GET /api/evidence` (Live 4-Signal Evidence Pack With Provenance)
+```json
+{
+  "incident_id": "APU-INC-20200605-01",
+  "regime": "LOADED",
   "evidence_pack": [
     {
       "code": "PRESSURE_SEVERE",
-      "signal_name": "Discharge Valve Pressure (DV_pressure)",
+      "signal_name": "Discharge Valve Pressure",
       "observed_value": 2.1856,
       "baseline_value": -0.0164,
       "unit": "bar",
@@ -200,14 +263,14 @@ stateDiagram-v2
       "is_primary": true,
       "provenance": {
         "source": "PressureAnomalyDetector",
-        "method": "Loaded-regime baseline deviation",
-        "timestamp": "2020-06-05T09:50:39Z",
+        "method": "Loaded-regime baseline (sigma > 20.0)",
+        "event_time": "2020-06-05T09:50:39Z",
         "regime": "LOADED"
       }
     },
     {
-      "code": "THERMAL_STRESS_DRIFT",
-      "signal_name": "Compressor Oil Temperature (Oil_temp)",
+      "code": "THERMAL_STRESS_SEVERE",
+      "signal_name": "Compressor Oil Temperature",
       "observed_value": 74.97,
       "baseline_value": 54.98,
       "unit": "°C",
@@ -215,15 +278,15 @@ stateDiagram-v2
       "status": "SEVERE",
       "is_primary": false,
       "provenance": {
-        "source": "ThermalDriftDetector",
-        "method": "Thermal drift cumulative threshold",
-        "timestamp": "2020-06-05T09:50:39Z",
+        "source": "ThermalStressDetector",
+        "method": "Loaded-regime thermal drift (sigma > 5.0)",
+        "event_time": "2020-06-05T10:15:00Z",
         "regime": "LOADED"
       }
     },
     {
       "code": "TEMPORAL_STEP_CONFIRMED",
-      "signal_name": "Temporal Step Persistence",
+      "signal_name": "Temporal Persistence Tracking",
       "observed_value": 2.202,
       "baseline_value": 0.0,
       "unit": "bar_diff",
@@ -233,98 +296,56 @@ stateDiagram-v2
       "provenance": {
         "source": "TemporalStepDetector",
         "method": "Consecutive loaded cycle persistence (3/3)",
-        "timestamp": "2020-06-05T09:50:39Z",
+        "event_time": "2020-06-05T09:50:39Z",
         "regime": "LOADED"
       }
     },
     {
-      "code": "MULTIVARIATE_CORROBORATION",
+      "code": "MULTIVARIATE_CORROBORATED",
       "signal_name": "Multivariate Isolation Forest",
       "observed_value": 0.382,
       "baseline_value": 0.35,
       "unit": "score",
-      "sigma_deviation": 0.0,
+      "sigma_deviation": null,
       "status": "CORROBORATED",
       "is_primary": false,
       "provenance": {
-        "source": "IsolationForestModel",
+        "source": "IsolationForestDetector",
         "method": "Multivariate boundary on 5 loaded features (DV, H1, Oil, Current, TP3)",
-        "timestamp": "2020-06-05T09:50:39Z",
+        "event_time": "2020-06-05T10:15:00Z",
         "regime": "LOADED",
         "role": "Independent corroboration (elevates mitigation confidence)"
       }
     }
-  ]
+  ],
+  "persistence": {
+    "confirmed": true,
+    "recent_observations": 3,
+    "required_observations": 3
+  }
 }
 ```
 
-### 5.4 `GET /api/case/events` (Chronological CaseEvent Ledger)
+### 5.5 `GET /api/action/guard-status` & `POST /api/action/safe-mode`
 ```json
+// GET /api/action/guard-status
 {
-  "case_id": "CASE-20200605-01",
-  "events": [
-    {
-      "timestamp": "2020-06-04T00:33:07Z",
-      "event_type": "OBSERVATION",
-      "title": "Transient Pressure Excursion",
-      "detail": "Transient spike of 0.52 bar observed; thermal normal; case creation suppressed to prevent alert fatigue.",
-      "actor": "CompressorGuard Engine",
-      "source": "PressureAnomalyDetector",
-      "case_phase": "OBSERVING"
-    },
-    {
-      "timestamp": "2020-06-05T09:50:39Z",
-      "event_type": "CASE_CREATED",
-      "title": "Confirmed Degradation Detected",
-      "detail": "Discharge pressure 2.18 bar sustained across 3 loaded cycles (+23.75σ). Operational Case opened.",
-      "actor": "CompressorGuard Engine",
-      "source": "PressureAnomalyDetector",
-      "case_phase": "DETECTED"
-    },
-    {
-      "timestamp": "2020-06-05T10:15:00Z",
-      "event_type": "CORROBORATION",
-      "title": "Multivariate Corroboration Confirmed",
-      "detail": "Oil temp reached 74.97°C (+5.71σ); Isolation Forest score 0.382 > 0.35. Escalated to INVESTIGATING.",
-      "actor": "ML Pipeline",
-      "source": "IsolationForestModel",
-      "case_phase": "INVESTIGATING"
-    },
-    {
-      "timestamp": "2020-06-05T10:15:20Z",
-      "event_type": "ACTION",
-      "title": "Safe Mode Simulated Intervention",
-      "detail": "Operator verified ActionGuard conditions and executed simulated isolation. Stream branched to post-maintenance telemetry.",
-      "actor": "DISPATCHER-0941",
-      "source": "ActionGuard",
-      "case_phase": "MITIGATING"
-    },
-    {
-      "timestamp": "2020-06-06T19:42:19Z",
-      "event_type": "BENCHMARK_LPS",
-      "title": "Reactive Benchmark Reached",
-      "detail": "Mechanical Low Pressure Switch (LPS=1) tripped in historical unmitigated baseline. Confirmed lead time: 33h 52m.",
-      "actor": "Benchmark Tracker",
-      "source": "MetroPT-3 Baseline",
-      "case_phase": "MITIGATING"
-    },
-    {
-      "timestamp": "2020-06-08T16:05:50Z",
-      "event_type": "RECOVERY",
-      "title": "Recovery Criteria Verified",
-      "detail": "5/5 consecutive loaded observations verified (DV < 0.05 bar, Oil < 67°C).",
-      "actor": "RecoveryVerifier",
-      "source": "RecoveryCriteriaPolicy",
-      "case_phase": "RESOLVED"
-    }
+  "is_permitted": true,
+  "denial_reason": "",
+  "checklist": [
+    {"id": "CASE_CONFIRMED", "label": "Case is active and confirmed", "passed": true},
+    {"id": "MITIGATION_RECOMMENDED", "label": "DecisionEngine recommends mitigation", "passed": true},
+    {"id": "SINGLE_ACTIVE_CASE", "label": "No conflicting active cases on asset", "passed": true},
+    {"id": "SIMULATION_MODE", "label": "Simulation intervention boundary verified", "passed": true},
+    {"id": "REPLAY_BRANCH_AVAILABLE", "label": "Post-maintenance historical stream segment available", "passed": true}
   ]
 }
-```
 
-### 5.5 `POST /api/action/safe-mode`
-```json
+// POST /api/action/safe-mode
 {
   "action_id": "ACT-SM-001",
+  "operator_id": "DISPATCHER-0941",
+  "playbook_id": "SOP-APU-ISO-04",
   "status": "ACTIVATED",
   "execution_mode": "SIMULATION_BRANCH",
   "target_state": "MITIGATING",
@@ -335,41 +356,49 @@ stateDiagram-v2
 }
 ```
 
-### 5.6 `GET /api/recovery`
+### 5.6 `GET /api/recovery` & `POST /api/case/close`
 ```json
+// GET /api/recovery
 {
-  "case_id": "CASE-20200605-01",
+  "incident_id": "APU-INC-20200605-01",
   "is_recovering": true,
-  "is_verified": false,
-  "consecutive_healthy_observations": 4,
+  "is_verified": true,
+  "consecutive_healthy_observations": 5,
   "target_healthy_observations": 5,
+  "latest_telemetry": {
+    "dv_pressure_bar": -0.0164,
+    "oil_temp_c": 64.12,
+    "regime": "LOADED"
+  },
   "criteria": {
     "dv_pressure_max": 0.05,
     "oil_temp_max": 67.0,
     "required_regime": "LOADED"
   }
 }
-```
 
-### 5.7 `POST /api/case/close` (Case Sign-Off & Asset Release)
-```json
+// POST /api/case/close
 {
-  "case_id": "CASE-20200605-01",
-  "status": "CLOSED",
-  "asset_id": "APU-COMP-01",
-  "asset_health": "HEALTHY",
-  "closed_at": "2020-06-08T16:06:10Z",
-  "closed_by": "DISPATCHER-0941",
-  "summary": "Verified physical recovery after maintenance. Train released back to normal revenue service."
+  "status": "CASE_CLOSED",
+  "case_id": "APU-INC-20200605-01",
+  "operator_id": "DISPATCHER-0941",
+  "root_cause": "DESICCANT_DRAIN_VALVE_LEAK",
+  "notes": "Verified 5/5 healthy LOADED observations post-overhaul. Released to revenue service.",
+  "lifecycle_state": "RESOLVED",
+  "asset_health": "HEALTHY"
 }
 ```
 
+### 5.7 `GET /api/case/events` (Chronological CaseEvent Audit Ledger)
+Includes both automated engine events (`OBSERVATION`, `DETECTION`, `CORROBORATION`, `DECISION`, `RECOVERY`) and human-in-the-loop operator events (`OPERATOR_ACK`, `FORENSIC_NOTE`, `WORK_ORDER_CREATED`, `ACTION`, `CASE_CLOSED`).
+
 ---
 
-## 6. Simulation Controls (`/demo/*`)
+## 6. Isolated Simulation & Replay Studio Controls (`/demo/*`)
 
-Simulation controls govern the dual-clock `SimulationRunner`. They do **not** synthesize fake telemetry.
+Simulation controls govern the dual-clock `SimulationRunner` from inside the collapsible **Replay Studio Drawer** (`🎛️ Replay Studio`), keeping the main operator UI clean and production-authentic:
 
-* **`POST /demo/reset`**: Resets the simulation to the initial onset milestone (`onset_0950`) or baseline.
-* **`POST /demo/tick`**: Advances the simulation cursor respecting $\Delta\text{event\_time}$ pacing.
-* **`POST /demo/jump`**: Jumps to verified historical milestones: `onset_0950`, `ml_corroborated_1015`, `lps_reactive_1942`, `post_maintenance_1605`.
+* **`GET /api/scenarios` & `POST /api/operations/scenario`**: Switches the active telemetry scenario (`failure_3`, `failure_1`, `failure_4`, `healthy_baseline`).
+* **`POST /demo/play` / `POST /demo/pause` / `POST /demo/speed`**: Controls continuous real-time stream pacing (`1x`, `10x`, `60x`, `300x`).
+* **`POST /demo/tick`**: Advances the simulation cursor by one 10-second historical observation.
+* **`POST /demo/reset` & `POST /demo/jump`**: Diagnostic bookmark seeking (`early_excursion_0033`, `onset_0950`, `ml_corroborated_1015`, `lps_reactive_1942`, `post_maintenance_1605`) for automated tests and evaluator spot-checks.

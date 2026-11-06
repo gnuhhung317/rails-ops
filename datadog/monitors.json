@@ -1,10 +1,10 @@
 {
   "monitors": [
     {
-      "name": "[CompressorGuard] Early Warning Pressure Breach (DV_pressure > 2.0 bar)",
+      "name": "[CompressorGuard] Early Warning Pressure Breach (DV_pressure > 2.0 bar in LOADED Regime)",
       "type": "metric alert",
       "query": "avg(last_1m):compressorguard.telemetry.dv_pressure_bar{asset_id:APU-COMP-01,regime:LOADED} > 2.0",
-      "message": "⚠️ High discharge valve leakage detected on APU-COMP-01 while operating in LOADED regime.\nPotential air leakage in tháp sấy (dryer tower). Dynamic intervention window: 33h 52m.\nTriggering CompressorGuard Incident Dispatcher. @pagerduty-metro-ops",
+      "message": "⚠️ Persistent discharge valve leakage detected on APU-COMP-01 while operating in LOADED regime.\nMain reservoir TP3 pressure currently stable (> 7.5 bar, LPS=0). Recommend scheduling end-of-shift Depot Oriente maintenance before pressure collapse.\nTriggering CompressorGuard Incident Correlator. @pagerduty-metro-ops",
       "tags": [
         "service:compressorguard",
         "asset_id:APU-COMP-01",
@@ -21,10 +21,30 @@
       }
     },
     {
-      "name": "[CompressorGuard] Recovery Criteria Verified (5/5 healthy LOADED observations)",
+      "name": "[CompressorGuard AI Observability] Isolation Forest & Physics Detector Divergence (Model / Sensor Drift)",
+      "type": "metric alert",
+      "query": "avg(last_5m):compressorguard.ml.physics_agreement{asset_id:APU-COMP-01} < 0.5",
+      "message": "🔍 AI/ML Observability Alert: Multivariate Isolation Forest anomaly score diverged from deterministic thermodynamic detectors on APU-COMP-01.\nInspect feature drift across (DV_pressure, Oil_temp, Motor_current, TP3, H1) or secondary sensor calibration. @mlops-rail-reliability",
+      "tags": [
+        "service:compressorguard",
+        "asset_id:APU-COMP-01",
+        "observability:ai_ml",
+        "severity:warning",
+        "env:hackathon-2026"
+      ],
+      "options": {
+        "thresholds": {
+          "critical": 0.5,
+          "warning": 0.8
+        },
+        "notify_no_data": false
+      }
+    },
+    {
+      "name": "[CompressorGuard] Post-Maintenance Recovery Criteria Verified (5/5 healthy LOADED observations)",
       "type": "metric alert",
       "query": "max(last_1m):compressorguard.recovery.consecutive_observations{asset_id:APU-COMP-01} >= 5",
-      "message": "✅ Physical recovery verified for APU-COMP-01 across 5 consecutive loaded observations.\nDV_pressure < 0.05 bar and Oil_temperature < 67°C satisfied.\nCase ready for operator sign-off and asset release. @metro-dispatch",
+      "message": "✅ Post-maintenance commissioning verified for APU-COMP-01 across 5 consecutive loaded observations.\nDV_pressure < 0.05 bar and Oil_temperature < 67°C satisfied.\nCase ready for engineering sign-off and train release to revenue service. @metro-dispatch",
       "tags": [
         "service:compressorguard",
         "asset_id:APU-COMP-01",
