@@ -32,6 +32,22 @@ python run_demo.py
 
 The server initializes at `http://localhost:8000/` and opens your default browser automatically.
 
+**Optional but recommended for a judge-grade run:**
+
+| Prerequisite | Env var | Effect if unset |
+|:---|:---|:---|
+| MongoDB (Atlas or local) | `MONGODB_URI` | Falls back to the in-memory repository; Time Series + `$setWindowFields` demo not visible |
+| Datadog Agent | `DD_API_KEY`, agent on `:8125`/`:8126` | Metrics/traces are dropped with a warning; app still runs |
+| MQTT broker (IoT edge path) | `MQTT_BROKER` | Producer uses store-and-forward buffering only |
+
+### Independent telemetry producer (the dashboard never pulls data)
+
+```bash
+python scripts/stream_telemetry.py --scenario failure_3 --speed 300 --hours 4
+python scripts/stream_telemetry.py --mode remote --play --speed 300   # steer a running server
+```
+
+
 - **Operations Command Console:** `http://localhost:8000/` or `http://localhost:8000/console`
 - **Interactive OpenAPI Documentation:** `http://localhost:8000/docs`
 - **Health Probe:** `http://localhost:8000/health`
@@ -54,6 +70,7 @@ The server initializes at `http://localhost:8000/` and opens your default browse
 
 ## 🧭 Documentation Navigator
 
+- 🎬 **[Demo Video Script](docs/DEMO_VIDEO_SCRIPT.md):** Kịch bản quay video theo từng shot, 10 shot / 5 phút, ánh xạ shot → tiêu chí chấm, 5 lỗi sẽ khiến video bị nhìn là "demo đồ chơi".
 - 🚉 **[RailOps VN Platform Blueprint](docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md):** Vấn đề đường sắt Việt Nam có thật, định vị platform ⊃ subsystem, module IoT, kiến trúc realtime MongoDB/Datadog, rollout 4 phase tới ĐSCT Bắc–Nam, ánh xạ rubric 30/30/30/10.
 - 🏛️ **[System & Live Stream Architecture (v3.0)](docs/ARCHITECTURE.md):** Kiến trúc luồng Live tách rời (Decoupled Producer–Pipeline–Storage–Observer) theo chuẩn ThreatLens AI.
 - 🎤 **[Pitch Deck & Judge Demo Runbook](docs/PITCH_DECK_AND_DEMO_RUNBOOK.md):** 3-minute pitch script, defense against the 5 toughest judge questions, and step-by-step click guide.
