@@ -160,7 +160,8 @@ def build() -> Presentation:
     tf = _box(s, MARGIN, Inches(1.5), BODY_W, Inches(4.6))
     para(tf, "THỜI GIAN CHÚNG TÔI MUA LẠI ĐƯỢC", 13, TEAL, bold=True, first=True, space_after=8)
     para(tf, "33h 52m", 108, INK, bold=True, space_after=10, align=PP_ALIGN.LEFT)
-    para(tf, "sớm hơn cách konvensional phát hiện lỗi rò khí máy nén — trên 1.516.948 "
+    para(tf, "sớm hơn cách báo động ngưỡng áp suất hiện hành phát hiện lỗi rò khí máy nén — "
+             "trên 1.516.948 "
              "điểm đo vật lý thật, không một giá trị do phần mềm sinh ra.", 17, AMBER,
          space_after=16)
     para(tf, "Chúng tôi không bán độ chính xác. Chúng tôi bán thời gian để quyết định: "
@@ -181,8 +182,8 @@ def build() -> Presentation:
          "Đầu tàu và hạ tầng đã vào vùng mòn; giám sát theo đồng hồ giờ đã hết chỗ dựa"],
         ["10 tuyến đường sắt đô thị đang chuẩn bị đầu tư trong 2025–2026; Hanoi Metro lập Xí nghiệp Quản lý Bảo trì riêng",
          "Đội tàu phình nhanh hơn tốc độ tuyển kỹ sư có kinh nghiệm"],
-        ["ĐSCT Bắc – Nam 1.541 km, ~1,7 triệu tỷ VND, khởi công trước cuối 2026",
-         "Cửa sổ thiết kế hệ thống giám sát ngay từ bàn giao vẫn đang mở"],
+        ["ĐSCT Bắc – Nam 1.541 km, ~1,7 triệu tỷ VND; đã phê duyệt chủ trương đầu tư (NQ 172/2024/QH15), mục tiêu khởi công trước 31/12/2026 được chính phủ đánh giá là \"rất khó khăn\"",
+         "Cửa sổ thiết kế hệ thống giám sát ngay từ bàn giao vẫn mở — nhưng đang đóng dần"],
     ], top=Inches(3.35), widths=[6.2, 4.4], font_size=11.5)
     footer(s, 3)
 
@@ -304,13 +305,13 @@ def build() -> Presentation:
 
     # 11 — Rollout
     s = new()
-    header(s, "Kế hoạch triển khai", "Bốn phase, rủi ro giảm dần, không xin 18 tháng pilot")
+    header(s, "Kế hoạch triển khai", "Bốn phase tiếp theo, rủi ro giảm dần, không xin 18 tháng pilot")
     table(s, ["Phase", "Phạm vi", "Thời gian", "Thành công đo bằng"], [
         ["0 · Proof", "CompressorGuard end-to-end trên dữ liệu thật", "Đã xong (bài nộp này)", "Gates G1–G5 PASS + lead time 33h52m"],
         ["1 · Pilot", "2 đầu tàu Cát Linh – Hà Đông, read-only mirror từ TCMS", "6 tháng", "Tỷ lệ báo động ảo; số lead time thành quyết định thật"],
         ["2 · Mở rộng", "BrakeAirGuard, DoorAirGuard dùng chung engine; tích hợp EAM một chiều", "6–12 tháng", "Số phân hệ onboard bằng cấu hình, không sửa code"],
         ["3 · Nhân bản", "Metro số 1 Bến Thành – Suối Tiên & Line 3 Nhổn – Ga Hà Nội", "12–18 tháng", "Onboard đoàn mới = cấu hình Asset Registry"],
-        ["4 · Chuẩn hoá", "Schema telemetry + event ledger cho ĐSCT Bắc – Nam", "từ 2026", "Dữ liệu sinh ra theo chuẩn, không retrofit"],
+        ["4 · Chuẩn hoá", "Schema telemetry + event ledger cho ĐSCT Bắc – Nam", "cùng tiến độ ĐSCT", "Dữ liệu sinh ra theo chuẩn, không retrofit"],
     ], top=Inches(1.75), widths=[1.5, 4.2, 1.6, 4.0], font_size=11)
     footer(s, 11)
 
@@ -321,9 +322,9 @@ def build() -> Presentation:
     para(tf, "Sáu tháng và hai đầu tàu.", 44, INK, bold=True, space_after=16)
     para(tf, "Đổi lại: một phân hệ đã chạy trọn đường — phát hiện sớm 33h52m, bằng chứng số, "
              "can thiệp có hàng rào, kiểm chứng phục hồi — và một kiến trúc nền tảng sẵn sàng "
-             "cho 1.541 km đang được xây.", 16, MUTED, space_after=20)
+             "cho 1.541 km ĐSCT đã phê duyệt chủ trương đầu tư.", 16, MUTED, space_after=20)
     bullets(s, [
-        ("h", "BỐN TỨA ĐIỂM, TỰ CHỨNG MINH"),
+        ("h", "BỐN CỬA KIỂM, TỰ CHỨNG MINH BẰNG LỆNH"),
         ("t", "Sáng tạo: 4 cơ chế không mặc định  ·  Kỹ thuật: 1.5M điểm thật + gates PASS  ·  "
               "Tác động: vấn đề VN có thật + rollout 4 phase  ·  Trình bày: console zero-hardcode, không nút demo trên header"),
     ], top=Inches(5.35), size=13)

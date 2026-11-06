@@ -6,11 +6,15 @@
 
 ## 1. Artifact bắt buộc theo thể lệ
 
+> **Cách nộp:** điền link repo + video + upload file tại **https://forms.gle/7JHbcihzVA3uGTPw6** trước **2026-11-08 23:59**.
+> **Số thành viên:** 1–3 (kiểm tra danh sách thành viên khai trên form khớp với repo).
+
 | # | Artifact (theo BTC) | Trạng thái | Bằng chứng / đường dẫn | Còn phải làm |
 |:-:|:---|:---:|:---|:---|
 | 1 | **Repository mã nguồn** | ✅ | `git log`, branch `feature/temporal-correctness-and-scenario-validation` | Push + kiểm tra repo mở được với người chấm |
 | 2 | **Video demo** | 🟡 | `docs/DEMO_VIDEO_SCRIPT.md` (10 shot, 5:00 + bản cắt 2:30) | **QUAY THẬT** sau khi console chạy ổn. Đây là mục dễ trượt nhất. |
 | 3 | **Slide thuyết trình chung kết** | ✅ | `docs/railops-vn-final-deck.pptx` — 12 slide, sinh lại bằng `python scripts/build_pitch_deck.py` | Đọc thử 1 lần đúng 3 phút; BGK chỉ cần file PDF/PPTX |
+| 4 | **README** | ✅ | `README.md` — bài toán, kiến trúc, quickstart 2 lệnh, bảng 5 evaluation gates, mục "Operator journey against a live server" | Đối chiếu lại một lần cuối sau khi đổi branding RailOps VN |
 
 ## 2. Yêu cầu kỹ thuật bắt buộc của đề bài
 
