@@ -96,7 +96,7 @@
   > *"We architected for multi-modal scalability using MongoDB Atlas and Datadog:
   > - **MongoDB Time Series Collections:** Sensor points are ingested into compressed time series buckets partitioned by `asset_id`, with automatic TTL and `$setWindowFields` analytical aggregation.
   > - **MongoDB Document Collections:** `operational_cases` and `case_events` maintain rich, searchable incident ledgers with unique compound indexing enforcing at most 1 active case per asset.
-  > - **Datadog Unified Observability:** We stream high-frequency metrics via DogStatsD (`compressorguard.pressure.dv_pressure_bar`, `compressorguard.decision.operational_confidence`) and trace every HTTP dispatch call via `ddtrace` APM."*
+  > - **Datadog Unified Observability:** We stream high-frequency metrics via DogStatsD (`compressorguard.telemetry.dv_pressure_bar`, `compressorguard.ml.physics_agreement`, `compressorguard.recovery.consecutive_observations`) and trace every pipeline tick, detector evaluation and Safe-Mode dispatch via `ddtrace` APM (`trace.compressorguard.detector.evaluate.duration`)."*
 
 ---
 

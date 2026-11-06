@@ -138,7 +138,7 @@ timestamps on the wire, and the append-only `case_events` ledger.
 
 ## 🧪 Running the Full Automated Test Suite
 
-CompressorGuard ships **107 collected automated tests** (exact count from `pytest --collect-only -q`), covering domain contracts, detectors, fusion, the state machine, ActionGuard, MongoDB persistence, Datadog observability, API integration, and the edge gateway's MQTT publish/buffer path:
+CompressorGuard ships **112 collected automated tests** (exact count from `pytest --collect-only -q`), covering domain contracts, detectors, fusion, the state machine, ActionGuard, MongoDB persistence, Datadog observability *and the Datadog dashboard/monitor JSON itself*, the MQTT edge publisher, API integration, and the operator journey:
 
 > Note: the full suite replays the real 1,516,948-row CSV, so it takes several minutes. For a
 > 60-second evidence moment, prefer the two verifiers below — they assert the same guarantees

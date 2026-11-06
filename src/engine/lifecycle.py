@@ -359,7 +359,7 @@ class IncidentLifecycleManager:
         Validates state, transitions to MITIGATING, and branches stream to
         post-maintenance (2020-06-08 16:05:00 to 2020-06-08 17:00:00).
         """
-        with trace_operation("compressorguard.action.safe_mode", resource=self.scenario.asset_id) as span:
+        with trace_operation("action.safe_mode", resource=self.scenario.asset_id) as span:
             span.set_tag("operator_id", operator_id)
             if self.lifecycle_state not in (
                 IncidentLifecycleState.DETECTED,
@@ -463,7 +463,7 @@ class IncidentLifecycleManager:
 
         self.current_point = pt
 
-        with trace_operation("compressorguard.pipeline.tick", resource=pt.asset_id) as tick_span:
+        with trace_operation("pipeline.tick", resource=pt.asset_id) as tick_span:
             tick_span.set_tag("asset_id", pt.asset_id)
             tick_span.set_tag("regime", pt.regime.value if pt.regime else "LOADED")
             tick_span.set_tag("event_time", pt.timestamp.isoformat())
@@ -558,14 +558,14 @@ class IncidentLifecycleManager:
             for d in self.detectors:
                 if d.detector_id == "isolation_forest":
                     t0 = time.perf_counter()
-                    with trace_operation("compressorguard.ml.inference", resource="IsolationForestDetector") as ml_span:
+                    with trace_operation("ml.inference", resource="IsolationForestDetector") as ml_span:
                         res_d = d.detect(self.window)
                         ml_latency_ms = (time.perf_counter() - t0) * 1000.0
                         ml_span.set_tag("ml.score", res_d.observed_value)
                         ml_span.set_tag("ml.corroborated", res_d.status == DetectorStatus.CORROBORATED)
                     detector_results.append(res_d)
                 else:
-                    with trace_operation("compressorguard.detector.evaluate", resource=d.__class__.__name__) as det_span:
+                    with trace_operation("detector.evaluate", resource=d.__class__.__name__) as det_span:
                         res_d = d.detect(self.window)
                         det_span.set_tag("detector_id", d.detector_id)
                         det_span.set_tag("status", res_d.status.value)
@@ -582,7 +582,7 @@ class IncidentLifecycleManager:
                 else None
             )
 
-            with trace_operation("compressorguard.decision.evaluate", resource="DecisionEngine"):
+            with trace_operation("decision.evaluate", resource="DecisionEngine"):
                 decision = self.decision_engine.evaluate(
                     self.current_evidence_state, incident_context=inc_ctx
                 )

@@ -371,3 +371,38 @@ no defense for it — the kind of question that turns a strong Q&A into a stumbl
 `SPEAKER_NOTES[11]` only after confirming the claim it rests on: G1–G5 did all pass
 (`verify_evaluation_gates.py`, 17:19 UTC). Deck regenerated, PDF re-exported so the committed
 artifacts stay in sync; 12/12 slides, notes now 5,431 chars total.
+
+### Datadog leg audited: the dashboard was querying a metric that cannot exist (18:11 UTC)
+Completion audit against the rubric said the weakest leg is Datadog, because no agent runs here and
+nothing verified that `datadog/*.json` agrees with what the code emits. Cross-checking the 8 widgets
+and 3 monitors against `src/observability/metrics.py` found three real defects:
+
+1. **Broken APM widget.** `dashboard.json` queries `trace.compressorguard.detector.evaluate.duration`,
+   but the engine traced spans named `compressorguard.detector.evaluate` on service `compressorguard`.
+   Datadog composes `trace.<service>.<operation>.duration`, so the emitted series was
+   `trace.compressorguard.compressorguard.detector.evaluate.duration` and that widget would have been
+   empty on a real org. Fixed at the root by dropping the redundant service prefix from all five
+   engine spans (`pipeline.tick`, `detector.evaluate`, `ml.inference`, `decision.evaluate`,
+   `action.safe_mode`) so the code now produces exactly what the dashboard asks for. No test pinned
+   the old names, so the rename was safe.
+2. **Unsatisfiable filter.** The same query and the monitor tags use `env:hackathon-2026`, but nothing
+   in the code ever set `DD_ENV` or tagged `env`. `trace_operation()` now tags every span with
+   `env` (default `hackathon-2026`, overridable by `DD_ENV`), so the filter matches by construction.
+3. **Fabricated metric names in the runbook.** `docs/PITCH_DECK_AND_DEMO_RUNBOOK.md:99` told the
+   presenter to say the app streams `compressorguard.pressure.dv_pressure_bar` (real name is
+   `telemetry.dv_pressure_bar`) and `compressorguard.decision.operational_confidence` — that one is a
+   domain field, never a metric. A Datadog sponsor engineer would spot this instantly. Replaced with
+   three names that exist plus the real trace metric.
+
+Added `tests/test_datadog_config_contract.py` (5 tests) so the config and the emitter cannot drift
+again: every `compressorguard.*` metric referenced by the dashboard/monitors must be emitted, every
+`trace.*` query must resolve to a real span, and the `env:` filter must equal the tag the tracer sets.
+Proved the guard is not vacuous by feeding it the old duplicated span name and a fake metric — both
+are now rejected. Suite is 112 collected (was 107).
+
+Because this touched pipeline code, re-proved the live path: server up on :8000,
+`verify_console_journey.py` **23/23** again (ActionGuard 5/5, MITIGATING, recovery 5/5 healthy
+LOADED, RESOLVED/HEALTHY, 10 ledger events), plus 15 passed across the three affected test files.
+Note ddtrace is genuinely installed here — the run flushed to :8126 and dropped with a network
+warning, which is the documented no-agent behaviour, and means the env-tag test ran against a real
+Datadog Span rather than only the fallback.

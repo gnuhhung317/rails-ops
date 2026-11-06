@@ -1,4 +1,5 @@
 import functools
+import os
 from contextlib import contextmanager
 from typing import Optional, Callable, Any
 
@@ -6,6 +7,8 @@ try:
     from ddtrace import tracer as dd_tracer
 except ImportError:
     dd_tracer = None
+
+DEFAULT_ENV = "hackathon-2026"
 
 
 class FallbackSpan:
@@ -56,10 +59,13 @@ def trace_operation(name: str, resource: Optional[str] = None, service: str = "c
     """
     Context manager for measuring domain operations with Datadog APM spans.
     Usage:
-        with trace_operation("compressorguard.detector.evaluate", resource="PressureAnomalyDetector") as span:
+        with trace_operation("detector.evaluate", resource="PressureAnomalyDetector") as span:
             span.set_tag("asset_id", "APU-COMP-01")
             ...
     """
     tracer = get_tracer()
     with tracer.trace(name, resource=resource, service=service) as span:
+        # The dashboard filters APM series by {env:hackathon-2026}; tagging here makes
+        # that filter satisfiable regardless of how the agent's DD_ENV is configured.
+        span.set_tag("env", os.environ.get("DD_ENV", DEFAULT_ENV))
         yield span

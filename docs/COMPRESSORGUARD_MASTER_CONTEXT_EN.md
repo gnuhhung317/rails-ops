@@ -235,7 +235,7 @@ Every milestone generates an immutable event (`EVT-001`, `EVT-002`, ...) recorde
    - `case.lifecycle_state` (Gauge)
 2. **APM Distributed Tracing (`ddtrace`):**
    - FastAPI tracing middleware emits spans for all API endpoints.
-   - Core engine spans: `compressorguard.tick`, `compressorguard.detector.evaluate`, `compressorguard.safe_mode`.
+   - Core engine spans: `pipeline.tick`, `detector.evaluate`, `ml.inference`, `decision.evaluate`, `action.safe_mode`, all on service `compressorguard`. Datadog derives the APM metric as `trace.<service>.<operation>.duration`, so operation names deliberately do **not** repeat the service prefix — `trace.compressorguard.detector.evaluate.duration` is what the dashboard queries. `tests/test_datadog_config_contract.py` enforces that agreement.
 3. **Structured JSON Logging:**
    - `DatadogJSONFormatter` automatically injects `dd.trace_id`, `dd.span_id`, `dd.service`, `dd.env` into every log entry.
 4. **Monitors & Dashboard (`datadog/`):**
