@@ -187,3 +187,29 @@
    - Thiết lập các nguyên tắc bất biến (Zero Fake Telemetry, Decoupled Producer-Consumer, 3 Data Layers, ActionGuard, Human-in-the-Loop, Zero Hardcoded UI).
 4. **Cập Nhật Làm Giàu Sổ Cái Phát Hiện ([`findings.md`](file:///d:/Code/Projects/self-projects/iot-hackathon/findings.md)):**
    - Bổ sung Phần 5 phân tích chi tiết khoảng cách kỹ thuật giữa bản prototype v2.3 và kiến trúc công nghiệp v3.0.
+
+
+---
+
+## Session: 2026-11-07 — RailOps VN Enterprise Positioning, Vietnam Re-Anchor & Producer Completion
+
+### Critical finding corrected
+- **`src/static/` was empty on disk.** Commits `633ec61`/`d5989df` described a finished SPA and "98/98 passing", but the v3.0 interface had been removed on 11/10 and never rebuilt. Recorded start point: commit `f48d74c`, tag `backup/start-point-20261107`.
+- **Action:** rebuilt the v3.0 console (`index.html` 31 KB, `styles.css` 33 KB, `app.js` 86 KB) against the real API contracts. Static audit confirms `node --check` clean, all 23 endpoints bound, and **no hardcoded telemetry values**.
+
+### Deliverables added
+1. **`docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md`** — platform positioning (RailOps VN ⊃ CompressorGuard), real Vietnamese rail evidence with sources, IoT edge module design, MongoDB/Datadog role justification, 4-phase rollout to ĐSCT Bắc–Nam, rubric mapping 30/30/30/10, and the 4 questions BGK will ask with defenses.
+2. **Vietnam re-anchor (Layer A only):** fleet/operator/depot/playbook labels moved from Lisbon Metro to `RailOps VN — Metro Line 1 (Bến Thành – Suối Tiên) · HURC1 · Depot Long Bình`. Physics and dataset provenance untouched; `is_illustrative_context` retained and the note now names MetroPT-3 origin explicitly. Files: `src/domain/registry.py`, `src/api/schemas.py`, `src/api/app.py`, `src/engine/lifecycle.py`, `src/storage/mongo_client.py`, `datadog/*.json`, `screen/*`, pitch runbook.
+3. **`scripts/stream_telemetry.py`** — the decoupled IoT/realtime producer referenced by `docs/ARCHITECTURE.md` and the v3.0 spec but never implemented. Dual-clock stamped frames, MongoDB persistence, MQTT edge topic with store-and-forward buffer, plus a `--mode remote` control harness.
+4. **`docs/DEMO_VIDEO_SCRIPT.md`** — 10 timed shots (5:00) + 2:30 cut, shot→rubric mapping, banned phrasings, and the 5 failure modes that make a demo read as a toy.
+5. **`docs/SUBMISSION_CHECKLIST.md`** — required artifacts vs. evidence, gates command, ranked remaining work against the 08/11 deadline.
+
+### Verification performed
+- `python scripts/verify_evaluation_gates.py` → **G1–G5 ALL PASSED**, `ReplayEngine loaded 1,516,948 rows`.
+- `python scripts/stream_telemetry.py --scenario failure_3 --speed 300 --hours 0.4` → 146 frames / 5.3 s, transitions `NONE → DETECTED → INVESTIGATING`, real values (`dv=2.316 bar`, `oil=72.35 °C`).
+- Targeted tests (per the AGENTS.md no-bare-pytest rule): `test_asset_registry`, `test_registry_boundary`, `test_action_guard`, `test_screen_spec_consistency` → **3/3 then 6/6 passed** after re-anchor fix.
+- `datadog/dashboard.json` and `monitors.json` re-validated as parseable JSON after edit.
+
+### Outstanding before submission
+- Live click-through of the rebuilt console through all four Human-in-the-Loop steps, then record the demo video.
+- Confirm the 12-slide deck artifact is complete.
