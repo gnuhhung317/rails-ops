@@ -363,3 +363,11 @@ incognito browser. Verified the gitignore claim before writing it: `git check-ig
 `.gitignore:5` covers the 145 MB CSV and `.gitignore:4` (`*.zip`) covers the dataset archive.
 Re-counted the test claim with `pytest --collect-only -q` (collection only, never executed): **107**,
 matching README exactly, so no doc change was needed.
+
+### Presenter script: closed the four-vs-five gate ambiguity (18:03 UTC)
+Slide 12 says "BỐN CỬA KIỂM" while slide 11 says "Gates G1–G5". Both are correct but they are
+different lists (the four rubric axes vs the five technical pipeline gates), and the slide-12 note had
+no defense for it — the kind of question that turns a strong Q&A into a stumble. Added the answer to
+`SPEAKER_NOTES[11]` only after confirming the claim it rests on: G1–G5 did all pass
+(`verify_evaluation_gates.py`, 17:19 UTC). Deck regenerated, PDF re-exported so the committed
+artifacts stay in sync; 12/12 slides, notes now 5,431 chars total.

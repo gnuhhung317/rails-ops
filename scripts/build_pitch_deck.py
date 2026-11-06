@@ -204,8 +204,13 @@ SPEAKER_NOTES = [
 
     "[2:52–3:00] Chúng tôi xin sáu tháng và hai đầu tàu. Đổi lại là một phân hệ đã chạy trọn "
     "đường, có bằng chứng số, và một kiến trúc sẵn cho 1.541 km. Mọi con số hôm nay mở được "
-    "bằng một lệnh: python run_demo.py.\nCảm ơn ban giám khảo. Câu hỏi khó nhất ta nên để dành "
-    "cho slide 7 và 12 — mở terminal, không mở slide.",
+    "bằng một lệnh: python run_demo.py.\n"
+    "Nếu bị hỏi 'slide này nói bốn cửa kiểm, slide 11 nói G1–G5 là năm, sao không khớp': hai "
+    "danh sách cố ý khác nhau. Bốn cửa kiểm ở đây là bốn trục chấm của ban giám khảo — Sáng tạo, "
+    "Kỹ thuật, Tác động, Trình bày — mỗi trục vừa nói vừa mở được bằng lệnh. G1–G5 ở slide 11 là "
+    "năm evaluation gate kỹ thuật của riêng pipeline, chạy bằng scripts/verify_evaluation_gates.py, "
+    "và PASS cả năm. Một bên là cách quý vị chấm chúng tôi, một bên là cách máy chúng tôi tự chấm.\n"
+    "Cảm ơn ban giám khảo. Câu hỏi khó nhất ta nên để dành cho slide 7 và 12 — mở terminal, không mở slide.",
 ]
 
 
