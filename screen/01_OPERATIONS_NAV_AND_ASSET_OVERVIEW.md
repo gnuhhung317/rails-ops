@@ -11,7 +11,7 @@
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ [CG] COMPRESSORGUARD // OPERATIONS COMMAND CONSOLE    [ LIVE SIMULATION · HISTORICAL DATA · 0.1 Hz ]         │
-│ Scope: Linha Azul Fleet / Train #302 / APU-COMP-01    Event Clock: 2020-06-04 00:33:07 UTC | [🗄️ Valid. Ref] │
+│ Scope: Metro Line 1 Fleet / Train #302 / APU-COMP-01    Event Clock: 2020-06-04 00:33:07 UTC | [🗄️ Valid. Ref] │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ NAV: [★ 1. FLEET & TELEMETRY MATRIX]    [2. INCIDENT QUEUE (0)]    [3. CASE INVESTIGATION WORKBENCH]         │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
@@ -25,7 +25,7 @@
 │ ───────────────────────────────────────────────── │ ──────────────────────────────────────────────────────── │
 │ [🔍 Search Train / Asset ID...] [Filter: All ▼]   │ Window: [Last 10m (60 pts) ▼]   Regime Shading: [ON ✓]   │
 │                                                   │                                                          │
-│ ▼ 🏢 FLEET-METRO-01 (Linha Azul · Depot Oriente)  │ 1. DISCHARGE VALVE PRESSURE (DV_pressure_bar)            │
+│ ▼ 🏢 FLEET-METRO-01 (Metro Line 1 · Depot Long Bình)  │ 1. DISCHARGE VALVE PRESSURE (DV_pressure_bar)            │
 │   └── ▼ 🚆 TRAIN-302 (Series 300 EMU · In-Service)│    2.5 ┤─────────────────── threshold: 2.0 bar ────────  │
 │         └── ▼ ⚙️ SUB-APU-01 (Air Production Unit) │    0.0 ┤─────────/\────────────────────────────────────  │
 │               └── 🟡 APU-COMP-01 (Knorr LP49)     │                 (00:33:07 Spike: 6.046 bar, 1/3 cycle)   │
@@ -85,7 +85,7 @@
   "operations": {
     "fleet": {
       "fleet_id": "FLEET-METRO-01",
-      "name": "Metro Fleet (Linha Azul)",
+      "name": "RailOps VN — Metro Line 1 (Bến Thành – Suối Tiên)",
       "depot_location": "Depot Oriente"
     },
     "train": {

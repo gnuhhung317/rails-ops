@@ -1,6 +1,7 @@
 # CompressorGuard — Pitch Deck & Judge Demonstration Runbook
 **Industrial Operations Command Platform for Urban Transit Rail**  
-*Lisbon Metro (Linha Azul) · Asset APU-COMP-01 · MUGVN Hackathon 2026*  
+*RailOps VN · Metro Line 1 Bến Thành – Suối Tiên · Asset APU-COMP-01 · MUGVN Hackathon 2026*  
+*Telemetry provenance: MetroPT-3 public air-compressor run records (Lisbon Metro). Fleet labels are an illustrative Vietnamese operational mapping — see `docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md` §4.1.*  
 *MongoDB Atlas Multi-Modal + Datadog Unified Observability*
 
 ---
@@ -22,7 +23,7 @@
 ## 3-Minute Hackathon Pitch Script (Judge Presentation)
 
 ### [0:00 – 0:45] Act I: The Real-World Rail Crisis
-> *"Judges, imagine it is Friday morning on Lisbon Metro’s Linha Azul. Train APU-COMP-01 carries thousands of passengers. Deep within the auxiliary pneumatic system, an air discharge valve suffers a mechanical step degradation.*
+> *"Judges, imagine it is Friday morning on Metro Line 1, Bến Thành – Suối Tiên. A leading car carries thousands of passengers. Deep within the auxiliary pneumatic system, an air discharge valve suffers a mechanical step degradation.*
 >
 > *Under conventional SCADA thresholds, nothing triggers. The train keeps running for another **33 hours and 52 minutes** until Saturday evening, when the Low Pressure Switch finally screams—forcing an emergency trackside evacuation, snarling the blue line, and incurring **€73,600 in delay penalties** and **€120,000 in catastrophic compressor rebuild costs**.*
 >
@@ -30,7 +31,7 @@
 
 ### [0:45 – 1:30] Act II: The CompressorGuard Architecture
 > *"CompressorGuard bridges the chasm between physical asset engineering and real-time operations command:*
-> 1. **Zero Fake Telemetry:** 100% of the 1,516,948 sensor points stream directly from Lisbon Metro’s actual run records.
+> 1. **Zero Fake Telemetry:** 100% of the 1,516,948 sensor points stream from the peer-reviewed MetroPT-3 run records of a metro main air compressor. Not one value is synthesised.
 > 2. **Physics-First Multi-Sensor Decision Engine:** It tracks differential pressure across loaded cycles and thermal drift, rejecting transient noise while isolating true mechanical degradation.
 > 3. **Independent ML Corroborator:** An Isolation Forest acts strictly as an objective corroborator—never creating cases alone, but elevating operational confidence to HIGH when physics and ML reach consensus.
 > 4. **Multi-Modal MongoDB Data Layer:** Telemetry streams into MongoDB Time Series collections with 1-second bucketing, while operational cases, audit events, and lead-time projections live in resilient document collections with strict single-active-case transactional boundaries.

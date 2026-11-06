@@ -35,7 +35,7 @@
 │ │ #1  │ 2020-06-08 16:05:10 │ LOADED │ -0.0171  │ 64.45  │ │Verified 5/5 consecutive LOADED observations   │ │
 │ │ #2  │ 2020-06-08 16:05:20 │ LOADED │ -0.0168  │ 64.38  │ │post-maintenance. DV pressure and Oil temp     │ │
 │ │ #3  │ 2020-06-08 16:05:30 │ LOADED │ -0.0165  │ 64.29  │ │stabilized within nominal bounds. Releasing    │ │
-│ │ #4  │ 2020-06-08 16:05:40 │ LOADED │ -0.0164  │ 64.19  │ │Train #302 back to Linha Azul revenue service. │ │
+│ │ #4  │ 2020-06-08 16:05:40 │ LOADED │ -0.0164  │ 64.19  │ │Train #302 back to Line 1 revenue service. │ │
 │ │ #5  │ 2020-06-08 16:05:50 │ LOADED │ -0.0164  │ 64.12  │ └───────────────────────────────────────────────┘ │
 │ └─────┴─────────────────────┴────────┴──────────┴────────┘                                                   │
 │                                                   │ ┌──────────────────────────────────────────────────────┐ │

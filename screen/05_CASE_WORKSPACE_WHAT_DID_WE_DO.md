@@ -25,7 +25,7 @@
 │ │   Active case in DETECTED or INVESTIGATING    │ │ • Standard Operating Playbook:                           │
 │ │   Current: INVESTIGATING (APU-INC-20200605-01)│ │   [SOP-APU-ISO-04: Dryer Tower #2 Isolation & Overhaul ▼]│
 │ ├───────────────────────────────────────────────┤ │ • Target Maintenance Depot:                              │
-│ │ [✓ PASS] 2. MITIGATION_RECOMMENDED            │ │   [Depot Oriente (Linha Azul Terminal)                 ▼]│
+│ │ [✓ PASS] 2. MITIGATION_RECOMMENDED            │ │   [Depot Long Bình (Line 1 Terminal)                 ▼]│
 │ │   DecisionEngine recommends EXECUTE_MITIGATION│ │ • Scheduled Intervention Window:                         │
 │ │   Current: EXECUTE_MITIGATION (IF 0.382>0.35) │ │   [Next Terminal Turnaround (Within 33h 52m Window)    ▼]│
 │ ├───────────────────────────────────────────────┤ │ • Dispatcher Work Order Instructions:                    │

@@ -9,7 +9,7 @@
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ [CG] COMPRESSORGUARD // OPERATIONS COMMAND CONSOLE    [ LIVE SIMULATION · HISTORICAL DATA · 0.1 Hz ]         │
-│ Scope: Linha Azul Fleet / Incident Queue              Event Clock: 2020-06-05 10:15:00 UTC | [🗄️ Valid. Ref] │
+│ Scope: Metro Line 1 Fleet / Incident Queue              Event Clock: 2020-06-05 10:15:00 UTC | [🗄️ Valid. Ref] │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ NAV: [1. FLEET & TELEMETRY MATRIX]    [★ 2. INCIDENT QUEUE (1 OPEN)]    [3. CASE INVESTIGATION WORKBENCH]    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
@@ -22,7 +22,7 @@
 │ ───────────────────┼─────────────────┼──────────────────────────┼──────────────────┼─────────────┼────────── │
 │ 🔴 APU-INC-20200605│ APU-COMP-01     │ Phase: [INVESTIGATING]   │ DV: +23.75σ      │ ⏱️ 33h 52m  │ [Ack ✓]   │
 │    P1-CRITICAL     │ Train #302      │ Ack:   [ACKED: DISP-0941]│ Oil: +5.71σ      │ (2032 mins  │ [👉 Open  │
-│    Opened 09:50:39 │ Linha Azul / APU│ WO:    [WO-302 DRAFTED]  │ IF:  0.382 (✓)   │  to LPS=1)  │ Workbench]│
+│    Opened 09:50:39 │ Line 1 / APU│ WO:    [WO-302 DRAFTED]  │ IF:  0.382 (✓)   │  to LPS=1)  │ Workbench]│
 │                    │                 │                          │ Guard: 5/5 PASS  │             │           │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ SELECTED CASE QUICK PREVIEW & OPERATOR TRIAGE BAR (INLINE DRAWER / EXPANDABLE ROW)                           │
@@ -71,7 +71,7 @@
       "incident_id": "APU-INC-20200605-01",
       "asset_id": "APU-COMP-01",
       "train_id": "TRAIN-302",
-      "fleet_name": "Metro Fleet (Linha Azul)",
+      "fleet_name": "RailOps VN — Metro Line 1 (Bến Thành – Suối Tiên)",
       "lifecycle_state": "INVESTIGATING",
       "asset_health": "CRITICAL",
       "operational_confidence": "HIGH",

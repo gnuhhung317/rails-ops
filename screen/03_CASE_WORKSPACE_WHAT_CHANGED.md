@@ -28,7 +28,7 @@
 │ • Persistence:[3/3 Loaded Cycles] │ 65.0 ┤               ╭───────╯                   │ │across 3 cycles... │ │
 │                                   │ 55.0 ┤───────────────╯ (Cumulative friction)     │ └───────────────────┘ │
 │ LAYER 2: BUSINESS CONTEXT (FLEET) │                                                  │ [➕ Append to Ledger] │
-│ • Fleet:      Linha Azul (Metro)  │ LIVE TELEMETRY DELTA TABLE (DYNAMIC API BINDING):│                       │
+│ • Fleet:      Metro Line 1 (HURC1)  │ LIVE TELEMETRY DELTA TABLE (DYNAMIC API BINDING):│                       │
 │ • Service:    TRAIN-302 (Car 1)   │ ┌──────────────┬───────────┬──────────┬────────┐ │ 3. ACTIONGUARD STATUS │
 │ • Subsystem:  SUB-APU-01 (APU)    │ │ Metric       │ Observed  │ Baseline │ Sigma  │ │ • Passed: 5/5 Checks  │
 │ • Risk:       H1 brake reservoir  │ ├──────────────┼───────────┼──────────┼────────┤ │ • Next:   Select SOP  │
