@@ -213,3 +213,38 @@
 ### Outstanding before submission
 - Live click-through of the rebuilt console through all four Human-in-the-Loop steps, then record the demo video.
 - Confirm the 12-slide deck artifact is complete.
+
+---
+
+## Session close-out — 2026-11-06 17:38 UTC (Phase 5 verified live, Phase 6 code-complete)
+
+### Deliverables landed this block
+- `scripts/build_pitch_deck.py` — deterministic deck generator; regenerated `docs/railops-vn-final-deck.pptx` to **12 slides**, scanned clean of CJK/full-width leftovers (slide 4 header defect fixed).
+- `scripts/verify_console_journey.py` — new HTTP-level operator-journey verifier (23 assertions), runnable by anyone with a live server.
+- `src/static/vendor/chart.umd.min.js` — Chart.js 4.4.1 vendored; console no longer depends on a CDN at demo time.
+
+### Console verified in a real browser (not just statically)
+- Boot: `python -m uvicorn src.api.app:create_app --factory --port 8021` (note: `src.api.app` exposes a factory, so `--factory` is required).
+- 6 Chart.js canvases rendering, 42 data-bound nodes, **0 empty bindings**, **0 console errors**.
+- Replay Studio drawer: 4 scenarios + 5 dynamically built bookmarks (`early_excursion_0033`, `onset_0950`, `ml_corroborated_1015`, `lps_reactive_1942`, `post_maintenance_1605`); clicking a bookmark and Play/Pause by mouse advanced the cursor to `2020-06-05 09:50:49` with 66 samples emitted.
+- Layer C Validation Reference drawer carries the explicit "never fed to detectors" statement.
+- Header main strip contains no simulation controls (invariant 7 holds).
+
+### Journey verification result: 23/23 PASSED (17:37 UTC)
+Key evidence captured by the run: premature Safe Mode -> **HTTP 409** and asset still in revenue service;
+case opened from real CSV telemetry `APU-INC-20200605-01`; **lead_time 33h 52m**; 4 evidence cards;
+rolling `rolling_avg_dv`/`rolling_std_dv` per frame; dual clock proven on the wire
+(`timestamp` 2020-06-08 vs `ingested_at` 2026-11-06); ActionGuard **5/5**; Safe Mode permitted ->
+MITIGATING; recovery **5/5 healthy LOADED**; sign-off -> `RESOLVED` / `HEALTHY`; ledger **10 events**.
+
+### Consistency fixes found by looking rather than assuming
+- API version was reported as `2.1.0` by `/health` while the app declared `2.2.0`; both now read from
+  a single source (`app.version`) and the app is declared **3.0.0** with the platform-first title.
+- Console `<title>` and brand strip now lead with **RAILOPS VN** while CompressorGuard stays the subsystem name.
+- Meta description no longer labels the fleet as "Lisbon Metro"; dataset provenance statements elsewhere keep Lisbon verbatim.
+- A `PMO-DEPOT-LISBON-01` option seen once in the depot dropdown was stale in-memory state from the prior journey run; after reset the dropdown reads `Depot Long Bình` / `DEPOT-LONGBINH-01` only. No literal remains in `src/`.
+- Targeted test `tests/test_asset_registry.py` -> 2 passed (no bare pytest, per AGENTS.md).
+
+### What is genuinely left
+1. **Record the 5:00 demo video** — the only required artifact that cannot be automated here.
+2. **Push the branch** and confirm judges can open the repository.

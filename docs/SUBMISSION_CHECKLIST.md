@@ -10,7 +10,7 @@
 |:-:|:---|:---:|:---|:---|
 | 1 | **Repository mã nguồn** | ✅ | `git log`, branch `feature/temporal-correctness-and-scenario-validation` | Push + kiểm tra repo mở được với người chấm |
 | 2 | **Video demo** | 🟡 | `docs/DEMO_VIDEO_SCRIPT.md` (10 shot, 5:00 + bản cắt 2:30) | **QUAY THẬT** sau khi console chạy ổn. Đây là mục dễ trượt nhất. |
-| 3 | **Slide thuyết trình chung kết** | 🟡 | `docs/railops-vn-final-deck.pptx` (12 slide theo kế hoạch) | Verify số slide thực tế + đọc thử 1 lần đúng 3 phút |
+| 3 | **Slide thuyết trình chung kết** | ✅ | `docs/railops-vn-final-deck.pptx` — 12 slide, sinh lại bằng `python scripts/build_pitch_deck.py` | Đọc thử 1 lần đúng 3 phút; BGK chỉ cần file PDF/PPTX |
 
 ## 2. Yêu cầu kỹ thuật bắt buộc của đề bài
 
@@ -46,6 +46,10 @@ python scripts/stream_telemetry.py --scenario failure_3 --speed 300 --hours 1
 
 # Console bật được
 python run_demo.py                               # http://localhost:8000/console
+
+# Toàn bộ hành trình Operator đi qua API thật, 23 khẳng định tự động
+# (server phải đang chạy; endpoint 409 Safe Mode sớm là một phần của test)
+CONSOLE_BASE_URL=http://localhost:8000 python scripts/verify_console_journey.py
 ```
 
 Kết quả gate gần nhất: **G1–G5 PASSED**, `ReplayEngine loaded 1,516,948 rows`
@@ -53,11 +57,19 @@ Kết quả gate gần nhất: **G1–G5 PASSED**, `ReplayEngine loaded 1,516,94
 trace bị drop kèm warning — đó là hành vi chấp nhận được, nhưng **khi quay video
 phải có agent** hoặc nói rõ là đang tắt.
 
+Kết quả journey gần nhất (`verify_console_journey.py`): **23/23 PASSED**
+(2026-11-06 17:37 UTC) — trong đó `lead_time = 33h 52m`, `4 evidence cards`,
+ActionGuard `5/5`, recovery `5/5 healthy LOADED`, `state=RESOLVED / health=HEALTHY`,
+ledger `10 events`, và Safe Mode sớm bị từ chối bằng **HTTP 409**.
+Console v3.0 chạy thật trên trình duyệt: 6 Chart.js canvases, 42 node bind,
+**0 binding trống**, **0 lỗi console**, bookmark/Play/Pause hoạt động bằng chuột.
+
 ## 5. Việc còn lại, xếp theo độ rủi ro khi hết giờ
 
 | Ưu tiên | Việc | Vì sao rủi ro |
 |:-:|:---|:---|
-| **P0** | Chạy thật console v3.0, bấm trọn 4 bước Human-in-the-Loop tới lúc đóng case | Không chạy được thì video và slide đều mất căn cứ |
+| **P0** | Quay + dựng video demo (5:00) | Artifact bắt buộc, tốn thời gian nhất, dễ trễ nhất; console đã xanh nên chỉ còn thiếu file ghi hình |
+| ~~P0~~ | ~~Chạy thật console v3.0, bấm trọn 4 bước Human-in-the-Loop~~ **XONG 2026-11-06 17:37 UTC** | `verify_console_journey.py` 23/23 + trình duyệt thật 0 lỗi console |
 | **P0** | Quay + dựng video demo (5:00) | Artifact bắt buộc, tốn thời gian nhất, dễ trễ nhất |
 | **P1** | Chốt deck 12 slide, tập nói 3 phút | Artifact bắt buộc |
 | **P1** | Push repo, kiểm tra quyền truy cập của BGK | Nộp repo không mở được = mất điểm kỹ thuật |

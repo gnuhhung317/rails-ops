@@ -64,9 +64,9 @@ def create_app(manager: Optional[IncidentLifecycleManager] = None) -> FastAPI:
                 pass
 
     app = FastAPI(
-        title="CompressorGuard Incident Command Console API",
-        version="2.2.0",
-        description="Presentation-agnostic Domain API and Demo Endpoints for RailOps VN Metro Line 1 APU-COMP-01.",
+        title="RailOps VN — CompressorGuard Operations Command Console API",
+        version="3.0.0",
+        description="Presentation-agnostic Domain API and Demo Endpoints for RailOps VN Metro Line 1 APU-COMP-01. Telemetry provenance: MetroPT-3 public compressor run records (Lisbon Metro); fleet labels are an illustrative Vietnamese operational mapping.",
         lifespan=lifespan,
     )
 
@@ -96,8 +96,8 @@ def create_app(manager: Optional[IncidentLifecycleManager] = None) -> FastAPI:
     @app.get("/health")
     def health():
         return {
-            "name": "CompressorGuard API",
-            "version": "2.1.0",
+            "name": app.title,
+            "version": app.version,
             "status": "OPERATIONAL",
         }
 
@@ -110,8 +110,8 @@ def create_app(manager: Optional[IncidentLifecycleManager] = None) -> FastAPI:
         if index_file.exists() and ("text/html" in accept or "application/json" not in accept):
             return FileResponse(str(index_file))
         return {
-            "name": "CompressorGuard API",
-            "version": "2.1.0",
+            "name": app.title,
+            "version": app.version,
             "status": "OPERATIONAL",
             "console_url": "/console",
         }

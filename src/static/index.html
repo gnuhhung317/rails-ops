@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAILOPS VN // COMPRESSORGUARD OPERATIONS COMMAND CONSOLE</title>
+<meta name="description" content="RailOps VN industrial operations command console. CompressorGuard mission-critical subsystem: v3.0 Human-in-the-Loop incident workbench for Metro Line 1 APU-COMP-01, replaying MetroPT-3 public compressor telemetry.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+<script src="/static/vendor/chart.umd.min.js"></script>
+<script>
+if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>');
+</script>
+</head>
+<body data-view="fleet" class="theme-carbon">
+
+<!-- ══════════════════════════════ TOP COMMAND HEADER ══════════════════════════════ -->
+<header class="cmd-header">
+  <div class="cmd-header-row">
+    <div class="brand-block">
+      <span class="brand-mark">CG</span>
+      <span class="brand-title">COMPRESSORGUARD</span>
+      <span class="brand-sep">//</span>
+      <span class="brand-sub">RAILOPS VN · OPERATIONS COMMAND CONSOLE</span>
+    </div>
+
+    <div class="stream-pill" id="stream-pill" title="Telemetry is pushed by the server-side background stream worker. The dashboard is a pure consumer.">
+      <span class="pulse-dot"></span>
+      <span id="stream-pill-label">LIVE SIMULATION · HISTORICAL DATA</span>
+      <span class="pill-sep">·</span>
+      <span class="mono" id="stream-rate">0.1 Hz</span>
+    </div>
+
+    <div class="header-controls">
+      <label class="ctl-group">
+        <span class="ctl-label">Operator</span>
+        <select id="operator-select" class="ctl-select">
+          <option value="DISPATCHER-0941">DISPATCHER-0941</option>
+          <option value="DISPATCHER-1177">DISPATCHER-1177</option>
+          <option value="LEAD-ENG-2204">LEAD-ENG-2204</option>
+        </select>
+      </label>
+
+      <div class="ctl-group">
+        <span class="ctl-label">Timeframe</span>
+        <div class="seg-bar" id="timeframe-seg">
+          <button class="seg-btn" data-timeframe="5m">5m</button>
+          <button class="seg-btn is-active" data-timeframe="15m">15m</button>
+          <button class="seg-btn" data-timeframe="1h">1h</button>
+          <button class="seg-btn" data-timeframe="6h">6h</button>
+          <button class="seg-btn" data-timeframe="all">all</button>
+        </div>
+      </div>
+
+      <div class="ctl-group">
+        <span class="ctl-label">Feed</span>
+        <div class="conn-indicator" id="conn-indicator" data-state="unknown">
+          <span class="conn-dot"></span><span id="conn-text">PROBING</span>
+        </div>
+      </div>
+
+      <button class="ghost-btn" id="btn-toggle-vr" title="Open the Layer C Validation Reference ground-truth drawer">
+        <span aria-hidden="true">&#128451;</span> Valid. Ref
+      </button>
+      <button class="ghost-btn" id="btn-toggle-replay" title="Open the Replay Studio drawer (Shift + S)">
+        <span aria-hidden="true">&#127899;</span> Replay Studio
+      </button>
+    </div>
+  </div>
+
+  <div class="cmd-header-row sub-row">
+    <nav class="breadcrumb" id="breadcrumb" aria-label="Asset hierarchy">
+      <span class="crumb muted">Scope: MetroPT-3 fleet / APU-COMP-01 — loading asset registry…</span>
+    </nav>
+    <div class="event-clock">
+      <span class="ctl-label">Event Clock</span>
+      <span class="mono" id="event-clock">—</span>
+      <span class="clock-tag">event_time</span>
+      <span class="ctl-label sim-label">Stream cursor</span>
+      <span class="mono" id="sim-points">—</span>
+      <span class="clock-tag">points emitted</span>
+    </div>
+  </div>
+
+  <nav class="main-nav" id="main-nav">
+    <button class="nav-tab is-active" data-view="fleet"><span class="nav-num">1</span> FLEET &amp; TELEMETRY MATRIX</button>
+    <button class="nav-tab" data-view="queue"><span class="nav-num">2</span> INCIDENT QUEUE <span class="nav-badge" id="nav-queue-count">0</span></button>
+    <button class="nav-tab" data-view="workbench"><span class="nav-num">3</span> CASE INVESTIGATION WORKBENCH</button>
+    <button class="nav-tab" data-view="timeline"><span class="nav-num">7</span> CASE TIMELINE / AUDIT LEDGER</button>
+  </nav>
+</header>
+
+<!-- ══════════════════════════════ DYNAMIC KPI STRIP ══════════════════════════════ -->
+<section class="kpi-strip" id="kpi-strip" aria-label="Live operations summary">
+  <div class="kpi-card">
+    <div class="kpi-label">MONITORED ASSETS</div>
+    <div class="kpi-value mono" data-kpi="monitored_assets_count">—</div>
+    <div class="kpi-note mono" data-kpi-note="provenance">stream: —</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">ACTIVE CASES</div>
+    <div class="kpi-value mono" data-kpi="active_cases_count">—</div>
+    <div class="kpi-note mono">policy: single active case per asset</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">OBSERVING / NOMINAL</div>
+    <div class="kpi-value mono" data-kpi="assets_observing_count">—</div>
+    <div class="kpi-note mono" data-kpi-note="transient">transient watchlist: —</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">OPERATING REGIME</div>
+    <div class="kpi-value mono" data-kpi="regime">—</div>
+    <div class="kpi-note mono" data-kpi-note="duty">loaded duty: —</div>
+  </div>
+  <div class="kpi-card kpi-accent">
+    <div class="kpi-label">INTERVENTION LEAD WINDOW</div>
+    <div class="kpi-value mono" data-kpi="lead_window">STANDBY</div>
+    <div class="kpi-note mono" data-kpi-note="conventional">benchmark: —</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">SCENARIO</div>
+    <div class="kpi-value small mono" data-kpi="scenario_name">—</div>
+    <div class="kpi-note mono" data-kpi-note="mode">mode: —</div>
+  </div>
+</section>
+
+<main class="view-root">
+
+  <!-- ══════════════════════ SCREEN 01 — FLEET & TELEMETRY MATRIX ══════════════════════ -->
+  <section class="view is-active" id="view-fleet">
+    <div class="split split-46">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">FLEET ASSET HIERARCHY &amp; SEARCH</h2>
+          <span class="panel-meta mono" data-bind="registry-source">AssetRegistry</span>
+        </div>
+        <div class="panel-body">
+          <div class="tree" id="fleet-tree" data-dynamic="api/operations"></div>
+
+          <div class="grid-toolbar">
+            <input type="search" id="asset-search" class="ctl-input" placeholder="Search Train ID / Asset ID / model…">
+            <select id="filter-health" class="ctl-select">
+              <option value="ALL">HEALTH: ALL</option>
+              <option value="HEALTHY">HEALTH: HEALTHY</option>
+              <option value="DEGRADING">HEALTH: DEGRADING</option>
+              <option value="CRITICAL">HEALTH: CRITICAL</option>
+            </select>
+            <select id="filter-regime" class="ctl-select">
+              <option value="ALL">REGIME: ALL</option>
+              <option value="LOADED">REGIME: LOADED</option>
+              <option value="UNLOADED">REGIME: UNLOADED</option>
+            </select>
+          </div>
+
+          <div class="table-wrap scroll-soft">
+            <table class="data-table" id="asset-grid">
+              <thead>
+                <tr>
+                  <th>Asset / Train</th><th>Criticality</th><th>Health</th>
+                  <th>Regime</th><th>Lead Window</th><th></th>
+                </tr>
+              </thead>
+              <tbody data-dynamic="api/operations+api/incident"></tbody>
+            </table>
+          </div>
+          <p class="empty-note" id="asset-grid-empty" hidden>No asset matches the current filter.</p>
+
+          <div class="sub-head">LIVE ASSET TELEMETRY MATRIX <span class="mono muted" data-bind="matrix-clock">(window from api/telemetry/window)</span></div>
+          <div class="table-wrap scroll-soft">
+            <table class="data-table dense" id="sensor-matrix">
+              <thead><tr><th>Signal</th><th>Live reading</th><th>Status</th></tr></thead>
+              <tbody data-dynamic="api/telemetry/window"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">MULTI-CHANNEL SYNCHRONIZED STRIP CHARTS</h2>
+          <div class="chart-toolbar">
+            <span class="mono muted" data-bind="window-label">—</span>
+            <label class="chk"><input type="checkbox" id="toggle-regime-shading" checked> Regime shading</label>
+            <label class="chk"><input type="checkbox" id="toggle-thresholds" checked> Threshold bands</label>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="chart-notice" class="notice-strip" hidden></div>
+          <div class="chart-block">
+            <div class="chart-title">1 · DISCHARGE VALVE PRESSURE <span class="mono muted">DV_pressure (bar)</span></div>
+            <div class="chart-canvas-wrap"><canvas id="chart-dv"></canvas></div>
+          </div>
+          <div class="chart-block">
+            <div class="chart-title">2 · COMPRESSOR OIL TEMPERATURE <span class="mono muted">Oil_temp (°C)</span></div>
+            <div class="chart-canvas-wrap"><canvas id="chart-oil"></canvas></div>
+          </div>
+          <div class="chart-block">
+            <div class="chart-title">3 · MOTOR CURRENT &amp; OPERATING REGIME <span class="mono muted">Motor_current (A)</span></div>
+            <div class="chart-canvas-wrap"><canvas id="chart-current"></canvas></div>
+          </div>
+          <div class="chart-block">
+            <div class="chart-title">4 · BRAKE AIR NETWORK <span class="mono muted">TP2 / TP3 / reservoirs (bar)</span></div>
+            <div class="chart-canvas-wrap"><canvas id="chart-tp"></canvas></div>
+          </div>
+          <div class="gauge-row">
+            <div class="gauge-card">
+              <div class="kpi-label">ML CORROBORATION · ISOLATION FOREST (5 LOADED FEATURES)</div>
+              <div class="gauge-bar"><span class="gauge-fill" id="if-fill"></span><span class="gauge-mark" id="if-mark"></span></div>
+              <div class="mono gauge-read" id="if-read">awaiting evidence</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel-bottom">
+      <div class="panel-head">
+        <h2 class="panel-title">REAL-TIME ANOMALY &amp; ANTI-FATIGUE SUPPRESSION STREAM</h2>
+        <span class="panel-meta mono" data-bind="suppression-count">transients suppressed: —</span>
+      </div>
+      <div class="panel-body">
+        <div class="table-wrap scroll-soft">
+          <table class="data-table dense" id="suppression-stream">
+            <thead>
+              <tr><th>Time (event_time)</th><th>Asset</th><th>Signal &amp; reading</th><th>Deviation</th><th>Regime</th><th>Engine disposition</th></tr>
+            </thead>
+            <tbody data-dynamic="api/telemetry/analytics"></tbody>
+          </table>
+        </div>
+        <p class="empty-note" id="suppression-empty" hidden>No suppressed transient excursions in the evaluated window.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ SCREEN 02 — INCIDENT QUEUE ══════════════════════ -->
+  <section class="view" id="view-queue">
+    <div class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title">ACTIVE OPERATIONAL CASES</h2>
+        <div class="grid-toolbar inline">
+          <input type="search" id="case-search" class="ctl-input" placeholder="Search case ID / asset / train…">
+          <select id="filter-ack" class="ctl-select">
+            <option value="ALL">ACK: ALL</option><option value="ACKED">ACK: ACKNOWLEDGED</option><option value="UNACKED">ACK: UNACKNOWLEDGED</option>
+          </select>
+          <label class="chk mono">Single-case invariant <input type="checkbox" id="invariant-chk" checked disabled></label>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="queue-cards" id="queue-cards" data-dynamic="api/operations+api/action/guard-status"></div>
+        <p class="empty-note" id="queue-empty" hidden>The engine has no open case on this asset right now — the stream is in monitoring state.</p>
+        <div class="invariant-banner" id="invariant-banner">
+          <span class="inv-icon mono">i</span>
+          <span><strong>Single Active Case Invariant.</strong> New corroborating evidence upgrades the <em>phase</em> of the existing case instead of opening a duplicate ticket. One asset = at most one open case.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel-bottom">
+      <div class="panel-head">
+        <h2 class="panel-title">RESOLVED &amp; CLOSED CASE ARCHIVE (POST-MORTEM LEDGER)</h2>
+        <span class="panel-meta mono" data-bind="archive-count">signed off: —</span>
+      </div>
+      <div class="panel-body">
+        <div class="table-wrap scroll-soft">
+          <table class="data-table" id="archive-grid">
+            <thead><tr><th>Case ID</th><th>Asset / Train</th><th>Root cause classification</th><th>Closed at (event_time)</th><th>Recovery</th></tr></thead>
+            <tbody data-dynamic="api/case/events"></tbody>
+          </table>
+        </div>
+        <p class="empty-note" id="archive-empty" hidden>No case has been signed off in the current replay session yet.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ SCREENS 03–06 — 3-PANE WORKBENCH ══════════════════════ -->
+  <section class="view" id="view-workbench">
+    <div class="wb-head">
+      <div class="wb-id">
+        <span class="mono wb-case" data-bind="wb-case-id">NO ACTIVE CASE</span>
+        <span class="mono muted" data-bind="wb-asset">—</span>
+      </div>
+      <div class="wb-states">
+        <span class="state-chip" data-bind="chip-phase">PHASE —</span>
+        <span class="state-chip" data-bind="chip-health">HEALTH —</span>
+        <span class="state-chip" data-bind="chip-ack">ACK —</span>
+        <span class="state-chip" data-bind="chip-guard">GUARD —</span>
+      </div>
+      <div class="wb-focus" id="wb-focus-tabs">
+        <button class="focus-btn is-active" data-focus="changed">1. WHAT CHANGED?</button>
+        <button class="focus-btn" data-focus="evidence">2. WHY? (EVIDENCE)</button>
+        <button class="focus-btn" data-focus="guard">3. PLAYBOOK &amp; GUARD</button>
+        <button class="focus-btn" data-focus="recovery">4. RECOVERY</button>
+        <button class="focus-btn" data-focus="audit">5. AUDIT</button>
+      </div>
+    </div>
+
+    <div class="split split-3pane">
+      <!-- LEFT PANE -->
+      <div class="pane pane-left">
+        <div class="block" data-block="changed">
+          <div class="block-head">INTERVENTION LEAD WINDOW <span class="mono muted">Layer B · computed</span></div>
+          <div class="lead-big mono" data-bind="wb-lead">—</div>
+          <dl class="kv-list" data-dynamic="api/incident">
+            <div><dt>Earliest detection</dt><dd class="mono" data-bind="wb-onset">—</dd></div>
+            <div><dt>Conventional LPS breach</dt><dd class="mono" data-bind="wb-lps">—</dd></div>
+            <div><dt>Projected RUL window</dt><dd class="mono" data-bind="wb-rul">—</dd></div>
+            <div><dt>Legacy switch status</dt><dd class="mono" data-bind="wb-legacy">—</dd></div>
+          </dl>
+        </div>
+
+        <div class="block" data-block="changed">
+          <div class="block-head">LAYER A/B — OPERATIONAL CONDITION</div>
+          <dl class="kv-list" data-dynamic="api/incident">
+            <div><dt>Summary</dt><dd data-bind="wb-summary">—</dd></div>
+            <div><dt>Confidence</dt><dd class="mono" data-bind="wb-confidence">—</dd></div>
+            <div><dt>Persistence</dt><dd class="mono" data-bind="wb-persistence">—</dd></div>
+            <div><dt>Runtime warning</dt><dd class="mono" data-bind="wb-warning">—</dd></div>
+          </dl>
+        </div>
+
+        <div class="block" data-block="changed">
+          <div class="block-head">LAYER A — BUSINESS CONTEXT <span class="mono muted">AssetRegistry</span></div>
+          <dl class="kv-list" data-dynamic="api/operations"></dl>
+        </div>
+
+        <div class="block" data-block="evidence">
+          <div class="block-head">4-SIGNAL EVIDENCE PACK <span class="mono muted">provenance expanded</span></div>
+          <div class="evidence-list" id="evidence-list" data-dynamic="api/evidence"></div>
+          <div class="persistence-box">
+            <div class="kpi-label">TEMPORAL PERSISTENCE</div>
+            <div class="persist-dots" id="persist-dots"></div>
+            <div class="mono muted" data-bind="persist-text">—</div>
+          </div>
+        </div>
+
+        <div class="block" data-block="evidence">
+          <div class="block-head">LAYER C — VALIDATION REFERENCE</div>
+          <p class="block-text">Ground truth is isolated in the Validation Reference drawer and is <strong>never</strong> consumed by the online detectors.</p>
+          <button class="ghost-btn wide" data-open-vr><span aria-hidden="true">&#128451;</span> Open Validation Drawer</button>
+        </div>
+      </div>
+
+      <!-- CENTER PANE -->
+      <div class="pane pane-center">
+        <div class="block" data-block="changed">
+          <div class="block-head">LIVE STEP-CHANGE &amp; THERMAL DRIFT <span class="mono muted" data-bind="wb-window-label">—</span></div>
+          <div class="chart-block compact">
+            <div class="chart-title">DV_pressure vs loaded baseline band</div>
+            <div class="chart-canvas-wrap"><canvas id="chart-wb-dv"></canvas></div>
+          </div>
+          <div class="chart-block compact">
+            <div class="chart-title">Oil_temp vs recovery threshold</div>
+            <div class="chart-canvas-wrap"><canvas id="chart-wb-oil"></canvas></div>
+          </div>
+          <div class="table-wrap scroll-soft">
+            <table class="data-table dense" id="delta-table">
+              <thead><tr><th>Metric</th><th>Observed</th><th>Baseline</th><th>Sigma</th><th>Status</th></tr></thead>
+              <tbody data-dynamic="api/evidence"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="block" data-block="guard">
+          <div class="block-head">DYNAMIC ACTIONGUARD PRE-FLIGHT <span class="mono" data-bind="guard-count">—</span></div>
+          <div class="table-wrap">
+            <table class="data-table dense" id="guard-table">
+              <thead><tr><th>Gate</th><th>Policy condition</th><th>Live value</th><th>Result</th></tr></thead>
+              <tbody data-dynamic="api/action/guard-status"></tbody>
+            </table>
+          </div>
+          <div class="denial-box" id="guard-denial" data-dynamic="api/action/guard-status"></div>
+        </div>
+
+        <div class="block" data-block="recovery">
+          <div class="block-head">5-SAMPLE LOADED RECOVERY VERIFICATION <span class="mono" data-bind="recovery-count">—</span></div>
+          <div class="verify-steps" id="verify-steps" data-dynamic="api/recovery"></div>
+          <div class="gauge-row two">
+            <div class="gauge-card">
+              <div class="kpi-label">DV_PRESSURE (LOADED)</div>
+              <div class="gauge-value mono" data-bind="rec-dv">—</div>
+              <div class="mono muted" data-bind="rec-dv-max">max —</div>
+              <div class="mono badge-slot" data-bind="rec-dv-state">—</div>
+            </div>
+            <div class="gauge-card">
+              <div class="kpi-label">OIL_TEMP (LOADED)</div>
+              <div class="gauge-value mono" data-bind="rec-oil">—</div>
+              <div class="mono muted" data-bind="rec-oil-max">max —</div>
+              <div class="mono badge-slot" data-bind="rec-oil-state">—</div>
+            </div>
+          </div>
+          <div class="sub-head">CONSECUTIVE LOADED OBSERVATION LOG <span class="mono muted">(live window, evaluated against recovery criteria)</span></div>
+          <div class="table-wrap scroll-soft">
+            <table class="data-table dense" id="recovery-log">
+              <thead><tr><th>#</th><th>Timestamp (event_time)</th><th>Regime</th><th>DV (bar)</th><th>Oil (°C)</th><th>Criterion</th></tr></thead>
+              <tbody data-dynamic="api/telemetry/window+api/recovery"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="block" data-block="audit">
+          <div class="block-head">LEDGER PREVIEW <span class="mono muted">append-only CaseEvent</span></div>
+          <div class="ledger-mini" id="ledger-mini" data-dynamic="api/case/events"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANE -->
+      <div class="pane pane-right">
+        <div class="rail-note mono">HUMAN-IN-THE-LOOP · OPERATOR ACTIONS ONLY</div>
+
+        <div class="block op-block" data-block="changed">
+          <div class="step-head"><span class="step-num mono">STEP 1</span> ACKNOWLEDGE &amp; TRIAGE</div>
+          <div class="mono ack-state" data-bind="ack-state">—</div>
+          <label class="field"><span>Priority</span>
+            <select id="ack-priority" class="ctl-select">
+              <option value="P1-CRITICAL">P1-CRITICAL</option>
+              <option value="P2-HIGH">P2-HIGH</option>
+              <option value="P3-MEDIUM">P3-MEDIUM</option>
+            </select>
+          </label>
+          <label class="field"><span>Initial triage note</span>
+            <textarea id="ack-note" class="ctl-textarea" rows="3" placeholder="e.g. Pressure step breach confirmed on leading cab APU; monitoring thermal drift."></textarea>
+          </label>
+          <div class="btn-row">
+            <button class="primary-btn" id="btn-acknowledge">Acknowledge Case</button>
+            <button class="danger-btn" id="btn-false-positive">Mark False Positive</button>
+          </div>
+          <label class="field"><span>False-positive reason (audit)</span>
+            <input id="fp-reason" class="ctl-input" type="text" placeholder="Sensor calibration transient verified by field technician.">
+          </label>
+        </div>
+
+        <div class="block op-block" data-block="changed">
+          <div class="step-head"><span class="step-num mono">STEP 2</span> FORENSIC NOTES</div>
+          <label class="field"><span>Diagnostic / handover note</span>
+            <textarea id="note-body" class="ctl-textarea" rows="3" placeholder="Append an operator observation to the immutable CaseEvent ledger."></textarea>
+          </label>
+          <button class="primary-btn" id="btn-add-note">Append to Ledger</button>
+        </div>
+
+        <div class="block op-block" data-block="guard">
+          <div class="step-head"><span class="step-num mono">STEP 3</span> PLAYBOOK &amp; DEPOT WORK ORDER</div>
+          <div class="wo-state mono" data-bind="wo-state">—</div>
+          <label class="field"><span>Standard operating playbook</span>
+            <select id="wo-playbook" class="ctl-select" data-dynamic="api/telemetry/analytics"></select>
+          </label>
+          <label class="field"><span>Target maintenance depot</span>
+            <select id="wo-depot" class="ctl-select" data-dynamic="api/operations"></select>
+          </label>
+          <label class="field"><span>Intervention window</span>
+            <select id="wo-window" class="ctl-select">
+              <option value="NEXT_TERMINAL_STOP">Next terminal turnaround</option>
+              <option value="NIGHT_DEPOT_SWAP">Night depot swap (derated load-sharing)</option>
+              <option value="IMMEDIATE_TOW">Immediate tow &amp; revenue-service suspension</option>
+            </select>
+          </label>
+          <label class="field"><span>Dispatcher instructions</span>
+            <textarea id="wo-instructions" class="ctl-textarea" rows="3" data-dynamic="api/telemetry/analytics"></textarea>
+          </label>
+          <button class="primary-btn" id="btn-work-order">Dispatch Work Order</button>
+        </div>
+
+        <div class="block op-block" data-block="guard">
+          <div class="step-head"><span class="step-num mono">STEP 4</span> DISPATCH SAFE MODE</div>
+          <div class="branch-info mono" data-bind="branch-info">Stream branch target: —</div>
+          <button class="action-btn" id="btn-safe-mode">Execute Safe Mode Intervention</button>
+          <p class="hint mono" data-bind="safe-hint">ActionGuard gates must all pass before dispatch is permitted.</p>
+        </div>
+
+        <div class="block op-block" data-block="recovery">
+          <div class="step-head"><span class="step-num mono">STEP 5</span> ROOT-CAUSE SIGN-OFF</div>
+          <label class="field"><span>Confirmed root cause</span>
+            <select id="close-root-cause" class="ctl-select" data-dynamic="api/telemetry/analytics"></select>
+          </label>
+          <label class="field"><span>Engineering sign-off notes</span>
+            <textarea id="close-notes" class="ctl-textarea" rows="4" placeholder="Required for audit: state the verified criteria and the release decision."></textarea>
+          </label>
+          <button class="signoff-btn" id="btn-close-case">Sign Off, Close Case &amp; Release Asset</button>
+          <p class="hint mono" data-bind="close-hint">Sign-off stays locked until the live recovery verifier reports all consecutive healthy LOADED observations.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ SCREEN 07 — TIMELINE / AUDIT LEDGER ══════════════════════ -->
+  <section class="view" id="view-timeline">
+    <div class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title">APPEND-ONLY CASEEVENT AUDIT LEDGER</h2>
+        <div class="grid-toolbar inline">
+          <select id="filter-actor" class="ctl-select">
+            <option value="ALL">ACTOR: ALL (SYSTEM + OPERATOR)</option>
+            <option value="system">ACTOR: SYSTEM ONLY</option>
+            <option value="operator">ACTOR: OPERATOR ONLY</option>
+          </select>
+          <select id="filter-type" class="ctl-select" data-dynamic="api/case/events">
+            <option value="ALL">TYPE: ALL EVENT TYPES</option>
+          </select>
+          <input type="search" id="event-search" class="ctl-input" placeholder="Filter events…">
+          <button class="ghost-btn" id="btn-export">Export Dossier</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="timeline" id="timeline-list" data-dynamic="api/case/events"></div>
+        <p class="empty-note" id="timeline-empty" hidden>The ledger is empty — no case event has been recorded in this replay session.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ══════════════════════════════ REPLAY STUDIO DRAWER ══════════════════════════════ -->
+<aside class="replay-drawer collapsed" id="replay-drawer" aria-label="Replay Studio simulation controls">
+  <button class="replay-tab" id="replay-tab" title="Toggle Replay Studio (Shift + S)">
+    <span aria-hidden="true">&#127899;</span> <span id="replay-tab-label">REPLAY STUDIO</span> <span class="mono" id="replay-tab-meta">—</span>
+  </button>
+  <div class="replay-body">
+    <div class="replay-head">
+      <h3 class="panel-title">REPLAY STUDIO — SIMULATION CONTROLS</h3>
+      <span class="mono muted">server-side stream worker</span>
+    </div>
+
+    <div class="replay-grid">
+      <div class="replay-col">
+        <div class="sub-head">PLAYBACK</div>
+        <div class="btn-row">
+          <button class="primary-btn" id="btn-play">Play</button>
+          <button class="ghost-btn" id="btn-pause">Pause</button>
+        </div>
+        <div class="mono muted replay-state" data-bind="replay-state">reading /demo/status…</div>
+        <div class="sub-head">SPEED MULTIPLIER</div>
+        <div class="seg-bar" id="speed-seg">
+          <button class="seg-btn" data-speed="1">1x</button>
+          <button class="seg-btn" data-speed="10">10x</button>
+          <button class="seg-btn is-active" data-speed="60">60x</button>
+          <button class="seg-btn" data-speed="300">300x</button>
+        </div>
+      </div>
+
+      <div class="replay-col">
+        <div class="sub-head">SCENARIO SWITCHER <span class="mono muted">api/scenarios</span></div>
+        <select id="scenario-select" class="ctl-select wide" data-dynamic="api/scenarios"></select>
+        <button class="ghost-btn wide" id="btn-apply-scenario">Apply Scenario</button>
+        <div class="sub-head">DIAGNOSTIC MILESTONE BOOKMARKS</div>
+        <div class="bookmark-grid" id="bookmark-grid" data-dynamic="api/scenarios"></div>
+        <div class="sub-head">SESSION</div>
+        <button class="danger-btn wide" id="btn-reset-stream">Reset Stream</button>
+      </div>
+    </div>
+    <p class="replay-foot mono">Producer / consumer separation: this console never pumps telemetry with a timer. Data is written to MongoDB by the backend worker; the UI only re-reads state.</p>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════ VALIDATION REFERENCE DRAWER ══════════════════════════════ -->
+<aside class="vr-backdrop" id="vr-backdrop" hidden></aside>
+<aside class="vr-drawer" id="vr-drawer" aria-label="Validation Reference ground truth">
+  <div class="vr-head">
+    <div>
+      <h3 class="panel-title">VALIDATION REFERENCE — LAYER C</h3>
+      <span class="mono muted">api/validation-reference</span>
+    </div>
+    <button class="ghost-btn" id="vr-close" aria-label="Close validation reference">✕</button>
+  </div>
+  <div class="vr-warn">
+    <strong>Historical maintenance report (Ground Truth).</strong>
+    These fields are used only for post-hoc comparison in this drawer. They are never fed to the online detectors, the decision engine or ActionGuard.
+  </div>
+  <div class="vr-body" id="vr-body" data-dynamic="api/validation-reference"></div>
+</aside>
+
+<!-- ══════════════════════════════ TOASTS ══════════════════════════════ -->
+<div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
