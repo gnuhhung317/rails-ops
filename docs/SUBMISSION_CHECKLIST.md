@@ -63,7 +63,7 @@ trace bị drop kèm warning — đó là hành vi chấp nhận được, nhưn
 phải có agent** hoặc nói rõ là đang tắt.
 
 Kết quả journey gần nhất (`verify_console_journey.py`): **23/23 PASSED**
-(2026-11-06 17:37 UTC) — trong đó `lead_time = 33h 52m`, `4 evidence cards`,
+(2026-11-06 17:37 UTC, chạy lại 17:54 UTC sau khi sửa docs/launcher/tests — vẫn 23/23) — trong đó `lead_time = 33h 52m`, `4 evidence cards`,
 ActionGuard `5/5`, recovery `5/5 healthy LOADED`, `state=RESOLVED / health=HEALTHY`,
 ledger `10 events`, và Safe Mode sớm bị từ chối bằng **HTTP 409**.
 Console v3.0 chạy thật trên trình duyệt: 6 Chart.js canvases, 42 node bind,
@@ -74,7 +74,7 @@ Console v3.0 chạy thật trên trình duyệt: 6 Chart.js canvases, 42 node bi
 | Ưu tiên | Việc | Vì sao rủi ro |
 |:-:|:---|:---|
 | **P0** | Quay + dựng video demo (5:00) | Artifact bắt buộc, tốn thời gian nhất, dễ trễ nhất; console đã xanh nên chỉ còn thiếu file ghi hình |
-| ~~P0~~ | ~~Chạy thật console v3.0, bấm trọn 4 bước Human-in-the-Loop~~ **XONG 2026-11-06 17:37 UTC** | `verify_console_journey.py` 23/23 + trình duyệt thật 0 lỗi console |
+| ~~P0~~ | ~~Chạy thật console v3.0, bấm trọn 4 bước Human-in-the-Loop~~ **XONG 2026-11-06 17:37 UTC · chạy lại 17:54 UTC vẫn 23/23 sau toàn bộ sửa đổi docs/launcher/tests** | `verify_console_journey.py` 23/23 + trình duyệt thật 0 lỗi console |
 | **P0** | Quay + dựng video demo (5:00) | Artifact bắt buộc, tốn thời gian nhất, dễ trễ nhất |
 | **P1** | Chốt deck 12 slide, tập nói 3 phút | Artifact bắt buộc |
 | **P1** | Push repo, kiểm tra quyền truy cập của BGK | Nộp repo không mở được = mất điểm kỹ thuật |

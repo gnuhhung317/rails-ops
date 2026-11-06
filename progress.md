@@ -321,3 +321,11 @@ the counted number plus a warning that the full suite replays the 1.5M-row CSV a
 verifiers are the better evidence moment.
 Also caught and removed one CJK fragment I had just written into the checklist — the same defect class
 I fixed in the deck, which is why the deck scan is now routine before committing docs.
+
+### Regression re-proof after the documentation/launcher/test changes (17:54 UTC)
+Restarted the console on a spare port (`/health` -> RailOps VN title, version 3.0.0) and re-ran
+`scripts/verify_console_journey.py`: **23/23 again**, same evidence as 17:37 UTC
+(409 on premature Safe Mode, `APU-INC-20200605-01`, lead time 33h 52m, dual clock on the wire,
+ActionGuard 5/5, recovery 5/5 healthy LOADED, `RESOLVED`/`HEALTHY`, 10 ledger events).
+Server stopped after the run; no product code changed between the two runs.
+`task_plan.md` Phase 6 now states the real blocker instead of "push the branch": there is no remote.
