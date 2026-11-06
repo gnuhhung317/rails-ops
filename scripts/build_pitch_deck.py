@@ -84,8 +84,7 @@ def bullets(slide, items, top=Inches(1.75), width=None, size=14.5):
         if kind == "h":
             para(tf, text, 15.5, AMBER, bold=True, space_before=10, space_after=4, first=first)
         elif kind == "t":
-            tf2 = _box(slide, MARGIN + Inches(0.25), top, width or BODY_W, Inches(0.01))
-            pass
+            para(tf, "     " + text, size - 1.5, MUTED, space_after=5, first=first)
         elif kind == "mono":
             para(tf, text, 12.5, TEAL, font=MONO, space_after=4, first=first)
         elif kind == "note":

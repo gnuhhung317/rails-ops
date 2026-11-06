@@ -11,9 +11,9 @@
 
 | # | Artifact (theo BTC) | Trạng thái | Bằng chứng / đường dẫn | Còn phải làm |
 |:-:|:---|:---:|:---|:---|
-| 1 | **Repository mã nguồn** | 🔴 | 45 commit local trên branch `feature/temporal-correctness-and-scenario-validation` | **CHƯA CÓ REMOTE NÀO** (`git remote -v` rỗng) — repo mới tồn tại trên máy này. Phải tạo repo + push, rồi mở thử bằng trình duyệt ẩn danh để chắc người chấm vào được. |
+| 1 | **Repository mã nguồn** | 🔴 | 49 commit local trên branch `feature/temporal-correctness-and-scenario-validation` (đếm bằng `git rev-list --count HEAD`; số này tăng mỗi lần commit) | **CHƯA CÓ REMOTE NÀO** (`git remote -v` rỗng) — repo mới tồn tại trên máy này. Phải tạo repo + push, rồi mở thử bằng trình duyệt ẩn danh để chắc người chấm vào được. |
 | 2 | **Video demo** | 🟡 | `docs/DEMO_VIDEO_SCRIPT.md` (10 shot, 5:00 + bản cắt 2:30) | **QUAY THẬT** sau khi console chạy ổn. Đây là mục dễ trượt nhất. |
-| 3 | **Slide thuyết trình chung kết** | ✅ | `docs/railops-vn-final-deck.pptx` — 12 slide, sinh lại bằng `python scripts/build_pitch_deck.py` | **Speaker notes đã nhúng sẵn trong file** (mốc 0:00→3:00 + câu trả lời cho từng hỏi khó). Mở Presenter View, bấm giờ 1 lần cho đúng 3 phút. |
+| 3 | **Slide thuyết trình chung kết** | ✅ | `docs/railops-vn-final-deck.pptx` — 12 slide, sinh lại bằng `python scripts/build_pitch_deck.py`; bản nộp không font-dependency: `docs/railops-vn-final-deck.pdf` | **Đã render thật từng slide qua PowerPoint 16 và xem bằng mắt 12/12 trang** (không suy luận bằng hình học): không tràn lề, không lỗi font tiếng Việt, không ký tự lạ. Phát hiện và sửa 1 lỗi sinh file: nhánh `("t", …)` trong `bullets()` tạo textbox rồi `pass`, **nuốt silently 4 dòng nội dung** — gồm dòng ánh xạ rubric 30/30/30/10 ở slide 12, dòng tech stack ở slide 5, dòng Phase 2–4 và dòng retrofit Layer C ở slide 8. Speaker notes vẫn nhúng đủ 12/12. Mở Presenter View, bấm giờ 1 lần cho đúng 3 phút. |
 | 4 | **README** | ✅ | `README.md` — bài toán, kiến trúc, quickstart 2 lệnh, bảng 5 evaluation gates, mục "Operator journey against a live server" | Đối chiếu lại một lần cuối sau khi đổi branding RailOps VN |
 
 ## 2. Yêu cầu kỹ thuật bắt buộc của đề bài

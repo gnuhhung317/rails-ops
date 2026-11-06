@@ -329,3 +329,23 @@ Restarted the console on a spare port (`/health` -> RailOps VN title, version 3.
 ActionGuard 5/5, recovery 5/5 healthy LOADED, `RESOLVED`/`HEALTHY`, 10 ledger events).
 Server stopped after the run; no product code changed between the two runs.
 `task_plan.md` Phase 6 now states the real blocker instead of "push the branch": there is no remote.
+
+### Visual QA of the deck — render, don't reason (18:00 UTC)
+Exported all 12 slides to PNG through PowerPoint 16 COM and actually looked at each one, instead of
+trusting geometry. This was the first time the deck was seen as pixels; every prior "verification"
+was coordinate arithmetic.
+
+The render caught a defect arithmetic could not: the `("t", …)` branch in `bullets()`
+(scripts/build_pitch_deck.py) built a throwaway textbox and then executed `pass`, so **four content
+lines were silently dropped from the deck** while the generator still reported success:
+- slide 5 — the Phase 2–4 shared-engine subsystem list, and the MongoDB/Datadog/IoT-edge stack line
+- slide 8 — the vibration/acoustic retrofit caveat (Layer C, never leaks into the online detector)
+- slide 12 — the explicit rubric mapping (30 Sáng tạo / 30 Kỹ thuật / 30 Tác động / 10 Trình bày)
+The slide-12 loss was the expensive one: the deck no longer answered the scoring rubric on the Ask
+slide, and nothing in the build output hinted at it. Fixed by rendering `"t"` as an indented sub-line
+of the heading above it; re-exported and re-read slides 5, 8, 12 to confirm the text is on screen.
+
+All 12 slides now verified: no overflow past the margins, no clipped table cells, no Vietnamese
+diacritic tofu, no CJK. Speaker notes present on 12/12. Committed `docs/railops-vn-final-deck.pdf`
+(154 KB) as the font-independent submission artifact so the judges see exactly what was QA'd.
+Checklist row 1 commit count corrected 45 -> 49 with the counting command, so it cannot silently rot.
