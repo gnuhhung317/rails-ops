@@ -19,6 +19,13 @@
 
 Launch the complete full-stack platform (FastAPI backend + Vanilla SPA Command Console + Replay Engine + Browser Auto-Open) with a single command:
 
+### Install first (Python 3.12; `run_demo.py` now refuses to start without it)
+```bash
+python -m pip install -r requirements.txt
+```
+Versions are pinned to the exact set this build was verified against. `paho-mqtt` is the only
+entry not exercised here (no broker in the test environment) — see the note in `requirements.txt`.
+
 ### On Windows:
 Double-click `demo.bat` or run in terminal:
 ```cmd

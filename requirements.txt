@@ -1,0 +1,29 @@
+# CompressorGuard runtime + verification dependencies.
+# Every "==" below is the exact version this repo was run and verified against
+# on Python 3.12.4 (Nature Scientific Data MetroPT-3, 1,516,948 rows).
+# Nothing here needs a GPU or a model server.
+
+# --- Core runtime (src/api, src/engine, src/storage) ---
+fastapi==0.128.0
+uvicorn==0.24.0
+pydantic==2.13.4
+pandas==2.3.3
+numpy==2.2.6
+scikit-learn==1.7.2
+pymongo==4.17.0
+
+# --- Observability (src/observability) ---
+# Optional at runtime: metrics/traces are dropped with a warning if unset.
+datadog==0.55.0
+ddtrace==4.15.6
+
+# --- IoT edge producer (scripts/stream_telemetry.py) ---
+# The code calls mqtt.Client() with no CallbackAPIVersion, i.e. the 1.x API;
+# paho-mqtt 2.x raises there, so the ceiling is functional, not cosmetic.
+# Not exercised in this environment (no broker): the verified behaviour is the
+# documented store-and-forward buffer, not a live publish.
+paho-mqtt>=1.6.1,<2
+
+# --- Dev / submission artifacts (not needed to run the console) ---
+pytest==8.4.2
+python-pptx==1.0.2

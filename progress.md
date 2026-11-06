@@ -289,3 +289,21 @@ Verified: 12 slides, notes on every slide, zero CJK residue, table geometry fits
    fails loudly with the expected path; README now states the source
    (doi:10.1038/s41597-022-01877-3), the exact target filename, and the 1,516,948-row check
    so the person doing the push can verify it in one command instead of discovering it live.
+
+### Fresh-clone readiness (the artifact-1 gap nobody was looking at)
+`git ls-files` for every runtime file came back clean **except** the dependency manifest: there was
+**no `requirements.txt`, no `pyproject.toml` — nothing**. A judge cloning the repo had no supported
+way to install fastapi/uvicorn/pandas/numpy/scikit-learn/pymongo, which quietly invalidates the
+"1-click turnkey" headline in README.
+- Built `requirements.txt` from the versions actually imported by `src/ scripts/ tests/` and actually
+  installed on this machine (Python 3.12.4), so the pins are evidence, not decoration. `paho-mqtt` is
+  the one entry **not** exercised here: it isn't installed, so live publish is unverified — recorded as
+  🟡 in the checklist instead of ✅. Its `<2` ceiling is forced by `mqtt.Client()` being the 1.x API.
+- Verified resolution: `pip install --dry-run -r requirements.txt` solves with only paho-mqtt-1.6.1 to add.
+- `run_demo.py` preflight now checks imports **before** the dataset and exits with the exact pip command;
+  tested both branches (present → OK; simulated missing → `[ERROR] Missing Python dependencies:
+  scikit-learn` + exit 1). Previously a missing package surfaced as a raw ImportError mid-boot.
+- `demo.bat` window title still said "CompressorGuard — Lisbon Metro"; now RailOps VN-first, matching
+  the branding rule applied to `index.html` and the API metadata.
+- Secret scan before any public push: no tracked `.env`/key/token files and no credential-shaped
+  literals in non-markdown tracked files. Safe to go public.

@@ -1,9 +1,9 @@
 @echo off
 setlocal
-title CompressorGuard - Lisbon Metro APU-COMP-01 Command Console
+title RailOps VN - CompressorGuard Operations Command Console
 
 echo ================================================================================
-echo   Launching CompressorGuard - Industrial Operations Command Platform
+echo   Launching RailOps VN - Industrial Operations Command Platform
 echo   MUGVN Hackathon 2026: MongoDB + Datadog Unified Observability
 echo ================================================================================
 

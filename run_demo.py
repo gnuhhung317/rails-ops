@@ -10,6 +10,7 @@ import sys
 import time
 import webbrowser
 import threading
+import importlib
 from pathlib import Path
 
 # UTF-8 stdout configuration for Windows
@@ -43,8 +44,28 @@ def print_banner():
     print("=" * 80)
 
 
+def _missing_dependencies():
+    # pymongo is a top-level import in src/storage, so the in-memory fallback
+    # still needs the driver installed; only the server connection is optional.
+    probes = {"fastapi": "fastapi", "uvicorn": "uvicorn", "pandas": "pandas",
+              "numpy": "numpy", "sklearn": "scikit-learn", "pymongo": "pymongo"}
+    missing = []
+    for module, dist in probes.items():
+        try:
+            importlib.import_module(module)
+        except ImportError:
+            missing.append(dist)
+    return missing
+
+
 def preflight_checks():
     print("[PREFLIGHT] Checking environment & dataset...")
+    missing = _missing_dependencies()
+    if missing:
+        print(f"[ERROR] Missing Python dependencies: {', '.join(missing)}")
+        print("Install them with:  python -m pip install -r requirements.txt")
+        sys.exit(1)
+    print("[OK] Runtime dependencies importable (fastapi/uvicorn/pandas/numpy/sklearn/pymongo).")
     if not DEFAULT_CSV_PATH.exists():
         print(f"[ERROR] Historical dataset not found at: {DEFAULT_CSV_PATH}")
         print("Please place 'MetroPT3(AirCompressor).csv' into the dataset/ directory.")

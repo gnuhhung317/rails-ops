@@ -22,7 +22,8 @@
 |:---|:---:|:---|
 | **MongoDB làm nền tảng dữ liệu** | ✅ | `src/storage/repository.py`, `src/storage/mongo_client.py` — Time Series `measurements`, `$setWindowFields`, TTL. Cần `MONGODB_URI` để thấy Compass. |
 | **Datadog: quan sát – phát hiện – xử lý** | ✅ | `datadog/dashboard.json` (6 widget), `datadog/monitors.json`, `src/observability/metrics.py` (DogStatsD + APM traces). Cần agent `:8125/:8126`. |
-| **Mô đun IoT** | ✅ | `scripts/stream_telemetry.py` — producer CLI tách rời, MQTT edge topic `railops/metro-line-1/APU-COMP-01/telemetry`, store-and-forward buffer. |
+| **Cài được từ clone sạch** | ✅ | `requirements.txt` — pin đúng bộ đã chạy trên Python 3.12.4; `python -m pip install --dry-run -r requirements.txt` resolve sạch. `run_demo.py` giờ **dừng ngay** và in lệnh cài nếu thiếu package (đã test cả 2 nhánh). |
+| **Mô đun IoT** | 🟡 | `scripts/stream_telemetry.py` — producer CLI tách rời, MQTT edge topic `railops/metro-line-1/APU-COMP-01/telemetry`, store-and-forward buffer. **Trung thực:** buffer/store-and-forward đã chạy; **live publish chưa được kiểm chứng** vì máy này chưa cài `paho-mqtt` và không có broker. Nói rõ là "đường MQTT chạy khi có broker, còn lại đã test" thay vì claim đã test hết. |
 | **Realtime** | ✅ | Background Stream Worker trong `src/api/app.py` + CLI producer; dashboard là consumer thuần túy, không `setInterval` kéo `/demo/tick`. |
 | **Dữ liệu thật, zero fake** | ✅ | `1,516,948` rows MetroPT-3; in ra bởi Gate 1 khi chạy `scripts/verify_evaluation_gates.py`. |
 
