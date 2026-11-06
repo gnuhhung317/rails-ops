@@ -307,3 +307,17 @@ way to install fastapi/uvicorn/pandas/numpy/scikit-learn/pymongo, which quietly 
   the branding rule applied to `index.html` and the API metadata.
 - Secret scan before any public push: no tracked `.env`/key/token files and no credential-shaped
   literals in non-markdown tracked files. Safe to go public.
+
+### IoT module claim made true instead of restated
+The "Module IoT" row was supported by the presence of code, not by execution: `paho-mqtt` had never
+been installed here, so `EdgePublisher` had never constructed a real client. Installed 1.6.1 (matching
+the pin) and added `tests/test_edge_publisher.py` -> **5 passed**: buffer cap keeps newest frames,
+topic equals `railops/{fleet}/{asset}/telemetry`, a live client drains the buffer at QoS 1, and —
+against a real paho client pointed at a closed port — an unreachable broker degrades to store-and-forward
+without raising. Honest boundary kept in the checklist: **no real-broker round trip**, because this
+machine has no mosquitto.
+`pytest --collect-only -q` says the suite holds **107** tests, so README's "96+" floor was replaced with
+the counted number plus a warning that the full suite replays the 1.5M-row CSV and the two fast
+verifiers are the better evidence moment.
+Also caught and removed one CJK fragment I had just written into the checklist — the same defect class
+I fixed in the deck, which is why the deck scan is now routine before committing docs.
