@@ -349,3 +349,17 @@ All 12 slides now verified: no overflow past the margins, no clipped table cells
 diacritic tofu, no CJK. Speaker notes present on 12/12. Committed `docs/railops-vn-final-deck.pdf`
 (154 KB) as the font-independent submission artifact so the judges see exactly what was QA'd.
 Checklist row 1 commit count corrected 45 -> 49 with the counting command, so it cannot silently rot.
+
+### Checklist self-audit: the "what's left" table had rotted (18:02 UTC)
+Re-read section 5 of `docs/SUBMISSION_CHECKLIST.md` and found the priority table contradicted the
+state of the repo: "Quay + dựng video demo" appeared as **two separate P0 rows**, "Chốt deck 12 slide"
+was still open although the deck is final and now pixel-verified, and the submission form had no row
+at all despite the 2026-11-08 23:59 hard deadline. Rewrote it: one row per task, deck struck through
+with only "tập nói 3 phút" left, form added as P1 with the deadline.
+Also added §5.1 with the literal push sequence, because the P0 blocker was described but never made
+executable — create a *public* repo manually (no `gh` on this machine), do **not** tick "add a README"
+(it would collide with the 49-commit history), push the submission branch, then verify access from an
+incognito browser. Verified the gitignore claim before writing it: `git check-ignore -v` confirms
+`.gitignore:5` covers the 145 MB CSV and `.gitignore:4` (`*.zip`) covers the dataset archive.
+Re-counted the test claim with `pytest --collect-only -q` (collection only, never executed): **107**,
+matching README exactly, so no doc change was needed.
