@@ -96,6 +96,24 @@ python scripts/verify_evaluation_gates.py
 | **Gate 4: ActionGuard Safety** | Rejects premature actions (HTTP 409); verifies 5 pre-flight criteria | `pytest tests/test_evaluation_gates.py::test_gate_4_action_guard_safety_checks` |
 | **Gate 5: Closed-Loop Recovery** | Requires 5 consecutive healthy LOADED cycles before release sign-off | `pytest tests/test_evaluation_gates.py::test_gate_5_closed_loop_recovery` |
 
+### Operator journey against a live server
+
+The five gates above test the engine in-process. To prove the same chain through the
+**HTTP surface the Operations Console actually uses** — including that a premature
+Safe Mode click is refused with `HTTP 409` while the asset stays in revenue service —
+start the console and run:
+
+```bash
+python run_demo.py                                              # terminal 1
+CONSOLE_BASE_URL=http://localhost:8000 \
+  python scripts/verify_console_journey.py                      # terminal 2
+```
+
+It walks all four Human-in-the-Loop steps (Acknowledge → Forensic Note + Depot Work
+Order → ActionGuard 5/5 + Safe Mode → 5-sample Recovery + Root-Cause Sign-Off) and
+asserts 23 checks: lead window, evidence pack, rolling statistics, dual-clock
+timestamps on the wire, and the append-only `case_events` ledger.
+
 ---
 
 ## 🧪 Running the Full Automated Test Suite

@@ -31,6 +31,7 @@ python run_demo.py                          # mở console tại http://localhos
 | 3 | Streams đang chạy phía server | `curl http://localhost:8000/demo/status` → `total_points_emitted` tăng dần, `is_paused:false` |
 | 4 | Datadog live | `curl -s localhost:8000/metrics` có `compressorguard.*` |
 | 5 | Kịch bản `failure_3` đang active | `curl -s localhost:8000/api/scenarios` → `active_scenario_id` |
+| 6 | Chuỗi vận hành không gãy trước khi bấm record | `CONSOLE_BASE_URL=http://localhost:8000 python scripts/verify_console_journey.py` → `23/23 assertions passed` (chạy ở terminal riêng, server vẫn bật). Script này tự bấm lại đúng 4 bước bạn sẽ nói trong video, kể cả bước Safe Mode sớm bị **409**. |
 
 **Bố cục màn hình khi quay:** trình duyệt fullscreen (F11), zoom 90%, tắt bookmark bar, đổi tên tab thành `RailOps VN — Operations Console`. Overlay góc: `LIVE SIMULATION · HISTORICAL DATA`. Dùng OBS, 1080p60, mic gần, nền lặng.
 
