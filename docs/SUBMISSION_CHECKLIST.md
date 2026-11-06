@@ -11,7 +11,7 @@
 
 | # | Artifact (theo BTC) | Trạng thái | Bằng chứng / đường dẫn | Còn phải làm |
 |:-:|:---|:---:|:---|:---|
-| 1 | **Repository mã nguồn** | ✅ | `git log`, branch `feature/temporal-correctness-and-scenario-validation` | Push + kiểm tra repo mở được với người chấm |
+| 1 | **Repository mã nguồn** | 🔴 | 45 commit local trên branch `feature/temporal-correctness-and-scenario-validation` | **CHƯA CÓ REMOTE NÀO** (`git remote -v` rỗng) — repo mới tồn tại trên máy này. Phải tạo repo + push, rồi mở thử bằng trình duyệt ẩn danh để chắc người chấm vào được. |
 | 2 | **Video demo** | 🟡 | `docs/DEMO_VIDEO_SCRIPT.md` (10 shot, 5:00 + bản cắt 2:30) | **QUAY THẬT** sau khi console chạy ổn. Đây là mục dễ trượt nhất. |
 | 3 | **Slide thuyết trình chung kết** | ✅ | `docs/railops-vn-final-deck.pptx` — 12 slide, sinh lại bằng `python scripts/build_pitch_deck.py` | **Speaker notes đã nhúng sẵn trong file** (mốc 0:00→3:00 + câu trả lời cho từng hỏi khó). Mở Presenter View, bấm giờ 1 lần cho đúng 3 phút. |
 | 4 | **README** | ✅ | `README.md` — bài toán, kiến trúc, quickstart 2 lệnh, bảng 5 evaluation gates, mục "Operator journey against a live server" | Đối chiếu lại một lần cuối sau khi đổi branding RailOps VN |

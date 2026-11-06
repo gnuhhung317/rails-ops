@@ -32,6 +32,19 @@ python run_demo.py
 
 The server initializes at `http://localhost:8000/` and opens your default browser automatically.
 
+### ⚠️ One required manual step before first run: place the dataset
+
+The 208 MB CSV is **not committed** (it is the authors' published file, redistributed from source,
+and would bloat the repo). Every sensor reading in this project comes from it, so nothing runs without it:
+
+1. Download **MetroPT-3** (Air Compressor Predictive Maintenance Dataset), published in
+   *Scientific Data* 2022 — [doi:10.1038/s41597-022-01877-3](https://www.nature.com/articles/s41597-022-01877-3).
+2. Save it as `dataset/MetroPT3(AirCompressor).csv` (exact filename — parentheses included).
+3. Expect **1,516,948** rows; Gate 1 prints that count when you run the evaluation gates.
+
+If the file is missing, `run_demo.py` stops with the expected path printed — it does not fail silently
+and it never substitutes synthetic data.
+
 **Optional but recommended for a judge-grade run:**
 
 | Prerequisite | Env var | Effect if unset |
