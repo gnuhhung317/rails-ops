@@ -311,7 +311,7 @@ DEFAULT_FAILURE_FINGERPRINTS = [
         "title": "Failure #3 — Dryer Discharge Pilot Valve Leakage & Thermal Drift",
         "historical_period": "2020-06-05 to 2020-06-06",
         "recommended_playbook": "SOP-APU-ISO-04",
-        "recommended_action": "Isolate Dryer Tower #2 drain valve, apply APU derated load-sharing, and schedule Depot Oriente valve replacement.",
+        "recommended_action": "Isolate Dryer Tower #2 drain valve, apply APU derated load-sharing, and schedule Depot Long Binh valve replacement.",
         "root_cause_component": "Desiccant Dryer Discharge Pilot Valve (Knorr-Bremse LP49)",
         "signature_vector": {
             "dv_sigma_ref": 23.75,

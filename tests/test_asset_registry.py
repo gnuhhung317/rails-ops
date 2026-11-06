@@ -14,12 +14,12 @@ def test_asset_hierarchy_resolution():
     # 1. Verify 4-level hierarchy structure
     fleet = registry.get_fleet("FLEET-METRO-01")
     assert fleet is not None
-    assert fleet.name == "Metro Fleet (Linha Azul)"
+    assert "RailOps VN" in fleet.name
     
     train = registry.get_train("TRAIN-302")
     assert train is not None
     assert train.fleet_id == "FLEET-METRO-01"
-    assert train.model == "Series 300 EMU"
+    assert train.model == "Nippon Sharyo Type 001 EMU"
     
     subsystem = registry.get_subsystem("SUB-APU-01")
     assert subsystem is not None

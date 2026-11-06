@@ -4,7 +4,7 @@
       "name": "[CompressorGuard] Early Warning Pressure Breach (DV_pressure > 2.0 bar in LOADED Regime)",
       "type": "metric alert",
       "query": "avg(last_1m):compressorguard.telemetry.dv_pressure_bar{asset_id:APU-COMP-01,regime:LOADED} > 2.0",
-      "message": "⚠️ Persistent discharge valve leakage detected on APU-COMP-01 while operating in LOADED regime.\nMain reservoir TP3 pressure currently stable (> 7.5 bar, LPS=0). Recommend scheduling end-of-shift Depot Oriente maintenance before pressure collapse.\nTriggering CompressorGuard Incident Correlator. @pagerduty-metro-ops",
+      "message": "⚠️ Persistent discharge valve leakage detected on APU-COMP-01 while operating in LOADED regime.\nMain reservoir TP3 pressure currently stable (> 7.5 bar, LPS=0). Recommend scheduling end-of-shift Depot Long Binh maintenance before pressure collapse.\nTriggering CompressorGuard Incident Correlator. @pagerduty-metro-ops",
       "tags": [
         "service:compressorguard",
         "asset_id:APU-COMP-01",

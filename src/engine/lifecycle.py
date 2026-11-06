@@ -1266,7 +1266,7 @@ class IncidentLifecycleManager:
         self,
         operator_id: str = "DISPATCHER-0941",
         playbook_id: str = "PB-APU-03-AIR-LEAK",
-        target_depot: str = "PMO-DEPOT-LISBON-01",
+        target_depot: str = "DEPOT-LONGBINH-01",
         maintenance_window: str = "NEXT_TERMINAL_STOP",
         instructions: str = "Inspect discharge valve seal and pneumatic air leak prior to LPS threshold breach.",
     ) -> Dict[str, Any]:

@@ -66,7 +66,7 @@ def create_app(manager: Optional[IncidentLifecycleManager] = None) -> FastAPI:
     app = FastAPI(
         title="CompressorGuard Incident Command Console API",
         version="2.2.0",
-        description="Presentation-agnostic Domain API and Demo Endpoints for Lisbon Metro APU-COMP-01.",
+        description="Presentation-agnostic Domain API and Demo Endpoints for RailOps VN Metro Line 1 APU-COMP-01.",
         lifespan=lifespan,
     )
 

@@ -4,23 +4,23 @@ from pydantic import BaseModel, Field
 
 class FleetEntity(BaseModel):
     fleet_id: str = "FLEET-METRO-01"
-    name: str = "Metro Fleet (Linha Azul)"
-    operator_name: str = "Metro do Porto / CP"
-    depot_location: str = "Depot Oriente"
+    name: str = "RailOps VN — Metro Line 1 (Bến Thành – Suối Tiên)"
+    operator_name: str = "HURC1 — Đường sắt đô thị TP.HCM"
+    depot_location: str = "Depot Long Bình"
     train_ids: List[str] = Field(default_factory=lambda: ["TRAIN-302"])
     is_illustrative_context: bool = True
-    context_note: str = "Illustrative operational hierarchy mapping for MetroPT-3 compressor telemetry."
+    context_note: str = "Illustrative Vietnamese metro operational hierarchy mapped onto MetroPT-3 (Lisbon, Brazil) public compressor telemetry; no physical values are re-attributed."
 
 
 class TrainEntity(BaseModel):
     train_id: str = "TRAIN-302"
     fleet_id: str = "FLEET-METRO-01"
-    model: str = "Series 300 EMU"
+    model: str = "Nippon Sharyo Type 001 EMU"
     car_number: str = "Car 1 (Leading Cab)"
     service_status: str = "REVENUE_SERVICE"
     subsystem_ids: List[str] = Field(default_factory=lambda: ["SUB-APU-01"])
     is_illustrative_context: bool = True
-    context_note: str = "Illustrative operational hierarchy mapping for MetroPT-3 compressor telemetry."
+    context_note: str = "Illustrative Vietnamese metro operational hierarchy mapped onto MetroPT-3 (Lisbon, Brazil) public compressor telemetry; no physical values are re-attributed."
 
 
 class SubsystemEntity(BaseModel):
@@ -30,7 +30,7 @@ class SubsystemEntity(BaseModel):
     subsystem_code: str = "APU"
     asset_ids: List[str] = Field(default_factory=lambda: ["APU-COMP-01"])
     is_illustrative_context: bool = True
-    context_note: str = "Illustrative operational hierarchy mapping for MetroPT-3 compressor telemetry."
+    context_note: str = "Illustrative Vietnamese metro operational hierarchy mapped onto MetroPT-3 (Lisbon, Brazil) public compressor telemetry; no physical values are re-attributed."
 
 
 class CompressorAssetEntity(BaseModel):

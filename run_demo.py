@@ -1,6 +1,6 @@
 """
 CompressorGuard — Turnkey 1-Click Demo Launcher
-Lisbon Metro (Linha Azul) APU-COMP-01 | MUGVN Hackathon 2026
+RailOps VN / Metro Line 1 Ben Thanh - Suoi Tien | APU-COMP-01 | MUGVN Hackathon 2026
 
 Runs self-checks, launches the FastAPI/Uvicorn server, and opens the Command Console in default browser.
 """
@@ -32,8 +32,8 @@ URL = f"http://{HOST}:{PORT}/"
 
 def print_banner():
     print("=" * 80)
-    print("  COMPRESSORGUARD -- INDUSTRIAL OPERATIONS COMMAND PLATFORM")
-    print("  Lisbon Metro (Linha Azul) APU-COMP-01 | MUGVN Hackathon 2026")
+    print("  RAILOPS VN -- INDUSTRIAL OPERATIONS COMMAND PLATFORM (CompressorGuard core)")
+    print("  RailOps VN (Metro Line 1) - CompressorGuard Mission-Critical Subsystem")
     print("=" * 80)
     print(f"  Web Console:   {URL}")
     print(f"  Interactive UI: {URL}console")

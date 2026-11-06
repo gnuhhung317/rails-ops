@@ -1,8 +1,12 @@
-# CompressorGuard
+# RailOps VN — CompressorGuard
 
-> **Industrial Operations Command Platform for Urban Transit Rail**  
-> *Lisbon Metro (Linha Azul) · Asset `APU-COMP-01` · MUGVN Hackathon 2026*  
+> **Industrial Operations Command Platform for Vietnam Urban Rail**
+> *Metro Line 1 Bến Thành – Suối Tiên · Asset `APU-COMP-01` (Main Air Compressor) · MUGVN Hackathon 2026*
 > **Core Promise:** Detect earlier → Prove why → Act safely → Verify recovery → Quantify value.
+
+> **One-line thesis:** mỗi đoàn tàu metro có một máy nén khí cấp khí cho **phanh, treo khí và cửa** — nó hỏng là tàu **mất phanh và phải rút khỏi tuyến**. CompressorGuard phát hiện lỗi rò khí trên **1.516.948 điểm đo vật lý thật** sớm hơn cách konvensional **33h 52m**, đủ để điều độ viên kéo tàu về depot và sửa trong khoảng trống bảo trì đêm.
+>
+> **RailOps VN** là nền tảng; **CompressorGuard** là phân hệ lõi sống còn đã chạy thật end-to-end. Kiến trúc và kế hoạch triển khai: **[docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md](docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md)**.
 
 [![MongoDB Atlas Multi-Modal](https://img.shields.io/badge/MongoDB-Time--Series%20%2B%20Document-green.svg)](https://www.mongodb.com/atlas)
 [![Datadog Unified Observability](https://img.shields.io/badge/Datadog-APM%20Tracing%20%2B%20DogStatsD-purple.svg)](https://www.datadoghq.com)
@@ -50,6 +54,7 @@ The server initializes at `http://localhost:8000/` and opens your default browse
 
 ## 🧭 Documentation Navigator
 
+- 🚉 **[RailOps VN Platform Blueprint](docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md):** Vấn đề đường sắt Việt Nam có thật, định vị platform ⊃ subsystem, module IoT, kiến trúc realtime MongoDB/Datadog, rollout 4 phase tới ĐSCT Bắc–Nam, ánh xạ rubric 30/30/30/10.
 - 🏛️ **[System & Live Stream Architecture (v3.0)](docs/ARCHITECTURE.md):** Kiến trúc luồng Live tách rời (Decoupled Producer–Pipeline–Storage–Observer) theo chuẩn ThreatLens AI.
 - 🎤 **[Pitch Deck & Judge Demo Runbook](docs/PITCH_DECK_AND_DEMO_RUNBOOK.md):** 3-minute pitch script, defense against the 5 toughest judge questions, and step-by-step click guide.
 - 💶 **[Rail Economics & Value Model](docs/RAIL_ECONOMICS_AND_VALUE_MODEL.md):** Formal mathematical models for delay penalties, asset overhaul avoidance, and ROI formulas.
@@ -122,5 +127,5 @@ MetroPT-3 Historical Stream (1,516,948 rows · Dual-Clock Background Stream Work
 ## 👥 Hackathon Team & Credits
 - **Project:** CompressorGuard
 - **Hackathon:** MUGVN Hackathon 2026 (MongoDB + Datadog)
-- **Target Application:** Lisbon Metro (Metropolitano de Lisboa) · Linha Azul
+- **Target Application:** RailOps VN · Metro Line 1 Bến Thành – Suối Tiên (HURC1) — fleet hierarchy is an *illustrative* Vietnamese mapping of the public MetroPT-3 compressor dataset (see `docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md` §4.1).
 - **Dataset:** MetroPT-3 Benchmark (Air Compressor Predictive Maintenance Dataset)
