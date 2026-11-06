@@ -406,3 +406,11 @@ LOADED, RESOLVED/HEALTHY, 10 ledger events), plus 15 passed across the three aff
 Note ddtrace is genuinely installed here — the run flushed to :8126 and dropped with a network
 warning, which is the documented no-agent behaviour, and means the env-tag test ran against a real
 Datadog Span rather than only the fallback.
+
+### Stale-count sweep + counts pinned to the contract test (18:13 UTC)
+Same failure class as the metric names: `docs/COMPRESSORGUARD_MASTER_CONTEXT_EN.md` still described a
+"6-widget" dashboard in prose and in the file tree, while `dashboard.json` has 8 widgets and
+`monitors.json` has 3 monitors. Corrected both lines and moved the numbers out of prose-only
+enforcement: the contract test now asserts `len(widgets) == 8` and `len(monitors) == 3`, so the next
+widget added without updating the docs fails a test instead of silently making a claim wrong.
+Verified by re-running the file: 5 passed, which is also the proof the counts are real.

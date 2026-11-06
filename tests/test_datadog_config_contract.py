@@ -58,9 +58,11 @@ def _trace_queries(text: str) -> list[tuple[str, str]]:
 def test_config_files_are_valid_json_with_expected_shape():
     dashboard = json.loads((ROOT / "datadog" / "dashboard.json").read_text(encoding="utf-8"))
     assert dashboard["layout_type"] == "ordered"
-    assert len(dashboard["widgets"]) >= 6
+    # docs/COMPRESSORGUARD_MASTER_CONTEXT_EN.md states the dashboard has 8 widgets; pinning the
+    # exact number here means that claim cannot rot the next time a widget is added or removed.
+    assert len(dashboard["widgets"]) == 8
     monitors = json.loads((ROOT / "datadog" / "monitors.json").read_text(encoding="utf-8"))["monitors"]
-    assert monitors
+    assert len(monitors) == 3
     for m in monitors:
         assert m["type"] and m["query"] and m["message"], m.get("name")
 

@@ -240,7 +240,7 @@ Every milestone generates an immutable event (`EVT-001`, `EVT-002`, ...) recorde
    - `DatadogJSONFormatter` automatically injects `dd.trace_id`, `dd.span_id`, `dd.service`, `dd.env` into every log entry.
 4. **Monitors & Dashboard (`datadog/`):**
    - `datadog/monitors.json`: Configured monitors for early pressure breaches and verified recovery.
-   - `datadog/dashboard.json`: 6-widget APM dashboard displaying fleet status, thermodynamic trends, and ML corroboration.
+   - `datadog/dashboard.json`: 8-widget APM dashboard displaying fleet status, thermodynamic trends, and ML corroboration.
 
 ---
 
@@ -304,7 +304,7 @@ All source code is located in `d:\Code\Projects\self-projects\iot-hackathon`:
 ```
 iot-hackathon/
 ├── datadog/
-│   ├── dashboard.json               # Datadog 6-widget APM dashboard layout
+│   ├── dashboard.json               # Datadog 8-widget APM dashboard layout
 │   └── monitors.json                # Datadog alerting monitors spec
 ├── docs/
 │   ├── PITCH_DECK_AND_DEMO_RUNBOOK.md # 3-minute pitch deck & live script
