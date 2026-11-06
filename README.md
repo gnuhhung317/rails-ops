@@ -60,7 +60,7 @@ python scripts/stream_telemetry.py --mode remote --play --speed 300   # steer a 
 | Metric | Measured Result | Operational Significance |
 |:---|:---|:---|
 | **Early Warning Lead Time** | **33 hours 52 minutes** | Onset at `09:50:39 June 5` vs. Low Pressure Switch alert at `19:42:49 June 6` |
-| **Quantified Economic Value** | **€193,600** ($210,000+) | €73,600 delay penalty avoidance + €120,000 catastrophic compressor overhaul avoidance |
+| **Avoided Cost (Scenario Model)** | **€193,600** ($210,000+) *projected, not realized* | €73,600 delay penalty + €120,000 catastrophic overhaul avoided — our explicit assumptions, parameterised in [docs/RAIL_ECONOMICS_AND_VALUE_MODEL.md](docs/RAIL_ECONOMICS_AND_VALUE_MODEL.md); no money figure is claimed inside the product |
 | **False Positive Rejection** | **00:33:07 transient noise suppressed** | 65.4σ transient pressure excursion rejected; zero false line stoppages |
 | **ActionGuard Safety Policy** | **5 transparent pre-flight checks** | Blocks premature intervention (HTTP 409) until multi-sensor & ML consensus is verified |
 | **Closed-Loop Recovery** | **5/5 consecutive LOADED cycles** | Verifies physical recovery (<0.05 bar DV pressure, <67°C oil temp) before dispatch sign-off |

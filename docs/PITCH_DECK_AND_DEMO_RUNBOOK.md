@@ -10,10 +10,10 @@
 
 | Dimension | Specification |
 |:---|:---|
-| **Asset** | Metro de Lisboa Linha Azul · Air Production Unit `APU-COMP-01` |
+| **Asset** | `APU-COMP-01` · telemetry provenance = MetroPT-3 public compressor run records (Lisbon Metro); Vietnamese fleet/line labels are an illustrative operational mapping, never a data claim |
 | **Historical Scenario** | Scenario Failure #3 (June 5–8, 2020) from `MetroPT3(AirCompressor).csv` |
-| **Confirmed Lead Time** | **33 hours 52 minutes** (Onset: 09:50:39 June 5 vs. LPS Alert: 19:42:49 June 6) |
-| **Quantified Economic Value** | **€193,600** ($210,000+) Avoided Cost per Event (€73,600 Delay Penalties + €120,000 Asset Overhaul) |
+| **Confirmed Lead Time** | **33 hours 52 minutes** (Onset: 09:50:39 June 5 vs. LPS Alert: 19:42:49 June 6) — measured, and asserted by `scripts/verify_console_journey.py` |
+| **Modelled Economic Value** | **€193,600** ($210,000+) avoided cost per event (€73,600 delay + €120,000 overhaul avoided) — **ILLUSTRATIVE business case built on our own assumptions, not a published tariff and not a UI claim** |
 | **Data Integrity Guarantee** | **100% Real Historical Telemetry** · Zero synthetic or fabricated sensor data |
 | **Core Architecture** | Multi-Sensor Physics + Independent ML Corroboration + ActionGuard Safety Checks + Closed-Loop Recovery Verifier |
 | **Tech Stack** | Python 3.12 · FastAPI · MongoDB Atlas (Time Series + Document) · Datadog (DogStatsD + APM Tracing) · Vanilla Modern UI |
@@ -21,6 +21,13 @@
 ---
 
 ## 3-Minute Hackathon Pitch Script (Judge Presentation)
+
+> **Script to actually rehearse from:** the per-slide Vietnamese talk track (mốc 0:00→3:00, kèm
+> câu trả lời cho từng hỏi khó) is embedded as **speaker notes inside `docs/railops-vn-final-deck.pptx`**
+> — regenerate with `python scripts/build_pitch_deck.py`. This section is the English background and
+> the narrative logic; it is intentionally *not* the verbatim script, and its timings differ from the deck.
+> **Numbers in this section marked `ILLUSTRATIVE` are modelled assumptions, not measured facts — never
+> read them out as if they were evidence.** Say "ước tính theo giả định của chúng tôi" or give a range.
 
 ### [0:00 – 0:45] Act I: The Real-World Rail Crisis
 > *"Judges, imagine it is Friday morning on Metro Line 1, Bến Thành – Suối Tiên. A leading car carries thousands of passengers. Deep within the auxiliary pneumatic system, an air discharge valve suffers a mechanical step degradation.*
@@ -94,6 +101,11 @@
 ---
 
 ## Economic ROI & Rail Impact Matrix
+
+> The first two rows are measured from the dataset and reproducible in the console. The three
+> euro rows are **our modelled assumptions** (46-minute suspension, penalty and overhaul tariffs
+> we invented as an order-of-magnitude case). Say so out loud if a judge asks for the source —
+> defending a stated assumption scores better than defending a number that sounds published.
 
 | Category | Without CompressorGuard | With CompressorGuard | Net Benefit |
 |:---|:---|:---|:---|
@@ -176,7 +188,10 @@
 - **Observation:**
   - Case `#APU-INC-20200605-01` closes.
   - Asset status returns to: `HEALTHY (Revenue Service Authorized)`.
-  - Economic Value card shows confirmed savings: **€193,600**.
+  - The audit ledger gains the operator sign-off event with actor + source; open it with
+    `curl -s localhost:8000/api/case/events`.
+  - *There is deliberately no savings figure inside the product — the € table below is a modelled
+    business case presented separately, not something the console claims.*
 
 ---
 

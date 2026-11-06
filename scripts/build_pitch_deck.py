@@ -129,6 +129,87 @@ def footer(slide, num, text="RailOps VN · CompressorGuard · MUGVN Hackathon 20
     para(tf, f"{text}   |   {num}", 10, MUTED, first=True)
 
 
+# Presenter script for the 3-minute final pitch. Each entry: [mốc thời gian]
+# lời nói, rồi "nếu bị hỏi" — câu trả lời ngắn nhất có bằng chứng mở được.
+SPEAKER_NOTES = [
+    "[0:00–0:12] Chào ban giám khảo. Đây là RailOps VN — nền tảng vận hành đường sắt, "
+    "với phân hệ sống còn đầu tiên đã chạy thật: CompressorGuard. Ba phút này tôi chỉ nói "
+    "về một máy nén khí và một khoảng thời gian 33 tiếng.\n"
+    "Đừng mở demo ở slide này; giữ lời hứa 'mở lệnh là thấy bằng chứng' ở slide 7.",
+
+    "[0:12–0:28] Con số duy nhất cần nhớ: 33 giờ 52 phút. Đó là thời gian chúng tôi phát hiện "
+    "sớm lỗi rò khí máy nén so với ngưỡng báo động áp suất hiện hành — tính trên 1.516.948 "
+    "điểm đo thật, không phải một case được chọn lọc.\n"
+    "Nếu bị hỏi 'sao biết 33h52m chứ không phải suy đoán': sổ cái sự kiện lưu cả mốc phát hiện "
+    "lẫn mốc bảo trì lịch sử, curl /api/incident là thấy.",
+
+    "[0:28–0:50] Một máy nén khí cấp khí cho ba hệ thống an toàn cùng lúc: phanh khí động, "
+    "treo khí, cửa hành khách và còi. Mất áp không phải sự cố tiện nghi — là mất phanh, "
+    "giới hạn tốc độ, hoặc tàu chết kẹt trong ga. Ở Việt Nam, Cát Linh – Hà Đông đã xuống cấp "
+    "nhiều hạng mục sau hơn ba năm, ga Yên Nghĩa từng bị nước tràn.\n"
+    "Nếu bị hỏi 'sự cố đó có thật không': dẫn nước tràn ga Yên Nghĩa 23/5/2025 và đề xuất "
+    "sửa chữa khẩn cấp của Hà Nội — báo chí, không phải dữ liệu của ta.",
+
+    "[0:50–1:05] Vì sao ba cách làm hiện có chưa đủ: báo động ngưỡng chỉ nói 'đã vượt ngưỡng' "
+    "khi đã muộn; bảo trì định kỳ thay cả cụm còn tốt; ML thuần cho ra điểm anomaly mà không "
+    "nói ai được quyền hành động. Chúng tôi lấy cả bốn thứ còn thiếu và lắp thành một chuỗi.\n"
+    "Đây là slide phòng thủ cho câu 'sao không dùng Datadog Anomaly Detection là xong': "
+    "monitor phát hiện, nhưng không có hàng rào can thiệp và không có bằng chứng dẫn chứng.",
+
+    "[1:05–1:20] Định vị: RailOps VN là nền tảng — Asset Registry, engine telemetry, ledger "
+    "sự kiện, hàng rào hành động. CompressorGuard là phân hệ chứng minh nền tảng đó chạy được. "
+    "BrakeAirGuard, DoorAirGuard dùng lại đúng engine, thêm bằng cấu hình chứ không sửa core.\n"
+    "Nếu bị hỏi 'thế bạn làm bao nhiêu sản phẩm': một engine, nhiều phân hệ — nói rõ cái đã xong "
+    "là CompressorGuard, phần còn lại là roadmap có điều kiện.",
+
+    "[1:20–1:40] Sáng tạo — 30%. Bốn cơ chế chúng tôi chủ động chọn, không phải mặc định: "
+    "phân tách chế độ LOADED/UNLOADED trước khi tính σ; two-view phát hiện rồi mới corroborate; "
+    "ActionGuard chặn cả hành động quá sớm; RecoveryVerifier bắt chứng minh phục hồi bằng 5 chu kỳ "
+    "healthy liên tiếp thay vì tự đóng case.\n"
+    "Câu hỏi dự phòng: 'cơ chế nào không làm cũng được?' — RecoveryVerifier. Không có nó, hệ thống "
+    "tự tuyên bố mình đúng, và đó là lý do demo đồ chơi trông giống demo đồ chơi.",
+
+    "[1:40–2:00] Kỹ thuật — 30%. Không có dữ liệu giả và không có con số trang trí: toàn bộ "
+    "telemetry đọc từ MetroPT-3, rolling mean/σ tính bằng $setWindowFields ngay trong MongoDB, "
+    "ML là Isolation Forest độc lập đứng cạnh — không nắm quyết định. Chạy "
+    "python scripts/verify_console_journey.py: 23/23 assertion xanh, gồm cả HTTP 409 khi bấm "
+    "Safe Mode quá sớm.\n"
+    "Nếu bị hỏi 'có test không': 5 evaluation gates G1–G5 và verifier hành trình operator, "
+    "cả hai đều là lệnh mở được trong 60 giây.",
+
+    "[2:00–2:12] Module IoT và realtime: producer chạy tách rời, publish MQTT topic "
+    "railops/metro-line-1/APU-COMP-01/telemetry, có store-and-forward khi mất kết nối. "
+    "Dashboard là consumer thuần — không tự kéo dữ liệu để trông như đang realtime.\n"
+    "Nếu bị hỏi 'gắn lên tàu thật thì sửa gì': chỉ đổi adapter ở biên; dual clock giữ nguyên vì "
+    "event_time là thời gian thiết bị, ingested_at là thời gian server.",
+
+    "[2:12–2:30] Chuỗi vận hành trọn vẹn: engine đề xuất, dispatcher ký, hàng rào chặn cả hai "
+    "chiều. Acknowledge → forensic notes + work order → ActionGuard 5/5 → Safe Mode → "
+    "5 mẫu LOADED healthy → sign-off. Mỗi bước ghi sổ cái kèm actor và provenance.\n"
+    "Đây là câu trả lời cho 'AI tự dừng tàu thì sao': không tự dừng. Không có bypass nào trong code.",
+
+    "[2:30–2:42] Tác động — 30%, tính bằng giờ chạy tàu và capex tránh được: mỗi lead time "
+    "33 tiếng là một lần xuống depot theo kế hoạch thay vì một lần dừng tàu giữa line; "
+    "đường ĐSCT Bắc – Nam 1.541 km đã phê duyệt chủ trương đầu tư và mục tiêu khởi công trước "
+    "31/12/2026 đang được đánh giá là rất khó khăn — cửa sổ thiết kế hệ thống giám sát vẫn mở "
+    "nhưng đang đóng dần.\n"
+    "Nếu bị hỏi 'ROI bao nhiêu': đưa RANGE (giờ dừng tránh được × chi phí một giờ tàu ngừng "
+    "phục vụ), nói rõ đâu là assumption của ta, đâu là số của báo cáo.",
+
+    "[2:42–2:52] Triển khai: không xin 18 tháng pilot. Phase 0 đã xong ngay trong bài nộp này. "
+    "Phase 1 là 6 tháng, 2 đầu tàu Cát Linh – Hà Đông, read-only mirror từ TCMS — không chạm "
+    "hệ thống điều khiển. Success metric là tỷ lệ báo động ảo và số lead time biến thành quyết "
+    "định thật, không phải 'demo chạy tốt'.\n"
+    "Nếu bị hỏi 'sao bắt đầu ở metro, không bắt đầu ở ĐSCT': metro đã vận hành, có TCMS, và "
+    "nguồn nhân lực bảo trì đang thiếu — đúng nơi dữ liệu tồn tại.",
+
+    "[2:52–3:00] Chúng tôi xin sáu tháng và hai đầu tàu. Đổi lại là một phân hệ đã chạy trọn "
+    "đường, có bằng chứng số, và một kiến trúc sẵn cho 1.541 km. Mọi con số hôm nay mở được "
+    "bằng một lệnh: python run_demo.py.\nCảm ơn ban giám khảo. Câu hỏi khó nhất ta nên để dành "
+    "cho slide 7 và 12 — mở terminal, không mở slide.",
+]
+
+
 # ---------------------------------------------------------------------------
 # Deck content
 # ---------------------------------------------------------------------------
@@ -331,6 +412,9 @@ def build() -> Presentation:
     tf2 = _box(s, MARGIN, Inches(6.5), BODY_W, Inches(0.6))
     para(tf2, "python run_demo.py  →  http://localhost:8000/console", 14, TEAL, font=MONO, first=True)
     footer(s, 12)
+
+    for slide, text in zip(prs.slides, SPEAKER_NOTES):
+        slide.notes_slide.notes_text_frame.text = text
 
     return prs
 
