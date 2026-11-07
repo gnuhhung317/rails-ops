@@ -11,6 +11,9 @@ pandas==2.3.3
 numpy==2.2.6
 scikit-learn==1.7.2
 pymongo==4.17.0
+# pymongo needs this specifically for mongodb+srv:// URIs (Atlas SRV lookup);
+# without it an Atlas connection string fails to parse rather than failing to connect.
+dnspython==2.8.0
 
 # --- Observability (src/observability) ---
 # Optional at runtime: metrics/traces are dropped with a warning if unset.
