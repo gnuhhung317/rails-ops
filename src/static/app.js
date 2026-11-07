@@ -20,7 +20,7 @@ const CFG = {
   gapBreakSeconds: 30,
   detectionWindowSeconds: 1200,
   timeframeLimits: { '5m': 30, '15m': 90, '1h': 360, '6h': 500, 'all': 500 },
-  timeframeLabels: { '5m': 'Last 5m', '15m': 'Last 15m', '1h': 'Last 1h', '6h': 'Last 6h', 'all': 'Max buffer' },
+  timeframeLabels: { '5m': '5 phút', '15m': '15 phút', '1h': '1 giờ', '6h': '6 giờ', 'all': 'Bộ đệm tối đa' },
   api: {
     operations: '/api/operations',
     incident: '/api/incident',
@@ -64,6 +64,106 @@ const DASH = '—';
 function txt(value) {
   if (value === null || value === undefined || value === '') return DASH;
   return String(value);
+}
+
+/*
+ * The engine speaks English. These are the recurring tokens the console renders;
+ * anything not in the glossary falls through untouched rather than being guessed,
+ * so an unknown backend value is always visible verbatim instead of mistranslated.
+ */
+const GLOSSARY = {
+  HEALTHY: 'Tốt',
+  DEGRADING: 'Suy giảm',
+  CRITICAL: 'Nghiêm trọng',
+  NOMINAL: 'Bình thường',
+  NONE: 'Chưa có',
+  LOW: 'Thấp',
+  MEDIUM: 'Vừa',
+  HIGH: 'Cao',
+  ACKNOWLEDGED: 'Đã xác nhận',
+  UNACKNOWLEDGED: 'Chưa xác nhận',
+  DISPATCHED: 'Đã phát',
+  CORROBORATED: 'AI xác nhận',
+  TRIGGERED: 'Kích hoạt',
+  NORMAL: 'Trong ngưỡng',
+  PASS: 'ĐẠT',
+  FAIL: 'KHÔNG ĐẠT',
+  AVAILABLE: 'SẴN SÀNG',
+  'NOT AVAILABLE': 'CHƯA SẴN SÀNG',
+  WITHIN_BASELINE: 'Trong baseline',
+  SUPPRESSED_TRANSIENT: 'Nhiễu thoáng qua đã chặn',
+  'Active case required in DETECTED or INVESTIGATING state.': 'Cần ca mở ở giai đoạn Phát hiện hoặc Đang điều tra.',
+  'Mitigation not recommended by DecisionEngine.': 'DecisionEngine chưa khuyến nghị can thiệp.',
+  'Conflicting active cases detected on asset.': 'Tài sản đang có ca mở xung đột.',
+  'Brake reservoir pressure below safe threshold (< 7.0 bar or LPS tripped).': 'Áp phanh bình chứa dưới ngưỡng an toàn (< 7.0 bar hoặc LPS đã kích).',
+  'Post-maintenance historical stream segment unavailable.': 'Chưa có phân đoạn luồng sau bảo trì.',
+  'Case is active and confirmed (DETECTED / INVESTIGATING)': 'Ca đang mở và đã xác nhận (DETECTED / INVESTIGATING)',
+  'DecisionEngine recommends mitigation (Physics + ML Corroboration)': 'DecisionEngine khuyến nghị can thiệp (vật lý + AI)',
+  'No conflicting active cases on asset': 'Không có ca mở xung đột trên tài sản',
+  'Main brake reservoir safe for depot routing (TP3 >= 7.0 bar, LPS == 0)': 'Bình phanh chính an toàn cho điều độ (TP3 ≥ 7.0 bar, LPS = 0)',
+  'Post-maintenance commissioning stream segment available': 'Có phân đoạn luồng chạy thử sau bảo trì',
+  'Transient excursion (< 3 consecutive LOADED cycles); suppressed to prevent alert fatigue.': 'Nhiễu thoáng qua dưới 3 kỳ LOADED — đã chặn.'
+};
+
+function vlabel(value) {
+  const key = String(value === null || value === undefined ? '' : value).trim();
+  return GLOSSARY[key] !== undefined ? GLOSSARY[key] : txt(key);
+}
+
+/* Backend prose is data, not UI copy: translate the known finite set, leave the rest verbatim. */
+const MESSAGE_VI = {
+  'Discharge Valve Pressure': 'Áp suất van xả',
+  'Compressor Oil Temperature': 'Nhiệt độ dầu máy nén',
+  'Temporal Persistence Tracking': 'Độ bền bước nhảy theo thời gian',
+  'Multivariate Isolation Forest': 'Isolation Forest đa biến',
+  'Low Pressure Switch': 'Công tắc áp thấp',
+  'Baseline state.': 'Trạng thái nền.',
+  'Multiple anomaly signals detected with ongoing persistence tracking.': 'Nhiều tín hiệu bất thường; đang theo dõi độ bền.',
+  'Transient anomaly excursion(s) detected. Accumulating telemetry evidence.': 'Có nhiễu thoáng qua; đang gom bằng chứng.',
+  'Confirmed severe step degradation in DV_pressure with thermal stress drift.': 'Suy giảm bước nhảy nghiêm trọng ở DV_pressure kèm trôi nhiệt.',
+  'Confirmed severe step degradation corroborated by Isolation Forest.': 'Suy giảm bước nhảy nghiêm trọng, AI xác nhận.',
+  'Physical step degradation corroborated by multivariate Isolation Forest (5 LOADED features). Safe Mode recommended.': 'Vật lý suy giảm bước nhảy, Isolation Forest xác nhận (5 đặc trưng LOADED). Khuyến nghị chế độ an toàn.',
+  'Low Pressure Switch (LPS=1) reactive threshold breached. Line pressure < 7.0 bar.': 'Công tắc áp thấp (LPS=1) đã kích hoạt. Áp đường < 7.0 bar.',
+  'Insufficient temporal persistence (1/3 LOADED cycles); suppressed to prevent alert fatigue.': 'Độ bền bước nhảy chưa đủ (1/3 kỳ LOADED) — đã chặn.',
+  'Confirmed degradation detected': 'Đã xác nhận suy giảm',
+  'Severe step degradation in DV_pressure with thermal drift sustained across loaded observations. Case opened.': 'Suy giảm bước nhảy ở DV_pressure kéo qua các kỳ LOADED. Đã mở vụ việc.',
+  'Operational Policy Evaluation: Open Case': 'Đánh giá chính sách: mở vụ việc',
+  'DecisionEngine evaluated multi-sensor evidence. Confirmed persistent degradation; opened case and recommended elevated monitoring.': 'DecisionEngine đánh giá bằng chứng đa cảm biến, xác nhận suy giảm bền; mở vụ việc và giám sát chặt.',
+  'Multivariate Isolation Forest Corroboration': 'AI xác nhận (Isolation Forest)',
+  'Isolation Forest exceeded threshold (score > 0.35) on 5 LOADED features. Mitigation recommended.': 'Isolation Forest vượt ngưỡng (điểm > 0.35) trên 5 đặc trưng LOADED. Khuyến nghị can thiệp.',
+  'Operational Policy Evaluation: Mitigation Recommended': 'Đánh giá chính sách: khuyến nghị can thiệp',
+  'DecisionEngine corroborated anomaly with Isolation Forest. Recommended EXECUTE_MITIGATION under ActionGuard.': 'DecisionEngine xác nhận bất thường bằng Isolation Forest; khuyến nghị can thiệp qua ActionGuard.',
+  'Early Excursion Telemetry Observation': 'Quan sát nhiễu áp đầu kỳ',
+  'Unmitigated Historical LPS Breach Reference': 'Tham chiếu LPS lịch sử không can thiệp',
+  'Conventional low pressure switch breach observed in historical baseline without early intervention.': 'LPS quy ước đã kích hoạt trong dữ liệu lịch sử, không có cảnh báo sớm.',
+  'Safe Mode Simulated Intervention': 'Can thiệp chế độ an toàn',
+  'ActionGuard validated 5 criteria. Branching stream to post-maintenance historical segment.': 'ActionGuard đạt 5 tiêu chí. Chuyển luồng sang phân đoạn sau bảo trì.',
+  'Recovery Criteria Verified (5/5 healthy LOADED observations)': 'Nghiệm thu đạt (5/5 kỳ LOADED khỏe)',
+  'Discharge valve pressure < 0.05 bar and oil temp < 67°C verified across 5 consecutive loaded observations.': 'Áp van xả < 0.05 bar, dầu < 67 °C đạt trên 5 kỳ LOADED liên tiếp.',
+  'Case Signed Off & Closed': 'Đã chốt và đóng vụ việc',
+  'Operator Shift / Diagnostic Note': 'Ghi chú vận hành / chẩn đoán',
+  'Case Closed as False Positive (Operator Override)': 'Đóng vụ việc: dương tính giả (operator bỏ qua)'
+};
+
+const MESSAGE_RX = [
+  [/^Case Acknowledged \((.+)\)$/, (m) => `Đã xác nhận vụ việc (${m[1]})`],
+  [/^Maintenance Work Order Dispatched \((.+)\)$/, (m) => `Đã phát lệnh công tác (${m[1]})`],
+  [/^Playbook (.+) dispatched to (.+) \((.+)\): ([\s\S]*)$/, (m) => `Playbook ${m[1]} → ${m[2]} (${m[3]}): ${m[4]}`],
+  [/^Discharge valve transient pressure excursion observed \(([^)]+)\) at ([^.]+)\..*$/, (m) => `Nhiễu áp van xả thoáng qua (${m[1]}) lúc ${m[2]} — độ bền chưa đủ, chưa mở vụ việc.`],
+  [/^Operator (\S+) acknowledged operational case with priority (\S+)\. ?([\s\S]*)$/, (m) => `${m[1]} xác nhận vụ việc, ưu tiên ${m[2]}. ${m[3]}`],
+  [/^Operator (\S+) marked case as false positive\. Reason: ?([\s\S]*)$/, (m) => `${m[1]} đánh dấu dương tính giả. Lý do: ${m[2]}`],
+  [/^Operator (\S+) signed off incident\. Asset (\S+) released back to HEALTHY service\. Notes: ?([\s\S]*)$/, (m) => `${m[1]} chốt vụ việc. ${m[2]} trở lại trạng thái Tốt. Ghi chú: ${m[3]}`]
+];
+
+function mtxt(value) {
+  const key = String(value === null || value === undefined ? '' : value).trim();
+  if (!key) return key;
+  if (MESSAGE_VI[key] !== undefined) return MESSAGE_VI[key];
+  for (let i = 0; i < MESSAGE_RX.length; i += 1) {
+    const m = key.match(MESSAGE_RX[i][0]);
+    if (m) return MESSAGE_RX[i][1](m);
+  }
+  return vlabel(key);
 }
 
 function bind(name, text, tone) {
@@ -227,16 +327,16 @@ function setConnection(online) {
   const wasDegraded = S.degraded;
   S.degraded = !online;
   box.setAttribute('data-state', online ? 'online' : 'degraded');
-  if (label) label.textContent = online ? 'API LINK OK' : 'API LINK DEGRADED';
+  if (label) label.textContent = online ? 'API BÌNH THƯỜNG' : 'API GIÁN ĐOẠN';
   const pill = $('#stream-pill');
   if (pill) pill.setAttribute('data-stale', online ? 'false' : 'true');
-  if (!online && !wasDegraded) toast('warn', 'Feed degraded', 'Last successful read: ' + formatPollAge());
+  if (!online && !wasDegraded) toast('warn', 'Gián đoạn luồng đọc', 'Lần đọc thành công: ' + formatPollAge());
 }
 
 function formatPollAge() {
-  if (!S.lastGoodPoll) return 'no successful poll yet';
+  if (!S.lastGoodPoll) return 'chưa đọc thành công';
   const secs = Math.max(0, Math.round((Date.now() - S.lastGoodPoll) / 1000));
-  return `${new Date(S.lastGoodPoll).toISOString().replace('T', ' ').slice(0, 19)} UTC (${secs}s ago)`;
+  return `${new Date(S.lastGoodPoll).toISOString().replace('T', ' ').slice(0, 19)} UTC (${secs}s trước)`;
 }
 
 /* ══════════════════════════════ toasts ══════════════════════════════ */
@@ -293,7 +393,7 @@ async function refreshAllData() {
     if (S.degraded && ok === names.length) setConnection(true);
   }
   if (failed.length === names.length && names.length) {
-    toast('error', 'Console read failed', failed[0], 8000);
+    toast('error', 'Mất kết nối API', failed[0], 8000);
   }
 
   S.pollCount += 1;
@@ -449,14 +549,14 @@ function renderHeader() {
 
   const simClock = sim && sim.current_event_time ? sim.current_event_time : (point ? point.timestamp : null);
   const clockNode = $('#event-clock');
-  if (clockNode) clockNode.textContent = txt(simClock ? `${utcOf(simClock)} UTC` : (S.degraded ? 'link degraded' : 'stream idle'));
+  if (clockNode) clockNode.textContent = txt(simClock ? `${utcOf(simClock)} UTC` : (S.degraded ? 'API gián đoạn' : 'luồng dừng'));
   const pointsNode = $('#sim-points');
-  if (pointsNode) pointsNode.textContent = sim ? `${sim.total_points_emitted} pts` : DASH;
+  if (pointsNode) pointsNode.textContent = sim ? `${sim.total_points_emitted} điểm` : DASH;
 
   if (sim) {
     const label = $('#stream-pill-label');
     if (label) {
-      label.textContent = `${CFG.pillBase}${sim.is_paused ? ' · STREAM PAUSED' : ''}`;
+      label.textContent = `${CFG.pillBase}${sim.is_paused ? ' · ĐÃ DỪNG' : ''}`;
     }
     const rate = $('#stream-rate');
     if (rate) {
@@ -480,7 +580,7 @@ function renderKpis() {
     kpi('active_cases_count', sum.active_cases_count, sum.active_cases_count > 0 ? 'crit' : 'ok');
     kpi('assets_observing_count', sum.assets_observing_count, sum.assets_observing_count > 0 ? 'ok' : null);
     kpi('scenario_name', sum.scenario_name, null);
-    kpiNote('mode', `mode: ${sum.simulation_mode}`);
+    kpiNote('mode', `kiểu: ${sum.simulation_mode}`);
     const badgeEl = $('#nav-queue-count');
     if (badgeEl) {
       badgeEl.textContent = String(sum.active_cases_count);
@@ -490,17 +590,17 @@ function renderKpis() {
 
   const state = (inc && inc.lifecycle_state) || 'NONE';
   kpi('phase', state === 'NONE' ? PHASE_LABEL.NONE : txt(PHASE_LABEL[state] || state), state === 'NONE' ? 'ok' : 'crit');
-  kpiNote('provenance', sim ? `stream: ${sim.provenance}` : 'stream: awaiting /demo/status');
+  kpiNote('provenance', sim ? `nguồn: ${sim.provenance}` : 'nguồn: chờ /demo/status');
 
   kpi('regime', ev ? regimeLabel(ev.regime) : DASH, ev && isLoaded(ev.regime) ? 'info' : 'idle');
   kpiNote('duty', an && an.regime_analytics
-    ? `loaded duty: ${num(an.regime_analytics.loaded_duty_cycle_pct, 1)}% · ${an.regime_analytics.loaded_samples_count}/${an.regime_analytics.total_samples_analyzed} samples`
-    : 'loaded duty: —');
+    ? `tải trọng: ${num(an.regime_analytics.loaded_duty_cycle_pct, 1)}% · ${an.regime_analytics.loaded_samples_count}/${an.regime_analytics.total_samples_analyzed} mẫu`
+    : 'tải trọng: —');
   kpiNote('transient', an && an.alert_fatigue_protection
-    ? `transient watchlist: ${an.alert_fatigue_protection.suppressed_transients_count} suppressed`
-    : 'transient watchlist: —');
+    ? `nhiễu đã chặn: ${an.alert_fatigue_protection.suppressed_transients_count}`
+    : 'nhiễu đã chặn: —');
 
-  const windowLabel = `${CFG.timeframeLabels[S.timeframe]} · ${S.data.window ? S.data.window.count : 0} samples · window ${S.data.window ? S.data.window.window_size : DASH}s`;
+  const windowLabel = `${CFG.timeframeLabels[S.timeframe]} · ${S.data.window ? S.data.window.count : 0} mẫu · cửa sổ ${S.data.window ? S.data.window.window_size : DASH}s`;
   bind('window-label', windowLabel);
   bind('wb-window-label', windowLabel);
 }
@@ -524,15 +624,15 @@ function renderTree() {
   aRow.appendChild(el('span', 'tree-caret mono', '●'));
   aRow.appendChild(el('span', 'tree-id', ops.asset.asset_id));
   aRow.appendChild(el('span', 'tree-desc', ` ${ops.asset.name} · ${ops.asset.discharge_valve_model}`));
-  aRow.appendChild(badge(inc ? inc.asset_health : 'UNKNOWN', tone(inc && inc.asset_health)));
-  const openBtn = el('button', 'mini-btn', 'Open workbench');
+  aRow.appendChild(badge(inc ? vlabel(inc.asset_health) : 'CHƯA RÕ', tone(inc && inc.asset_health)));
+  const openBtn = el('button', 'mini-btn', 'Mở bàn điều tra');
   openBtn.addEventListener('click', () => setView('workbench'));
   aRow.appendChild(openBtn);
 
   const levels = [
     { id: ops.fleet.fleet_id, label: ops.fleet.name, chip: `${ops.fleet.operator_name} · ${ops.fleet.depot_location}` },
     { id: ops.train.train_id, label: `${ops.train.model} · ${ops.train.car_number}`, chip: ops.train.service_status },
-    { id: ops.subsystem.subsystem_id, label: `${ops.subsystem.name} (${ops.subsystem.subsystem_code})`, chip: `${ops.subsystem.asset_ids.length} asset` }
+    { id: ops.subsystem.subsystem_id, label: `${ops.subsystem.name} (${ops.subsystem.subsystem_code})`, chip: `${ops.subsystem.asset_ids.length} tài sản` }
   ];
   let cursor = host;
   levels.forEach((lv) => {
@@ -583,11 +683,11 @@ function renderAssetGrid() {
     c1.appendChild(el('span', null, r.assetId));
     c1.appendChild(el('span', 'cell-sub mono', `${r.assetName} · ${r.train}`));
     tr.appendChild(c1);
-    tr.appendChild(el('td')).appendChild(badge(r.criticality, r.criticality === 'CRITICAL' ? 'crit' : 'idle'));
-    tr.appendChild(el('td')).appendChild(badge(r.health, tone(r.health)));
+    tr.appendChild(el('td')).appendChild(badge(vlabel(r.criticality), r.criticality === 'CRITICAL' ? 'crit' : 'idle'));
+    tr.appendChild(el('td')).appendChild(badge(vlabel(r.health), tone(r.health)));
     tr.appendChild(el('td')).appendChild(badge(r.regime, isLoaded(r.regime) ? 'info' : 'idle'));
     const action = el('td');
-    const btn = el('button', 'mini-btn', 'Inspect workbench');
+    const btn = el('button', 'mini-btn', 'Mở chi tiết');
     btn.addEventListener('click', () => setView('workbench'));
     action.appendChild(btn);
     tr.appendChild(action);
@@ -598,21 +698,21 @@ function renderAssetGrid() {
 }
 
 const SENSOR_ROWS = [
-  { label: 'Operating regime', key: 'regime', kind: 'regime' },
+  { label: 'Chế độ vận hành', key: 'regime', kind: 'regime' },
   { label: 'DV_pressure', key: 'dv_pressure_bar', unit: 'bar', digits: 4, sensor: 'DV_pressure' },
   { label: 'Oil_temperature', key: 'oil_temp_c', unit: '°C', digits: 2, sensor: 'Oil_temperature' },
   { label: 'Motor_current', key: 'motor_current_a', unit: 'A', digits: 3 },
   { label: 'H1_pressure', key: 'h1_bar', unit: 'bar', digits: 4 },
   { label: 'TP2_pressure', key: 'tp2_bar', unit: 'bar', digits: 3 },
   { label: 'TP3_pressure', key: 'tp3_bar', unit: 'bar', digits: 3 },
-  { label: 'Reservoirs', key: 'reservoirs_bar', unit: 'bar', digits: 3 },
-  { label: 'LPS switch', key: 'lps_active', kind: 'digital' },
-  { label: 'Pressure switch', key: 'pressure_switch', kind: 'digital' },
-  { label: 'Oil level low', key: 'oil_level_low', kind: 'digital' },
-  { label: 'Caudal impulses', key: 'caudal_impulses', unit: 'imp', digits: 1 },
-  { label: 'Rolling avg DV (10m)', key: 'rolling_avg_dv', unit: 'bar', digits: 4, derived: true },
-  { label: 'Rolling std DV (10m)', key: 'rolling_std_dv', unit: 'bar', digits: 4, derived: true },
-  { label: 'Rolling avg oil temp (10m)', key: 'rolling_avg_oil_temp', unit: '°C', digits: 2, derived: true }
+  { label: 'Bình chứa khí', key: 'reservoirs_bar', unit: 'bar', digits: 3 },
+  { label: 'Công tắc LPS', key: 'lps_active', kind: 'digital' },
+  { label: 'Công tắc áp suất', key: 'pressure_switch', kind: 'digital' },
+  { label: 'Mức dầu thấp', key: 'oil_level_low', kind: 'digital' },
+  { label: 'Xung lưu lượng', key: 'caudal_impulses', unit: 'imp', digits: 1 },
+  { label: 'TB trượt DV (10p)', key: 'rolling_avg_dv', unit: 'bar', digits: 4, derived: true },
+  { label: 'Độ lệch TB DV (10p)', key: 'rolling_std_dv', unit: 'bar', digits: 4, derived: true },
+  { label: 'TB trượt Oil_temp (10p)', key: 'rolling_avg_oil_temp', unit: '°C', digits: 2, derived: true }
 ];
 
 function renderSensorMatrix() {
@@ -621,9 +721,9 @@ function renderSensorMatrix() {
   if (!tbody) return;
   clear(tbody);
   const note = $('[data-bind="matrix-clock"]');
-  if (note) note.textContent = point ? `latest event_time ${utcOf(point.timestamp)} UTC` : 'no sample in buffer yet';
+  if (note) note.textContent = point ? `event_time mới nhất ${utcOf(point.timestamp)} UTC` : 'chưa có mẫu trong bộ đệm';
   if (!point) {
-    const tr = el('tr'); const td = el('td', 'muted', 'Waiting for the background stream worker to write the first sample.');
+    const tr = el('tr'); const td = el('td', 'muted', 'Đang chờ worker ghi mẫu đầu tiên vào luồng.');
     td.colSpan = 3; tr.appendChild(td); tbody.appendChild(tr); return;
   }
   SENSOR_ROWS.forEach((row) => {
@@ -634,7 +734,7 @@ function renderSensorMatrix() {
     let valueText;
     if (raw === undefined || raw === null) valueText = DASH;
     else if (row.kind === 'regime') valueText = regimeLabel(raw);
-    else if (row.kind === 'digital') valueText = Number(raw) > 0 ? '1 · ACTIVE' : '0 · INACTIVE';
+    else if (row.kind === 'digital') valueText = Number(raw) > 0 ? '1 · KÍCH' : '0 · KHÔNG';
     else valueText = `${num(raw, row.digits)} ${row.unit || ''}`.trim();
     cell.textContent = valueText;
     tr.appendChild(cell);
@@ -643,21 +743,21 @@ function renderSensorMatrix() {
     if (row.sensor) {
       const card = evidenceCardBySensor(row.sensor);
       if (card) {
-        status.appendChild(badge(card.status, tone(card.status)));
+        status.appendChild(badge(vlabel(card.status), tone(card.status)));
         if (card.sigma_deviation !== null && card.sigma_deviation !== undefined) {
-          status.appendChild(el('span', 'cell-sub mono', `Δ ${signed(card.sigma_deviation)}σ vs ${num(card.baseline_value, 2)}`));
+          status.appendChild(el('span', 'cell-sub mono', `Δ ${signed(card.sigma_deviation)}σ so với ${num(card.baseline_value, 2)}`));
         }
       } else {
-        status.appendChild(badge('WITHIN BASELINE', 'ok'));
+        status.appendChild(badge('TRONG BASELINE', 'ok'));
       }
     } else if (row.kind === 'digital') {
-      status.appendChild(badge(Number(raw) > 0 ? 'LATCHED' : 'CLEAR', Number(raw) > 0 ? 'warn' : 'ok'));
+      status.appendChild(badge(Number(raw) > 0 ? 'KẸP' : 'CỜ Ở 0', Number(raw) > 0 ? 'warn' : 'ok'));
     } else if (row.derived) {
       status.appendChild(badge('MONGO $setWindowFields', 'info'));
     } else if (row.kind === 'regime') {
-      status.appendChild(badge(Number(point.motor_current_a) > 0 ? 'LOADED CYCLE' : 'REST CYCLE', 'idle'));
+      status.appendChild(badge(Number(point.motor_current_a) > 0 ? 'KỲ CÓ TẢI' : 'KỲ NGHỈ', 'idle'));
     } else {
-      status.appendChild(badge('OBSERVED', 'idle'));
+      status.appendChild(badge('ĐỌC ĐƯỢC', 'idle'));
     }
     tr.appendChild(status);
     if (row.key === 'dv_pressure_bar') tr.className = `row-${tone((evidenceCardBySensor('DV_pressure') || {}).status || '') || 'ok'}`;
@@ -674,13 +774,13 @@ function renderSuppressionStream() {
   const counter = $('[data-bind="suppression-count"]');
   if (counter) {
     counter.textContent = an
-      ? `transients suppressed: ${an.alert_fatigue_protection.suppressed_transients_count} · samples analyzed ${an.regime_analytics.total_samples_analyzed}`
-      : 'transients suppressed: —';
+      ? `nhiễu đã chặn: ${an.alert_fatigue_protection.suppressed_transients_count} · mẫu đã xét: ${an.regime_analytics.total_samples_analyzed}`
+      : 'nhiễu đã chặn: —';
   }
   const empty = $('#suppression-empty');
   if (empty) empty.hidden = signals.length > 0;
   if (!signals.length) {
-    const tr = el('tr'); const td = el('td', 'muted', 'No transient excursion has been suppressed in the evaluated window.');
+    const tr = el('tr'); const td = el('td', 'muted', 'Cửa sổ này không có nhiễu bị chặn.');
     td.colSpan = 6; tr.appendChild(td); tbody.appendChild(tr);
     return;
   }
@@ -695,8 +795,8 @@ function renderSuppressionStream() {
     tr.appendChild(el('td', 'mono', `${signed(sig.sigma_deviation)}σ`));
     tr.appendChild(el('td', 'mono', regimeLabel(sig.regime)));
     const disp = el('td');
-    disp.appendChild(badge(sig.disposition || 'SUPPRESSED', 'warn'));
-    disp.appendChild(el('span', 'cell-sub', sig.reason || ''));
+    disp.appendChild(badge(vlabel(sig.disposition || 'SUPPRESSED_TRANSIENT'), 'warn'));
+    disp.appendChild(el('span', 'cell-sub', mtxt(sig.reason || '')));
     tr.appendChild(disp);
     tbody.appendChild(tr);
   });
@@ -744,7 +844,7 @@ function makeChart(canvasId, series, opts) {
             title: (items) => `${opts && opts.title ? opts.title : ''} ${items[0].label}`.trim(),
             afterBody: (items) => {
               const meta = items[0].chart.$pointMeta ? items[0].chart.$pointMeta[items[0].dataIndex] : null;
-              return meta && meta.p ? [`regime: ${meta.p.regime}`, `event_time: ${meta.p.timestamp}`] : [];
+              return meta && meta.p ? [`chế độ: ${meta.p.regime}`, `event_time: ${meta.p.timestamp}`] : [];
             }
           }
         }
@@ -974,7 +1074,7 @@ function chartLines() {
     ],
     current: [{ label: 'ngưỡng LOADED/UNLOADED (suy từ dữ liệu)', value: loadGate, color: '#37c4f4', digits: 2 }],
     tp: [{ label: 'TP3 thấp nhất cửa sổ', value: an && an.regime_analytics ? an.regime_analytics.min_tp3_bar : null, color: '#f5b544', digits: 2 }],
-    ifScore: [{ label: 'corroboration threshold', value: (evidenceCardByCode('CORROBORAT') || {}).baseline_value, color: '#f5b544', digits: 3 }]
+    ifScore: [{ label: 'ngưỡng AI xác nhận', value: (evidenceCardByCode('CORROBORAT') || {}).baseline_value, color: '#f5b544', digits: 3 }]
   };
 }
 
@@ -1027,16 +1127,14 @@ function ensureCharts() {
   S.charts.oil = makeChart('chart-oil', [{ label: 'Oil_temp (°C)' }], { lines: lines.oil, title: 'Oil_temp' });
   S.charts.current = makeChart('chart-current', [{ label: 'Motor_current (A)' }], { lines: lines.current, title: 'Motor_current' });
   S.charts.tp = makeChart('chart-tp', [
-    { label: 'TP2 (bar)' }, { label: 'TP3 (bar)', color: '#3ddc97' }, { label: 'Reservoirs (bar)', color: '#f5b544' }
-  ], { lines: lines.tp, title: 'Brake air network' });
-  S.charts.wbDv = makeChart('chart-wb-dv', [{ label: 'DV_pressure (bar)' }], { lines: lines.dv, title: 'DV_pressure' });
-  S.charts.wbOil = makeChart('chart-wb-oil', [{ label: 'Oil_temp (°C)' }], { lines: lines.oil, title: 'Oil_temp' });
-  [S.charts.dv, S.charts.wbDv].forEach((c) => { if (c) c.$zeroAnchored = true; });
+    { label: 'TP2 (bar)' }, { label: 'TP3 (bar)', color: '#3ddc97' }, { label: 'Bình chứa (bar)', color: '#f5b544' }
+  ], { lines: lines.tp, title: 'Mạng phanh khí nén' });
+  S.charts.dv.$zeroAnchored = true;
   S.chartsReady = chartsReady = true;
   const notice = $('#chart-notice');
   if (notice && typeof window.Chart === 'undefined') {
     notice.hidden = false;
-    notice.textContent = 'Chart.js CDN unreachable — using inline SVG polylines derived from the same /api/telemetry/window payload. No values are fabricated.';
+    notice.textContent = 'Không tải được Chart.js — dùng SVG nội tuyến từ cùng payload /api/telemetry/window. Không bịa giá trị.';
   }
 }
 
@@ -1048,15 +1146,11 @@ function renderCharts() {
   setLines(S.charts.oil, lines.oil);
   setLines(S.charts.current, lines.current);
   setLines(S.charts.tp, lines.tp);
-  setLines(S.charts.wbDv, lines.dv);
-  setLines(S.charts.wbOil, lines.oil);
 
   paintChart(S.charts.dv, rows, ['dv_pressure_bar'], lines.dv);
   paintChart(S.charts.oil, rows, ['oil_temp_c'], lines.oil);
   paintChart(S.charts.current, rows, ['motor_current_a'], lines.current);
   paintChart(S.charts.tp, rows, ['tp2_bar', 'tp3_bar', 'reservoirs_bar'], lines.tp);
-  paintChart(S.charts.wbDv, rows, ['dv_pressure_bar'], lines.dv);
-  paintChart(S.charts.wbOil, rows, ['oil_temp_c'], lines.oil);
 
   renderIfGauge();
 }
@@ -1081,7 +1175,7 @@ function renderIfGauge() {
   if (!card) {
     if (fill) fill.style.width = '0%';
     if (mark) mark.style.left = '50%';
-    if (read) read.textContent = 'Isolation Forest has not emitted a corroboration score for the current window';
+    if (read) read.textContent = 'Isolation Forest chưa cho điểm xác nhận cho cửa sổ này';
     return;
   }
   const score = Number(card.observed_value) || 0;
@@ -1091,7 +1185,7 @@ function renderIfGauge() {
   if (mark) mark.style.left = `${Math.min(100, (thr / scaleMax) * 100)}%`;
   if (read) {
     const feats = (card.provenance && (card.provenance.feature_count || (card.provenance.feature_names || []).length)) || null;
-    read.textContent = `${num(score, 4)} vs threshold ${num(thr, 3)} · ${card.status}${feats ? ` · ${feats} LOADED features` : ''} · ${card.provenance && card.provenance.algorithm ? card.provenance.algorithm : ''}`;
+    read.textContent = `${num(score, 4)} so ngưỡng ${num(thr, 3)} · ${vlabel(card.status)}${feats ? ` · ${feats} đặc trưng LOADED` : ''}`;
   }
 }
 
@@ -1114,17 +1208,12 @@ function renderQueueCards() {
   if (!active) {
     const idle = el('div', 'case-card');
     idle.style.borderLeftColor = 'var(--ok)';
-    idle.appendChild(el('div', 'case-id', 'NO OPEN CASE'));
-    idle.appendChild(el('div', 'case-grid'));
+    idle.appendChild(el('div', 'case-id', 'KHÔNG CA MỞ'));
     const dl = el('dl', 'case-grid');
-    pushDl(dl, [
-      ['Engine state', inc ? `${inc.lifecycle_state} · ${inc.asset_health}` : DASH],
-      ['Monitoring', ops && ops.operations_summary ? `${ops.operations_summary.assets_observing_count} asset observing` : DASH],
-      ['Transient watchlist', S.data.analytics ? `${S.data.analytics.alert_fatigue_protection.suppressed_transients_count} suppressed` : DASH]
-    ]);
+    pushDl(dl, [['Giai đoạn', inc ? `${vlabel(inc.lifecycle_state)} · ${vlabel(inc.asset_health)}` : DASH]]);
     idle.appendChild(dl);
     const actions = el('div', 'case-actions');
-    const btn = el('button', 'mini-btn', 'Open telemetry matrix');
+    const btn = el('button', 'mini-btn', 'Mở lưới cảm biến');
     btn.addEventListener('click', () => setView('fleet'));
     actions.appendChild(btn);
     idle.appendChild(actions);
@@ -1153,31 +1242,31 @@ function renderQueueCards() {
   const oilCard = evidenceCardBySensor('Oil_temperature');
   const ifCard = evidenceCardByCode('CORROBORAT');
   pushDl(dl, [
-    ['Asset / train', `${active.asset_id || DASH} · ${opsSafe.train.train_id || DASH} (${opsSafe.fleet.name || DASH})`],
-    ['Phase', `${active.lifecycle_state} · health ${active.asset_health} · confidence ${active.operational_confidence}`],
-    ['Owner', acked ? `${inc.acknowledged_by}` : 'unclaimed'],
-    ['Evidence', dvCard ? `DV ${signed(dvCard.sigma_deviation)}σ (${num(dvCard.observed_value, 4)} ${dvCard.unit})` : DASH],
-    ['Thermal', oilCard ? `Oil ${signed(oilCard.sigma_deviation)}σ (${num(oilCard.observed_value, 2)} ${oilCard.unit})` : 'awaiting thermal drift'],
-    ['ML', ifCard ? `${num(ifCard.observed_value, 4)} → ${ifCard.status}` : 'awaiting corroboration'],
+    ['Tài sản / Tàu', `${active.asset_id || DASH} · ${opsSafe.train.train_id || DASH} (${opsSafe.fleet.name || DASH})`],
+    ['Giai đoạn', `${vlabel(active.lifecycle_state)} · ${vlabel(active.asset_health)} · tin cậy ${vlabel(active.operational_confidence)}`],
+    ['Người phụ trách', acked ? `${inc.acknowledged_by}` : 'chưa nhận'],
+    ['Bằng chứng', dvCard ? `DV ${signed(dvCard.sigma_deviation)}σ (${num(dvCard.observed_value, 4)} ${dvCard.unit})` : DASH],
+    ['Nhiệt', oilCard ? `Oil ${signed(oilCard.sigma_deviation)}σ (${num(oilCard.observed_value, 2)} ${oilCard.unit})` : 'chờ trôi nhiệt'],
+    ['AI', ifCard ? `${num(ifCard.observed_value, 4)} → ${vlabel(ifCard.status)}` : 'chờ xác nhận'],
     ['ActionGuard', guardSummary(guard)],
-    ['Work order', inc && inc.work_order ? `${inc.work_order.work_order_id} · ${inc.work_order.status} → ${inc.work_order.target_depot}` : 'not drafted'],
-    ['Summary', active.summary || DASH]
+    ['Lệnh công tác', inc && inc.work_order ? `${inc.work_order.work_order_id} · ${vlabel(inc.work_order.status)} → ${inc.work_order.target_depot}` : 'chưa phát'],
+    ['Tóm tắt', mtxt(active.summary) || DASH]
   ]);
   card.appendChild(dl);
 
   const actions = el('div', 'case-actions');
   if (!acked) {
-    const ackBtn = el('button', 'mini-btn', 'Acknowledge now');
+    const ackBtn = el('button', 'mini-btn', 'Xác nhận ngay');
     ackBtn.addEventListener('click', () => {
       setView('workbench');
       runOperatorAction('acknowledge');
     });
     actions.appendChild(ackBtn);
   }
-  const openBtn = el('button', 'mini-btn', 'Open Workbench');
+  const openBtn = el('button', 'mini-btn', 'Mở bàn điều tra');
   openBtn.addEventListener('click', () => setView('workbench'));
   actions.appendChild(openBtn);
-  const tlBtn = el('button', 'mini-btn', 'Audit ledger');
+  const tlBtn = el('button', 'mini-btn', 'Sổ theo dõi');
   tlBtn.addEventListener('click', () => setView('timeline'));
   actions.appendChild(tlBtn);
   card.appendChild(actions);
@@ -1200,9 +1289,9 @@ function renderArchive() {
   const empty = $('#archive-empty');
   if (empty) empty.hidden = closed.length > 0;
   const counter = $('[data-bind="archive-count"]');
-  if (counter) counter.textContent = `signed off: ${closed.length}`;
+  if (counter) counter.textContent = `đã nghiệm thu: ${closed.length}`;
   if (!closed.length) {
-    const tr = el('tr'); const td = el('td', 'muted', 'No operator sign-off recorded yet in this replay session.');
+    const tr = el('tr'); const td = el('td', 'muted', 'Chưa có nghiệm thu trong phiên này.');
     td.colSpan = 5; tr.appendChild(td); tbody.appendChild(tr);
     return;
   }
@@ -1216,7 +1305,7 @@ function renderArchive() {
     tr.appendChild(el('td', 'mono', ops ? `${ops.asset.asset_id} / ${ops.train.train_id}` : DASH));
     tr.appendChild(el('td', null, (e.provenance && (e.provenance.root_cause || e.provenance.root_cause_tag)) || e.detail || DASH));
     tr.appendChild(el('td', 'mono', utcOf(e.event_time)));
-    tr.appendChild(el('td')).appendChild(badge('RECOVERY VERIFIED', 'ok'));
+    tr.appendChild(el('td')).appendChild(badge(e.provenance && e.provenance.root_cause ? 'CÓ NGUYÊN NHÂN' : 'KHÔNG PHÂN LOẠI', e.provenance && e.provenance.root_cause ? 'ok' : 'idle'));
     tbody.appendChild(tr);
   });
 }
@@ -1229,14 +1318,13 @@ function renderWorkbench() {
   const rec = S.data.recovery;
   const an = S.data.analytics;
 
-  bind('wb-case-id', activeCaseId() || 'NO ACTIVE CASE');
+  bind('wb-case-id', activeCaseId() || 'CHƯA CÓ VỤ VIỆC');
   bind('wb-asset', ops ? `${ops.asset.asset_id} · ${ops.train.train_id} · ${ops.fleet.name}` : DASH);
 
   const hasCase = hasActiveCase();
   const state = (inc && inc.lifecycle_state) || 'NONE';
-  setChip('[data-bind="chip-phase"]', hasCase ? phaseLabel(state) : phaseLabel('NONE'), tone(hasCase ? state : 'HEALTHY'));
-  setChip('[data-bind="chip-health"]', inc ? `HEALTH ${inc.asset_health}` : 'HEALTH —', tone(inc && inc.asset_health));
-  setChip('[data-bind="chip-ack"]', hasCase && inc ? (inc.acknowledged ? `ACKED ${inc.acknowledged_by || ''}` : 'UNACKNOWLEDGED') : 'ACK —', hasCase ? (inc && inc.acknowledged ? 'ok' : 'crit') : null);
+  setChip('[data-bind="chip-health"]', inc ? `SỨC KHỎE ${vlabel(inc.asset_health)}` : 'SỨC KHỎE —', tone(inc && inc.asset_health));
+  setChip('[data-bind="chip-ack"]', hasCase && inc ? (inc.acknowledged ? `ĐÃ XÁC NHẬN ${inc.acknowledged_by || ''}` : 'CHƯA XÁC NHẬN') : 'CHƯA XÁC NHẬN —', hasCase ? (inc && inc.acknowledged ? 'ok' : 'crit') : null);
   setChip('[data-bind="chip-guard"]', hasCase && guard ? `Chốt an toàn ${guard.passed_count}/${guard.total_checks}` : 'Chốt an toàn —', hasCase && guard ? (guard.is_permitted ? 'ok' : 'warn') : null);
 
   const rw = inc ? inc.runtime_warning : null;
@@ -1264,7 +1352,7 @@ function renderWorkbench() {
   const alertBox = $('#wb-alert');
   if (alertBox) alertBox.hidden = !hasCase;
 
-  bind('wb-summary', inc ? inc.summary : DASH);
+  bind('wb-summary', inc ? mtxt(inc.summary) : DASH);
   bind('wb-confidence', inc ? `${inc.operational_confidence}` : DASH);
 
   renderBusinessContext();
@@ -1272,7 +1360,6 @@ function renderWorkbench() {
   renderDeltaTable();
   renderGuardTable();
   renderRecoveryBlock();
-  renderLedgerMini();
   applyWorkbenchFocus();
 }
 
@@ -1321,13 +1408,13 @@ function renderBusinessContext() {
   const ops = S.data.operations;
   const inc = S.data.incident;
   const pairs = [
-    ['Fleet', `${ops.fleet.name} (${ops.fleet.fleet_id}) · ${ops.fleet.operator_name}`],
-    ['Train', `${ops.train.train_id} · ${ops.train.model} · ${ops.train.car_number}`],
-    ['Subsystem', `${ops.subsystem.name} (${ops.subsystem.subsystem_id})`],
-    ['Asset', `${ops.asset.name} (${ops.asset.asset_id}) · ${ops.asset.service_role}`],
-    ['Hardware', `${ops.asset.discharge_valve_model} · rated ${num(ops.asset.rated_pressure_bar, 1)} bar`],
+    ['Hạm đội', `${ops.fleet.name} (${ops.fleet.fleet_id}) · ${ops.fleet.operator_name}`],
+    ['Tàu', `${ops.train.train_id} · ${ops.train.model} · ${ops.train.car_number}`],
+    ['Phân hệ', `${ops.subsystem.name} (${ops.subsystem.subsystem_id})`],
+    ['Tài sản', `${ops.asset.name} (${ops.asset.asset_id}) · ${ops.asset.service_role}`],
+    ['Thiết bị', `${ops.asset.discharge_valve_model} · định mức ${num(ops.asset.rated_pressure_bar, 1)} bar`],
     ['Depot', ops.fleet.depot_location],
-    ['Context tier', ops.fleet.is_illustrative_context ? 'Layer A hierarchy is illustrative; telemetry is MetroPT-3 real data' : 'Layer A hierarchy verified']
+    ['Tầng ngữ cảnh', ops.fleet.is_illustrative_context ? 'Layer A minh hoạ; số liệu là MetroPT-3 thật' : 'Layer A đã xác minh']
   ];
   pairs.forEach(([k, v]) => {
     const row = el('div');
@@ -1337,13 +1424,13 @@ function renderBusinessContext() {
   });
   if (inc && inc.work_order) {
     const row = el('div');
-    row.appendChild(el('dt', null, 'Work order'));
-    row.appendChild(el('dd', 'mono', `${inc.work_order.work_order_id} · ${inc.work_order.status}`));
+    row.appendChild(el('dt', null, 'Lệnh công tác'));
+    row.appendChild(el('dd', 'mono', `${inc.work_order.work_order_id} · ${vlabel(inc.work_order.status)}`));
     host.appendChild(row);
   }
 }
 
-const EV_TITLE = { PRESSURE: 'CARD A · DISCHARGE PRESSURE', THERMAL: 'CARD B · OIL TEMPERATURE', TEMPORAL: 'CARD C · TEMPORAL STEP PERSISTENCE', CORROBORAT: 'CARD D · MULTIVARIATE ISOLATION FOREST', LPS: 'CARD E · LOW PRESSURE SWITCH' };
+const EV_TITLE = { PRESSURE: 'THẺ A · ÁP SUẤT VAN XẢ', THERMAL: 'THẺ B · NHIỆT ĐỘ DẦU', TEMPORAL: 'THẺ C · ĐỘ BỀN BƯỚC NHẢY', CORROBORAT: 'THẺ D · ISOLATION FOREST', LPS: 'THẺ E · CÔNG TẮC ÁP THẤP' };
 
 function evidenceTitleOf(card) {
   const code = String(card.code || '').toUpperCase();
@@ -1352,7 +1439,7 @@ function evidenceTitleOf(card) {
   if (code.includes('TEMPORAL')) return EV_TITLE.TEMPORAL;
   if (code.includes('CORROBORAT') || code.includes('ML_')) return EV_TITLE.CORROBORAT;
   if (code.includes('LPS')) return EV_TITLE.LPS;
-  return `CARD · ${card.signal_name || code}`;
+  return `THẺ · ${mtxt(card.signal_name) || code}`;
 }
 
 function renderEvidenceCards() {
@@ -1373,15 +1460,15 @@ function renderEvidenceCards() {
     top.appendChild(el('span', 'ev-name', evidenceTitleOf(card)));
     const statusWrap = el('span');
     statusWrap.appendChild(badge(card.status, tone(card.status)));
-    if (card.is_primary) statusWrap.appendChild(el('span', 'cell-sub mono', 'primary'));
+    if (card.is_primary) statusWrap.appendChild(el('span', 'cell-sub mono', 'chính'));
     top.appendChild(statusWrap);
     box.appendChild(top);
     box.appendChild(el('div', 'ev-name mono', card.signal_name || card.code));
 
     const vals = el('div', 'ev-vals');
-    vals.appendChild(miniVal('Observed', `${num(card.observed_value, 4)} ${card.unit || ''}`));
+    vals.appendChild(miniVal('Quan trắc', `${num(card.observed_value, 4)} ${card.unit || ''}`));
     vals.appendChild(miniVal('Baseline', `${num(card.baseline_value, 4)} ${card.unit || ''}`));
-    vals.appendChild(miniVal('Deviation', card.sigma_deviation === null || card.sigma_deviation === undefined ? 'n/a' : `${signed(card.sigma_deviation)}σ`));
+    vals.appendChild(miniVal('Độ lệch', card.sigma_deviation === null || card.sigma_deviation === undefined ? DASH : `${signed(card.sigma_deviation)}σ`));
     box.appendChild(vals);
 
     const prov = el('div', 'ev-prov');
@@ -1394,7 +1481,7 @@ function renderEvidenceCards() {
       prov.appendChild(provLine('features', `${p.feature_count || (p.feature_names || []).length}: ${(p.feature_names || []).join(', ')}`));
     }
     if (p.step_diff !== undefined) {
-      prov.appendChild(provLine('step Δ', `${num(p.step_diff, 4)} bar · recent ${p.recent_observations}/${p.required_observations} · contiguous ${p.is_temporally_contiguous ? 'yes' : 'no'}`));
+      prov.appendChild(provLine('step Δ', `${num(p.step_diff, 4)} bar · ${p.recent_observations}/${p.required_observations} kỳ gần đây · liên tục ${p.is_temporally_contiguous ? 'có' : 'không'}`));
     }
     if (p.role) prov.appendChild(provLine('role', p.role));
     box.appendChild(prov);
@@ -1446,16 +1533,16 @@ function renderDeltaTable() {
   const point = latestPoint();
   const state = (S.data.incident && S.data.incident.lifecycle_state) || 'NONE';
   if (!pack.length) {
-    const tr = el('tr'); const td = el('td', 'muted', 'No evidence rows for the current sample.');
+    const tr = el('tr'); const td = el('td', 'muted', 'Chưa có bằng chứng ở mẫu hiện tại.');
     td.colSpan = 5; tr.appendChild(td); tbody.appendChild(tr);
     return;
   }
   pack.forEach((card) => {
     const tr = el('tr', `row-${tone(card.status) === 'idle' ? 'ok' : tone(card.status)}`);
-    tr.appendChild(el('td', 'strong', card.signal_name));
+    tr.appendChild(el('td', 'strong', mtxt(card.signal_name)));
     tr.appendChild(el('td', 'mono', `${num(card.observed_value, 4)} ${card.unit || ''}`));
     tr.appendChild(el('td', 'mono', num(card.baseline_value, 4)));
-    tr.appendChild(el('td', 'mono', card.sigma_deviation === null || card.sigma_deviation === undefined ? 'n/a' : `${signed(card.sigma_deviation)}σ`));
+    tr.appendChild(el('td', 'mono', card.sigma_deviation === null || card.sigma_deviation === undefined ? DASH : `${signed(card.sigma_deviation)}σ`));
     const st = el('td');
     st.appendChild(badge(card.status, tone(card.status)));
     st.appendChild(el('span', 'cell-sub mono', `${card.code} · ${card.provenance && card.provenance.source ? card.provenance.source : DASH}`));
@@ -1464,13 +1551,13 @@ function renderDeltaTable() {
   });
   if (point && rec && rec.criteria && recoveryPhase(state)) {
     const tr = el('tr');
-    tr.appendChild(el('td', 'strong', 'Recovery gate (latest sample)'));
+    tr.appendChild(el('td', 'strong', 'Chốt nghiệm thu (mẫu mới nhất)'));
     tr.appendChild(el('td', 'mono', `DV ${num(point.dv_pressure_bar, 4)} · Oil ${num(point.oil_temp_c, 2)}`));
     tr.appendChild(el('td', 'mono', `< ${num(rec.criteria.dv_pressure_max, 3)} · < ${num(rec.criteria.oil_temp_max, 1)}`));
     tr.appendChild(el('td', 'mono', regimeLabel(point.regime)));
     const ok = point.dv_pressure_bar < rec.criteria.dv_pressure_max && point.oil_temp_c < rec.criteria.oil_temp_max && regimeLabel(point.regime) === 'LOADED';
     const st = el('td');
-    st.appendChild(badge(ok ? 'MEETS RECOVERY CRITERIA' : 'OUTSIDE RECOVERY CRITERIA', ok ? 'ok' : 'warn'));
+    st.appendChild(badge(ok ? 'ĐẠT TIÊU CHÍ NGHIỆM THU' : 'CHƯA ĐẠT TIÊU CHÍ', ok ? 'ok' : 'warn'));
     tr.appendChild(st);
     tbody.appendChild(tr);
   }
@@ -1493,13 +1580,13 @@ function renderGuardTable() {
   bind('guard-count', guard ? `${guard.passed_count}/${guard.total_checks} chốt đạt` : DASH);
   const list = (guard && guard.checklist) || [];
   if (!list.length) {
-    const tr = el('tr'); const td = el('td', 'muted', 'ActionGuard has not been evaluated yet.');
+    const tr = el('tr'); const td = el('td', 'muted', 'ActionGuard chưa được đánh giá.');
     td.colSpan = 4; tr.appendChild(td); tbody.appendChild(tr);
   }
   list.forEach((check, i) => {
     const tr = el('tr');
     tr.appendChild(el('td', 'mono', `${i + 1} · ${check.id}`));
-    tr.appendChild(el('td', null, check.label));
+    tr.appendChild(el('td', null, vlabel(check.label)));
     tr.appendChild(el('td', 'mono', check.current_value === null || check.current_value === undefined ? DASH : check.current_value));
     const st = el('td');
     st.appendChild(badge(check.passed ? 'PASS' : 'FAIL', check.passed ? 'ok' : 'crit'));
@@ -1511,7 +1598,7 @@ function renderGuardTable() {
     clear(box);
     if (!guard) { box.setAttribute('data-tone', 'denied'); box.textContent = 'Chưa đọc được chốt an toàn.'; return; }
     box.setAttribute('data-tone', guard.is_permitted ? 'permitted' : 'denied');
-    const detail = guard.is_permitted ? '' : ` — ${guard.denial_reason || ''}`;
+    const detail = guard.is_permitted ? '' : ` — ${mtxt(guard.denial_reason || '')}`;
     box.textContent = `${guardSummary(guard)}${detail}`;
   }
 }
@@ -1520,7 +1607,7 @@ function renderRecoveryBlock() {
   const rec = S.data.recovery;
   const steps = clear($('#verify-steps'));
   if (!rec) {
-    steps.appendChild(el('span', 'vstep', 'awaiting /api/recovery'));
+    steps.appendChild(el('span', 'vstep', 'chờ /api/recovery'));
     return;
   }
   const target = rec.target_healthy_observations || 5;
@@ -1531,16 +1618,16 @@ function renderRecoveryBlock() {
     steps.appendChild(chip);
     if (i < target) steps.appendChild(el('span', 'varrow mono', '→'));
   }
-  const status = el('span', 'verify-status mono', rec.is_verified ? `${done}/${target} CRITERIA VERIFIED · SIGN-OFF UNLOCKED` : `${done}/${target} · ${rec.is_recovering ? 'post-maintenance stream, counting LOADED samples' : 'not yet in recovery branch'}`);
+  const status = el('span', 'verify-status mono', rec.is_verified ? `${done}/${target} ĐẠT TIÊU CHÍ · ĐÃ MỞ KHOÁ CHỐT` : `${done}/${target} · ${rec.is_recovering ? 'luồng sau bảo trì, đang đếm kỳ LOADED' : 'chưa vào nhánh nghiệm thu'}`);
   status.setAttribute('data-tone', rec.is_verified ? 'ok' : 'warn');
   status.style.color = rec.is_verified ? 'var(--ok)' : 'var(--warn)';
   steps.appendChild(status);
-  bind('recovery-count', `${done}/${target} consecutive healthy LOADED observations`);
+  bind('recovery-count', `${done}/${target} kỳ LOADED khỏe liên tiếp`);
 
   const c = rec.criteria || {};
   const latest = rec.latest_telemetry || {};
   bind('rec-dv', `${num(latest.dv_pressure_bar, 4)} bar`);
-  bind('rec-dv-max', `max < ${num(c.dv_pressure_max, 3)} bar · regime required ${c.required_regime}`);
+  bind('rec-dv-max', `ngưỡng < ${num(c.dv_pressure_max, 3)} bar · bắt buộc ${c.required_regime}`);
   bind('rec-oil', `${num(latest.oil_temp_c, 2)} °C`);
   bind('rec-oil-max', `max < ${num(c.oil_temp_max, 1)} °C`);
   const dvOk = typeof latest.dv_pressure_bar === 'number' && c.dv_pressure_max !== undefined && latest.dv_pressure_bar < c.dv_pressure_max;
@@ -1565,7 +1652,7 @@ function renderRecoveryLog(rec, target) {
   const loaded = chronologicalPoints().filter((p) => regimeLabel(p.regime) === 'LOADED').slice(-target);
   const criteria = (rec && rec.criteria) || {};
   if (!loaded.length) {
-    const tr = el('tr'); const td = el('td', 'muted', 'No LOADED sample inside the current chart window — widen the timeframe or let the stream advance.');
+    const tr = el('tr'); const td = el('td', 'muted', 'Không có kỳ LOADED trong cửa sổ hiện tại — chọn khoảng thời gian dài hơn.');
     td.colSpan = 6; tr.appendChild(td); tbody.appendChild(tr);
     return;
   }
@@ -1581,27 +1668,9 @@ function renderRecoveryLog(rec, target) {
     tr.appendChild(el('td', 'mono', num(p.oil_temp_c, 2)));
     const st = el('td');
     st.appendChild(badge(pass ? 'PASS' : 'FAIL', pass ? 'ok' : 'crit'));
-    st.appendChild(el('span', 'cell-sub mono', `gate DV < ${num(criteria.dv_pressure_max, 3)} · Oil < ${num(criteria.oil_temp_max, 1)}`));
+    st.appendChild(el('span', 'cell-sub mono', `DV < ${num(criteria.dv_pressure_max, 3)} · Oil < ${num(criteria.oil_temp_max, 1)}`));
     tr.appendChild(st);
     tbody.appendChild(tr);
-  });
-}
-
-function renderLedgerMini() {
-  const host = $('#ledger-mini');
-  if (!host) return;
-  clear(host);
-  const events = (S.data.events || []).slice(-8).reverse();
-  if (!events.length) {
-    host.appendChild(el('div', 'muted', 'Ledger empty — no CaseEvent recorded yet.'));
-    return;
-  }
-  events.forEach((e) => {
-    const row = el('div', 'ledger-mini-row');
-    row.appendChild(el('span', 't', clockOf(e.event_time)));
-    row.appendChild(el('span', 'k', e.event_type));
-    row.appendChild(el('span', 'd', `${e.title} · ${e.actor}`));
-    host.appendChild(row);
   });
 }
 
@@ -1628,7 +1697,7 @@ function renderTimeline() {
     const current = typeFilter.value || 'ALL';
     if (typeFilter.dataset.signature !== wanted.join('|')) {
       clear(typeFilter);
-      const all = el('option', null, 'TYPE: ALL EVENT TYPES'); all.value = 'ALL'; typeFilter.appendChild(all);
+      const all = el('option', null, 'LOẠI: MỌI LOẠI'); all.value = 'ALL'; typeFilter.appendChild(all);
       wanted.forEach((t) => { const o = el('option', null, t); o.value = t; typeFilter.appendChild(o); });
       typeFilter.dataset.signature = wanted.join('|');
       if (wanted.includes(current)) typeFilter.value = current;
@@ -1668,15 +1737,15 @@ function renderTimeline() {
     const typeCell = el('span', 'tl-type');
     typeCell.appendChild(badge(e.event_type, t));
     row.appendChild(typeCell);
-    row.appendChild(el('span', 'tl-phase', `Phase: ${e.phase || DASH}`));
+    row.appendChild(el('span', 'tl-phase', `Giai đoạn: ${e.phase || DASH}`));
     const actor = el('span', 'tl-actor');
     actor.appendChild(el('b', null, e.actor || DASH));
     row.appendChild(actor);
     const body = el('span');
-    body.appendChild(el('div', 'tl-body-title', e.title || DASH));
-    body.appendChild(el('div', 'tl-body-detail', e.detail || ''));
+    body.appendChild(el('div', 'tl-body-title', mtxt(e.title) || DASH));
+    body.appendChild(el('div', 'tl-body-detail', mtxt(e.detail)));
     const provKeys = Object.keys(e.provenance || {});
-    body.appendChild(el('div', 'tl-src', `source: ${e.source || DASH} · ${e.event_id || ''}${provKeys.length ? ` · provenance: ${provKeys.slice(0, 4).map((k) => `${k}=${String(e.provenance[k]).slice(0, 40)}`).join(', ')}` : ''}`));
+    body.appendChild(el('div', 'tl-src', `nguồn: ${e.source || DASH} · ${e.event_id || ''}${provKeys.length ? ` · provenance: ${provKeys.slice(0, 4).map((k) => `${k}=${String(e.provenance[k]).slice(0, 40)}`).join(', ')}` : ''}`));
     row.appendChild(body);
     host.appendChild(row);
   });
@@ -1686,9 +1755,9 @@ function renderTimeline() {
 function renderReplayDrawer() {
   const sim = S.data.simStatus;
   const meta = $('#replay-tab-meta');
-  if (meta && sim) meta.textContent = `${sim.scenario_name} · ${num(sim.speed_multiplier, 0)}x · ${sim.is_paused ? 'PAUSED' : 'STREAMING'}`;
+  if (meta && sim) meta.textContent = `${sim.scenario_name} · ${num(sim.speed_multiplier, 0)}x · ${sim.is_paused ? 'ĐÃ DỪNG' : 'ĐANG PHÁT'}`;
   bind('replay-state', sim
-    ? `${sim.is_paused ? 'PAUSED' : 'STREAMING'} · ${num(sim.speed_multiplier, 0)}x · ${sim.total_points_emitted} samples emitted · cursor ${sim.current_event_time ? utcOf(sim.current_event_time) : 'not started'} · ${sim.mode}`
+    ? `${sim.is_paused ? 'ĐÃ DỪNG' : 'ĐANG PHÁT'} · ${num(sim.speed_multiplier, 0)}x · ${sim.total_points_emitted} mẫu đã phát · cursor ${sim.current_event_time ? utcOf(sim.current_event_time) : 'chưa bắt đầu'} · ${sim.mode}`
     : DASH);
 
   const play = $('#btn-play');
@@ -1704,7 +1773,9 @@ function renderReplayDrawer() {
   if (sel && catalog && sel.dataset.signature !== `${catalog.active_scenario_id}|${(catalog.scenarios || []).length}`) {
     clear(sel);
     (catalog.scenarios || []).forEach((sc) => {
-      const o = el('option', null, `${sc.name} · ${sc.stream_start} → ${sc.stream_end}`);
+      const o = el('option', null, sc.name);
+      /* Scenario clocks stay out of the DOM: stream_end can name a future LPS breach. */
+      o.dataset.range = `${sc.stream_start} -> ${sc.stream_end}`;
       o.value = sc.scenario_id;
       if (sc.scenario_id === catalog.active_scenario_id) o.selected = true;
       sel.appendChild(o);
@@ -1720,7 +1791,7 @@ function renderReplayDrawer() {
     if (grid.dataset.signature !== sig) {
       clear(grid);
       const keys = Object.keys(milestones);
-      if (!keys.length) grid.appendChild(el('span', 'mono muted', 'this scenario exposes no diagnostic milestones'));
+      if (!keys.length) grid.appendChild(el('span', 'mono muted', 'kịch bản này không có mốc chẩn đoán'));
       keys.forEach((key) => {
         const b = el('button', 'mini-btn', key);
         /* The milestone clock stays out of the DOM: it can name a future LPS breach. */
@@ -1740,14 +1811,14 @@ async function postDemo(path, body) {
     await refreshAllData();
     return res;
   } catch (err) {
-    toast('error', `Replay control failed · ${path}`, err.message);
+    toast('error', `Lệnh replay lỗi · ${path}`, err.message);
     return null;
   }
 }
 
 async function jumpTo(milestone) {
   const res = await postDemo('/demo/jump', { milestone });
-  if (res) toast('info', 'Stream cursor moved', `milestone ${res.milestone} → ${res.lifecycle_state}`);
+  if (res) toast('info', 'Đã dời cursor', `mốc ${res.milestone} → ${res.lifecycle_state}`);
 }
 
 function toggleReplay(force) {
@@ -1755,7 +1826,7 @@ function toggleReplay(force) {
   const collapsed = drawer.classList.contains('collapsed');
   const wantOpen = force === undefined ? collapsed : force;
   drawer.classList.toggle('collapsed', !wantOpen);
-  $('#replay-tab-label').textContent = wantOpen ? 'REPLAY STUDIO · OPEN' : 'REPLAY STUDIO';
+  $('#replay-tab-label').textContent = wantOpen ? 'REPLAY STUDIO · ĐANG MỞ' : 'REPLAY STUDIO';
 }
 
 /* ══════════════════════════════ Validation Reference drawer ══════════════════════════════ */
@@ -1765,31 +1836,31 @@ function renderValidationDrawer() {
   if (!ref || !host || host.dataset.signature) return;
   clear(host);
   const items = [
-    ['Scenario', `${ref.scenario_name} (${ref.scenario_id})`],
-    ['Dataset source', ref.dataset_source],
-    ['Historical period', ref.historical_period],
-    ['Reported failure mode', ref.reported_failure_mode],
-    ['Reported failure start', ref.reported_failure_start],
-    ['Conventional LPS breach', ref.conventional_lps_breach],
-    ['Online detector confirmation (CompressorGuard)', ref.online_detector_confirmation],
-    ['Confirmed intervention window', `${ref.confirmed_intervention_window_formatted} (${ref.confirmed_intervention_window_minutes} min)`],
-    ['Maintenance report', ref.maintenance_summary]
+    ['Kịch bản', `${ref.scenario_name} (${ref.scenario_id})`],
+    ['Nguồn dữ liệu', ref.dataset_source],
+    ['Giai đoạn lịch sử', ref.historical_period],
+    ['Hỏng hóc ghi nhận', ref.reported_failure_mode],
+    ['Bắt đầu hỏng', ref.reported_failure_start],
+    ['LPS quy ước', ref.conventional_lps_breach],
+    ['Detector online xác nhận', ref.online_detector_confirmation],
+    ['Cửa sổ can thiệp', `${ref.confirmed_intervention_window_formatted} (${ref.confirmed_intervention_window_minutes} phút)`],
+    ['Báo cáo bảo trì', ref.maintenance_summary]
   ];
   items.forEach(([k, v]) => {
     const box = el('div', 'vr-item');
     box.appendChild(el('span', null, k));
-    box.appendChild(el('b', k.startsWith('Online detector') ? 'computed' : null, v));
+    box.appendChild(el('b', k === 'Detector online xác nhận' ? 'computed' : null, v));
     host.appendChild(box);
   });
   if (ref.computed_by_compressorguard) {
     const box = el('div', 'vr-item');
-    box.appendChild(el('span', null, 'Computed by CompressorGuard (Layer B)'));
+    box.appendChild(el('span', null, 'CompressorGuard tính (Layer B)'));
     box.appendChild(el('b', 'computed', JSON.stringify(ref.computed_by_compressorguard)));
     host.appendChild(box);
   }
   const note = el('div', 'vr-item');
-  note.appendChild(el('span', null, 'Live comparison'));
-  note.appendChild(el('b', null, `Current engine lead window: ${(S.data.incident && S.data.incident.lead_time && S.data.incident.lead_time.lead_time_formatted) || 'not confirmed yet in this replay session'}`));
+  note.appendChild(el('span', null, 'Đối chứng trực tiếp'));
+  note.appendChild(el('b', null, `Thời gian báo trước của engine: ${(S.data.incident && S.data.incident.lead_time && S.data.incident.lead_time.lead_time_formatted) || 'chưa xác nhận ở phiên này'}`));
   host.appendChild(note);
 }
 
@@ -1805,8 +1876,8 @@ function toggleVr(open) {
     request(CFG.api.validation).then((payload) => {
       S.data.validation = payload;
       renderValidationDrawer();
-      toast('info', 'Validation Reference opened', 'Layer C ground truth — isolated from the online detectors.');
-    }).catch((err) => toast('error', 'Validation reference read failed', err.message));
+      toast('info', 'Đã mở đối chứng', 'Sự thật lịch sử Layer C — không cấp cho detector online.');
+    }).catch((err) => toast('error', 'Đọc đối chứng thất bại', err.message));
   }
 }
 
@@ -1828,8 +1899,8 @@ function renderOperatorRail() {
   fillRootCauseOptions(an);
 
   bind('ack-state', active
-    ? (inc.acknowledged ? `ACKNOWLEDGED by ${inc.acknowledged_by || 'operator'} · priority ${inc.priority}` : `UNACKNOWLEDGED · phase ${state}`)
-    : 'no open case on this asset', inc && inc.acknowledged ? 'ok' : (active ? 'warn' : null));
+    ? (inc.acknowledged ? `${vlabel('ACKNOWLEDGED')} bởi ${inc.acknowledged_by || 'operator'} · ưu tiên ${inc.priority}` : `${vlabel('UNACKNOWLEDGED')} · giai đoạn ${vlabel(state)}`)
+    : 'chưa có vụ việc mở', inc && inc.acknowledged ? 'ok' : (active ? 'warn' : null));
 
   const ackBtn = $('#btn-acknowledge');
   if (ackBtn) ackBtn.disabled = !active || Boolean(inc && inc.acknowledged);
@@ -1840,7 +1911,7 @@ function renderOperatorRail() {
   const woBtn = $('#btn-work-order');
   if (woBtn) {
     woBtn.disabled = !woAllowed || !$('#wo-playbook').value || !$('#wo-instructions').value.trim();
-    woBtn.textContent = inc && inc.work_order ? 'Update Work Order' : 'Dispatch Work Order';
+    woBtn.textContent = inc && inc.work_order ? 'Cập nhật lệnh công tác' : 'Phát lệnh công tác';
   }
   const safeBtn = $('#btn-safe-mode');
   if (safeBtn) safeBtn.disabled = !(guard && guard.is_permitted) || !active || state === 'MITIGATING' || state === 'VERIFYING_RECOVERY' || state === 'RESOLVED';
@@ -1848,21 +1919,21 @@ function renderOperatorRail() {
   if (closeBtn) closeBtn.disabled = !active || !closeable();
 
   bind('close-hint', !active
-    ? 'Nothing to sign off — no open case.'
+    ? 'Chưa có vụ việc để chốt.'
     : (closeable()
-      ? `Recovery verified ${rec.consecutive_healthy_observations}/${rec.target_healthy_observations}. Root cause + sign-off notes unlock the release of the asset.`
-      : `Locked until recovery verification reports ${rec ? rec.consecutive_healthy_observations : 0}/${rec ? rec.target_healthy_observations : 5} healthy LOADED observations.`));
+      ? `Nghiệm thu đạt ${rec.consecutive_healthy_observations}/${rec.target_healthy_observations} · đã mở khoá trả tàu.`
+      : `Chốt khi đủ ${rec ? rec.consecutive_healthy_observations : 0}/${rec ? rec.target_healthy_observations : 5} kỳ LOADED khỏe.`));
   bind('safe-hint', guard && guard.is_permitted
-    ? 'All ActionGuard gates passed — dispatch is authorised.'
-    : `Blocked by ActionGuard: ${guard ? guard.denial_reason || `${guard.passed_count}/${guard.total_checks} gates passed` : 'guard status unavailable'}`);
+    ? 'Mọi chốt ActionGuard đạt · được phép điều độ.'
+    : `ActionGuard chặn: ${guard ? guard.denial_reason || `${guard.passed_count}/${guard.total_checks} chốt đạt` : 'chưa đọc được chốt'}`);
 
   const branch = guardCheck('REPLAY_BRANCH_AVAILABLE');
-  bind('branch-info', `Stream branch gate: ${branch ? `${branch.passed ? 'AVAILABLE' : 'NOT AVAILABLE'} — ${branch.current_value}` : 'not reported'}${S.lastAction && S.lastAction.stream_branch ? ` · last dispatch → ${S.lastAction.stream_branch.source} @ ${S.lastAction.stream_branch.offset_timestamp}` : ''}`,
+  bind('branch-info', `Chốt nhánh luồng: ${branch ? `${vlabel(branch.passed ? 'AVAILABLE' : 'NOT AVAILABLE')} — ${branch.current_value}` : 'chưa báo'}${S.lastAction && S.lastAction.stream_branch ? ` · phát trước → ${S.lastAction.stream_branch.source} @ ${S.lastAction.stream_branch.offset_timestamp}` : ''}`,
     branch && branch.passed ? 'ok' : null);
 
   bind('wo-state', inc && inc.work_order
     ? `${inc.work_order.work_order_id} · ${inc.work_order.status} · ${inc.work_order.playbook_id} → ${inc.work_order.target_depot} (${inc.work_order.maintenance_window})`
-    : 'no work order drafted');
+    : 'chưa thảo lệnh công tác');
 
 }
 
@@ -1874,12 +1945,12 @@ function fillPlaybookOptions(an) {
   if (sel.dataset.signature === sig) return;
   clear(sel);
   if (!matches.length) {
-    const o = el('option', null, 'engine default (no fingerprint match yet)');
+    const o = el('option', null, 'mặc định engine · chưa khớp vân hỏng');
     o.value = '';
     sel.appendChild(o);
   }
   matches.forEach((m) => {
-    const o = el('option', null, `${m.recommended_playbook} · ${m.title} (similarity ${num(m.similarity_score * 100, 1)}%)`);
+    const o = el('option', null, `${m.recommended_playbook} · ${m.title} · giống ${num(m.similarity_score * 100, 1)}%`);
     o.value = m.recommended_playbook;
     o.dataset.action = m.recommended_action || '';
     sel.appendChild(o);
@@ -1903,10 +1974,10 @@ function fillDepotOptions(ops, inc) {
   if (sel.dataset.signature === sig) return;
   clear(sel);
   const opts = [
-    { value: primary, label: `${primary} · fleet home depot (${ops.fleet.name})` }
+    { value: primary, label: `${primary} · depot hạm đội (${ops.fleet.name})` }
   ];
-  if (existing && existing !== primary) opts.push({ value: existing, label: `${existing} · last dispatched depot` });
-  opts.push({ value: '', label: 'omit field · engine routing default' });
+  if (existing && existing !== primary) opts.push({ value: existing, label: `${existing} · depot đã phát trước` });
+  opts.push({ value: '', label: 'bỏ trống · engine tự chọn' });
   opts.forEach((o, i) => {
     const option = el('option', null, o.label);
     option.value = o.value;
@@ -1924,12 +1995,12 @@ function fillRootCauseOptions(an) {
   if (sel.dataset.signature === sig) return;
   clear(sel);
   if (!matches.length) {
-    const o = el('option', null, 'root cause not yet classified by the fingerprint matcher');
+    const o = el('option', null, 'chưa phân loại nguyên nhân gốc');
     o.value = '';
     sel.appendChild(o);
   }
   matches.forEach((m) => {
-    const o = el('option', null, `${m.root_cause_component} · similarity ${num(m.similarity_score * 100, 1)}%`);
+    const o = el('option', null, `${m.root_cause_component} · giống ${num(m.similarity_score * 100, 1)}%`);
     o.value = m.root_cause_component;
     sel.appendChild(o);
   });
@@ -1938,8 +2009,8 @@ function fillRootCauseOptions(an) {
 
 async function runOperatorAction(kind) {
   const endpoints = {
-    acknowledge: { path: '/api/case/acknowledge', build: () => ({ operator_id: S.operator, priority: $('#ack-priority').value, note: $('#ack-note').value.trim() }), ok: 'Case acknowledged' },
-    note: { path: '/api/case/notes', build: () => ({ operator_id: S.operator, note: $('#note-body').value.trim() }), ok: 'Forensic note appended to ledger' },
+    acknowledge: { path: '/api/case/acknowledge', build: () => ({ operator_id: S.operator, priority: $('#ack-priority').value, note: $('#ack-note').value.trim() }), ok: 'Đã xác nhận vụ việc' },
+    note: { path: '/api/case/notes', build: () => ({ operator_id: S.operator, note: $('#note-body').value.trim() }), ok: 'Đã ghi chú vào sổ theo dõi' },
     workOrder: {
       path: '/api/case/work-order',
       build: () => {
@@ -1954,18 +2025,18 @@ async function runOperatorAction(kind) {
         if (depot) body.target_depot = depot;
         return body;
       },
-      ok: 'Depot work order dispatched'
+      ok: 'Đã phát lệnh công tác depot'
     },
-    safeMode: { path: '/api/action/safe-mode', build: () => ({ operator_id: S.operator }), ok: 'Safe mode intervention dispatched' },
-    falsePositive: { path: '/api/case/false-positive', build: () => ({ operator_id: S.operator, reason: $('#fp-reason').value.trim() || 'Operator override from operations console.' }), ok: 'Case marked as false positive' },
+    safeMode: { path: '/api/action/safe-mode', build: () => ({ operator_id: S.operator }), ok: 'Đã phát can thiệp an toàn' },
+    falsePositive: { path: '/api/case/false-positive', build: () => ({ operator_id: S.operator, reason: $('#fp-reason').value.trim() || 'Operator bỏ qua từ console vận hành.' }), ok: 'Đã đánh dấu dương tính giả' },
     close: {
       path: '/api/case/close',
       build: () => {
         const rc = $('#close-root-cause').value;
         const body = $('#close-notes').value.trim();
-        return { operator_id: S.operator, notes: `${rc ? `Root cause: ${rc}. ` : ''}${body || 'Recovery criteria verified.'}` };
+        return { operator_id: S.operator, notes: `${rc ? `Nguyên nhân gốc: ${rc}. ` : ''}${body || 'Đã kiểm tiêu chí nghiệm thu.'}` };
       },
-      ok: 'Case signed off · asset released'
+      ok: 'Đã chốt vụ việc · trả tài sản'
     }
   };
   const spec = endpoints[kind];
@@ -1983,19 +2054,19 @@ async function runOperatorAction(kind) {
     await refreshAllData();
   } catch (err) {
     const status = err.status || '';
-    toast('error', `Operator action rejected ${status}`.trim(), err.message, 9000);
+    toast('error', `Hành động bị từ chối ${status}`.trim(), err.message, 9000);
     await refreshAllData();
   }
 }
 
 function summariseResponse(kind, res) {
   if (!res) return '';
-  if (kind === 'acknowledge') return `${res.case_id} · ${res.priority} · owner ${res.operator_id} · event ${res.event_id}`;
-  if (kind === 'note') return `${res.event_time} · event ${res.event_id}`;
+  if (kind === 'acknowledge') return `${res.case_id} · ${vlabel(res.priority)} · ${res.operator_id} · ${res.event_id}`;
+  if (kind === 'note') return `${res.event_time} · ${res.event_id}`;
   if (kind === 'workOrder') return `${res.work_order_id} · ${res.playbook_id} → ${res.target_depot} (${res.maintenance_window})`;
-  if (kind === 'safeMode') return `${res.status} · target ${res.target_state} · branch ${res.stream_branch.source} @ ${res.stream_branch.offset_timestamp}`;
-  if (kind === 'falsePositive') return `phase ${res.lifecycle_state} · health ${res.asset_health} · event ${res.event_id}`;
-  if (kind === 'close') return `status ${res.status} · phase ${res.lifecycle_state} · health ${res.asset_health}`;
+  if (kind === 'safeMode') return `${res.status} · ${vlabel(res.target_state)} · ${res.stream_branch.source} @ ${res.stream_branch.offset_timestamp}`;
+  if (kind === 'falsePositive') return `${vlabel(res.lifecycle_state)} · ${vlabel(res.asset_health)} · ${res.event_id}`;
+  if (kind === 'close') return `${res.status} · ${vlabel(res.lifecycle_state)} · ${vlabel(res.asset_health)}`;
   return JSON.stringify(res).slice(0, 180);
 }
 
@@ -2021,7 +2092,7 @@ function wireEvents() {
 
   $('#operator-select').addEventListener('change', (e) => {
     S.operator = e.target.value;
-    toast('info', 'Shift operator switched', `Audit events from now on are attributed to operator:${S.operator}`);
+    toast('info', 'Đổi ca vận hành', `Từ nay sự kiện ghi cho ${S.operator}.`);
   });
 
   $('#toggle-regime-shading').addEventListener('change', (e) => { S.shading = e.target.checked; renderCharts(); });
@@ -2059,12 +2130,12 @@ function wireEvents() {
   $('#vr-backdrop').addEventListener('click', () => toggleVr(false));
   $$('[data-open-vr]').forEach((b) => b.addEventListener('click', () => toggleVr(true)));
 
-  $('#btn-play').addEventListener('click', async () => { await postDemo('/demo/play'); toast('info', 'Server stream resumed', 'Producer advanced by the backend worker; this console only reads state.'); });
-  $('#btn-pause').addEventListener('click', async () => { await postDemo('/demo/pause'); toast('info', 'Server stream paused', 'No further samples will be written to MongoDB until playback resumes.'); });
+  $('#btn-play').addEventListener('click', async () => { await postDemo('/demo/play'); toast('info', 'Đã phát lại luồng', 'Worker backend đẩy mẫu; console chỉ đọc.'); });
+  $('#btn-pause').addEventListener('click', async () => { await postDemo('/demo/pause'); toast('info', 'Đã dừng luồng', 'MongoDB ngừng nhận mẫu cho tới khi phát lại.'); });
   $$('#speed-seg .seg-btn').forEach((b) => {
     b.addEventListener('click', async () => {
       const res = await postDemo('/demo/speed', { speed_multiplier: Number(b.dataset.speed) });
-      if (res) toast('info', 'Replay pacing updated', `${num(res.speed_multiplier, 0)}x simulation speed · paused=${res.is_paused}`);
+      if (res) toast('info', 'Đã đổi nhịp phát', `${num(res.speed_multiplier, 0)}x · ${res.is_paused ? 'đã dừng' : 'đang phát'}`);
     });
   });
   $('#btn-apply-scenario').addEventListener('click', async () => {
@@ -2072,23 +2143,28 @@ function wireEvents() {
     if (!id) return;
     try {
       const res = await request('/api/operations/scenario', { method: 'POST', body: { scenario_id: id } });
-      toast('info', 'Scenario switched', `${res.scenario_name} · ${res.stream_start} → ${res.stream_end}`);
+      toast('info', 'Đã đổi kịch bản', `${res.scenario_name} · cursor về đầu kịch bản`);
       S.data.scenarios = null;
       S.data.window = null;
       await refreshAllData();
     } catch (err) {
-      toast('error', 'Scenario switch failed', err.message);
+      toast('error', 'Đổi kịch bản thất bại', err.message);
     }
   });
   $('#btn-reset-stream').addEventListener('click', async () => {
     const res = await postDemo('/demo/reset', {});
-    if (res) toast('warn', 'Replay session reset', 'Lifecycle, detectors and ledger rebuilt from the CSV origin.');
+    if (res) toast('warn', 'Đã đặt lại phiên', 'State machine, detector và sổ dựng lại từ đầu CSV.');
   });
 
   $('#btn-export').addEventListener('click', exportDossier);
 
   $$('#wb-focus-tabs .focus-btn').forEach((b) => {
     b.addEventListener('click', () => {
+      /* The ledger lives in one place: the audit chip opens the Case Timeline screen. */
+      if (b.dataset.focus === 'audit') {
+        setView('timeline');
+        return;
+      }
       S.wbFocus = b.dataset.focus;
       $$('#wb-focus-tabs .focus-btn').forEach((x) => x.classList.toggle('is-active', x === b));
       applyWorkbenchFocus();
@@ -2128,13 +2204,13 @@ async function exportDossier() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  toast('ok', 'Dossier exported', 'Post-mortem JSON built from live API state (append-only ledger included).');
+  toast('ok', 'Đã xuất hồ sơ', 'JSON hậu kiểm dựng từ state API, kèm sổ theo dõi.');
 }
 
 /* ══════════════════════════════ boot ══════════════════════════════ */
 function boot() {
   wireEvents();
-  toast('info', 'Console attached', 'Pure consumer mode: the UI only reads API state. Telemetry is produced by the server-side stream worker.');
+  toast('info', 'Đã kết nối console', 'Console chỉ đọc API; worker backend phát luồng dữ liệu.');
   refreshAllData();
   setInterval(refreshAllData, CFG.pollMs);
 }

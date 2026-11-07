@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RAILOPS VN // COMPRESSORGUARD OPERATIONS COMMAND CONSOLE</title>
-<meta name="description" content="RailOps VN industrial operations command console. CompressorGuard mission-critical subsystem: v3.0 Human-in-the-Loop incident workbench for Metro Line 1 APU-COMP-01, replaying MetroPT-3 public compressor telemetry.">
+<title>RAILOPS VN // COMPRESSORGUARD — BẢNG ĐIỀU HÀNH VẬN TẢI</title>
+<meta name="description" content="Bảng điều hành vận tải công nghiệp RailOps VN. Phân hệ CompressorGuard v3.0: nhân sự vận hành quyết định, dữ liệu MetroPT-3 thực trên APU-COMP-01.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -26,7 +26,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
       <span class="brand-sub">RAILOPS VN · OPERATIONS COMMAND CONSOLE</span>
     </div>
 
-    <div class="stream-pill" id="stream-pill" title="Telemetry is pushed by the server-side background stream worker. The dashboard is a pure consumer.">
+    <div class="stream-pill" id="stream-pill" title="Luồng dữ liệu do worker phía server phát; dashboard chỉ tiêu thụ.">
       <span class="pulse-dot"></span>
       <span id="stream-pill-label">LIVE SIMULATION · HISTORICAL DATA</span>
       <span class="pill-sep">·</span>
@@ -35,7 +35,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
 
     <div class="header-controls">
       <label class="ctl-group">
-        <span class="ctl-label">Operator</span>
+        <span class="ctl-label">Nhân viên trực</span>
         <select id="operator-select" class="ctl-select">
           <option value="DISPATCHER-0941">DISPATCHER-0941</option>
           <option value="DISPATCHER-1177">DISPATCHER-1177</option>
@@ -44,7 +44,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
       </label>
 
       <div class="ctl-group">
-        <span class="ctl-label">Timeframe</span>
+        <span class="ctl-label">Khung thời gian</span>
         <div class="seg-bar" id="timeframe-seg">
           <button class="seg-btn" data-timeframe="5m">5m</button>
           <button class="seg-btn is-active" data-timeframe="15m">15m</button>
@@ -55,73 +55,73 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
       </div>
 
       <div class="ctl-group">
-        <span class="ctl-label">Feed</span>
+        <span class="ctl-label">Luồng dữ liệu</span>
         <div class="conn-indicator" id="conn-indicator" data-state="unknown">
-          <span class="conn-dot"></span><span id="conn-text">PROBING</span>
+          <span class="conn-dot"></span><span id="conn-text">ĐANG THĂM</span>
         </div>
       </div>
 
-      <button class="ghost-btn" id="btn-toggle-vr" title="Open the Layer C Validation Reference ground-truth drawer">
-        <span aria-hidden="true">&#128451;</span> Valid. Ref
+      <button class="ghost-btn" id="btn-toggle-vr" title="Mở ngăn đối chứng Layer C">
+        <span aria-hidden="true">&#128451;</span> Đối chứng
       </button>
-      <button class="ghost-btn" id="btn-toggle-replay" title="Open the Replay Studio drawer (Shift + S)">
-        <span aria-hidden="true">&#127899;</span> Replay Studio
+      <button class="ghost-btn" id="btn-toggle-replay" title="Mở phòng phát lại (Shift + S)">
+        <span aria-hidden="true">&#127899;</span> Phát lại
       </button>
     </div>
   </div>
 
   <div class="cmd-header-row sub-row">
-    <nav class="breadcrumb" id="breadcrumb" aria-label="Asset hierarchy">
-      <span class="crumb muted">Scope: MetroPT-3 fleet / APU-COMP-01 — loading asset registry…</span>
+    <nav class="breadcrumb" id="breadcrumb" aria-label="Cây phân cấp tài sản">
+      <span class="crumb muted">Đang tải danh mục tài sản…</span>
     </nav>
     <div class="event-clock">
-      <span class="ctl-label">Event Clock</span>
+      <span class="ctl-label">Giờ mô phỏng</span>
       <span class="mono" id="event-clock">—</span>
       <span class="clock-tag">event_time</span>
-      <span class="ctl-label sim-label">Stream cursor</span>
+      <span class="ctl-label sim-label">Con trỏ luồng</span>
       <span class="mono" id="sim-points">—</span>
-      <span class="clock-tag">points emitted</span>
+      <span class="clock-tag">điểm đã phát</span>
     </div>
   </div>
 
   <nav class="main-nav" id="main-nav">
-    <button class="nav-tab is-active" data-view="fleet"><span class="nav-num">1</span> FLEET &amp; TELEMETRY MATRIX</button>
-    <button class="nav-tab" data-view="queue"><span class="nav-num">2</span> INCIDENT QUEUE <span class="nav-badge" id="nav-queue-count">0</span></button>
-    <button class="nav-tab" data-view="workbench"><span class="nav-num">3</span> CASE INVESTIGATION WORKBENCH</button>
-    <button class="nav-tab" data-view="timeline"><span class="nav-num">7</span> CASE TIMELINE / AUDIT LEDGER</button>
+    <button class="nav-tab is-active" data-view="fleet"><span class="nav-num">1</span> HẠM ĐỘI &amp; TELEMETRY</button>
+    <button class="nav-tab" data-view="queue"><span class="nav-num">2</span> HÀNG ĐỢI CA <span class="nav-badge" id="nav-queue-count">0</span></button>
+    <button class="nav-tab" data-view="workbench"><span class="nav-num">3</span> BÀN ĐIỀU TRA CA</button>
+    <button class="nav-tab" data-view="timeline"><span class="nav-num">7</span> SỔ THEO DÕI CA</button>
   </nav>
 </header>
 
 <!-- ══════════════════════════════ DYNAMIC KPI STRIP ══════════════════════════════ -->
-<section class="kpi-strip" id="kpi-strip" aria-label="Live operations summary">
+<section class="kpi-strip" id="kpi-strip" aria-label="Tóm tắt vận hành trực tiếp">
   <div class="kpi-card">
-    <div class="kpi-label">MONITORED ASSETS</div>
+    <div class="kpi-label">TÀI SẢN THEO DÕI</div>
     <div class="kpi-value mono" data-kpi="monitored_assets_count">—</div>
-    <div class="kpi-note mono" data-kpi-note="provenance">stream: —</div>
+    <div class="kpi-note mono" data-kpi-note="provenance">nguồn: —</div>
   </div>
   <div class="kpi-card">
-    <div class="kpi-label">ACTIVE CASES</div>
+    <div class="kpi-label">CA ĐANG MỞ</div>
     <div class="kpi-value mono" data-kpi="active_cases_count">—</div>
-    <div class="kpi-note mono">policy: single active case per asset</div>
+    <div class="kpi-note mono">một ca mở mỗi tài sản</div>
   </div>
   <div class="kpi-card">
-    <div class="kpi-label">OBSERVING / NOMINAL</div>
+    <div class="kpi-label">ĐANG GIÁM SÁT</div>
     <div class="kpi-value mono" data-kpi="assets_observing_count">—</div>
-    <div class="kpi-note mono" data-kpi-note="transient">transient watchlist: —</div>
+    <div class="kpi-note mono" data-kpi-note="transient">nhiễu đã chặn: —</div>
   </div>
   <div class="kpi-card">
-    <div class="kpi-label">OPERATING REGIME</div>
+    <div class="kpi-label">CHẾ ĐỘ VẬN HÀNH</div>
     <div class="kpi-value mono" data-kpi="regime">—</div>
-    <div class="kpi-note mono" data-kpi-note="duty">loaded duty: —</div>
+    <div class="kpi-note mono" data-kpi-note="duty">tải trọng: —</div>
   </div>
   <div class="kpi-card kpi-accent">
     <div class="kpi-label">Giai đoạn</div>
     <div class="kpi-value small mono" data-kpi="phase">—</div>
   </div>
   <div class="kpi-card">
-    <div class="kpi-label">SCENARIO</div>
+    <div class="kpi-label">KỊCH BẢN</div>
     <div class="kpi-value small mono" data-kpi="scenario_name">—</div>
-    <div class="kpi-note mono" data-kpi-note="mode">mode: —</div>
+    <div class="kpi-note mono" data-kpi-note="mode">kiểu: —</div>
   </div>
 </section>
 
@@ -132,24 +132,24 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
     <div class="split split-46">
       <div class="panel">
         <div class="panel-head">
-          <h2 class="panel-title">FLEET ASSET HIERARCHY &amp; SEARCH</h2>
+          <h2 class="panel-title">CÂY TÀI SẢN &amp; TÌM KIẾM</h2>
           <span class="panel-meta mono" data-bind="registry-source">AssetRegistry</span>
         </div>
         <div class="panel-body">
           <div class="tree" id="fleet-tree" data-dynamic="api/operations"></div>
 
           <div class="grid-toolbar">
-            <input type="search" id="asset-search" class="ctl-input" placeholder="Search Train ID / Asset ID / model…">
+            <input type="search" id="asset-search" class="ctl-input" placeholder="Tìm tàu, tài sản, model…">
             <select id="filter-health" class="ctl-select">
-              <option value="ALL">HEALTH: ALL</option>
-              <option value="HEALTHY">HEALTH: HEALTHY</option>
-              <option value="DEGRADING">HEALTH: DEGRADING</option>
-              <option value="CRITICAL">HEALTH: CRITICAL</option>
+              <option value="ALL">SỨC KHỎE: TẤT CẢ</option>
+              <option value="HEALTHY">SỨC KHỎE: TỐT</option>
+              <option value="DEGRADING">SỨC KHỎE: SUY GIẢM</option>
+              <option value="CRITICAL">SỨC KHỎE: NGHIÊM TRỌNG</option>
             </select>
             <select id="filter-regime" class="ctl-select">
-              <option value="ALL">REGIME: ALL</option>
-              <option value="LOADED">REGIME: LOADED</option>
-              <option value="UNLOADED">REGIME: UNLOADED</option>
+              <option value="ALL">CHẾ ĐỘ: TẤT CẢ</option>
+              <option value="LOADED">CHẾ ĐỘ: LOADED</option>
+              <option value="UNLOADED">CHẾ ĐỘ: UNLOADED</option>
             </select>
           </div>
 
@@ -157,19 +157,19 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
             <table class="data-table" id="asset-grid">
               <thead>
                 <tr>
-                  <th>Asset / Train</th><th>Criticality</th><th>Health</th>
-                  <th>Regime</th><th></th>
+                  <th>Tài sản / Tàu</th><th>Vai trò</th><th>Sức khỏe</th>
+                  <th>Chế độ</th><th></th>
                 </tr>
               </thead>
               <tbody data-dynamic="api/operations+api/incident"></tbody>
             </table>
           </div>
-          <p class="empty-note" id="asset-grid-empty" hidden>No asset matches the current filter.</p>
+          <p class="empty-note" id="asset-grid-empty" hidden>Không tài sản nào khớp bộ lọc.</p>
 
-          <div class="sub-head">LIVE ASSET TELEMETRY MATRIX <span class="mono muted" data-bind="matrix-clock">(window from api/telemetry/window)</span></div>
+          <div class="sub-head">LƯỚI CẢM BIẾN TRỰC TIẾP <span class="mono muted" data-bind="matrix-clock">—</span></div>
           <div class="table-wrap scroll-soft">
             <table class="data-table dense" id="sensor-matrix">
-              <thead><tr><th>Signal</th><th>Live reading</th><th>Status</th></tr></thead>
+              <thead><tr><th>Tín hiệu</th><th>Giá trị</th><th>Trạng thái</th></tr></thead>
               <tbody data-dynamic="api/telemetry/window"></tbody>
             </table>
           </div>
@@ -178,37 +178,37 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
 
       <div class="panel">
         <div class="panel-head">
-          <h2 class="panel-title">MULTI-CHANNEL SYNCHRONIZED STRIP CHARTS</h2>
+          <h2 class="panel-title">BIỂU ĐỒ ĐỒNG BỘ ĐA KÊNH</h2>
           <div class="chart-toolbar">
             <span class="mono muted" data-bind="window-label">—</span>
-            <label class="chk"><input type="checkbox" id="toggle-regime-shading" checked> Regime shading</label>
-            <label class="chk"><input type="checkbox" id="toggle-thresholds" checked> Threshold bands</label>
-            <label class="chk" title="Băng baseline trượt 3σ của cửa sổ"><input type="checkbox" id="toggle-engineering"> Kỹ thuật</label>
+            <label class="chk"><input type="checkbox" id="toggle-regime-shading" checked> Chế độ</label>
+            <label class="chk"><input type="checkbox" id="toggle-thresholds" checked> Ngưỡng</label>
+            <label class="chk" title="Băng 3σ cửa sổ"><input type="checkbox" id="toggle-engineering"> Kỹ thuật</label>
           </div>
         </div>
         <div class="panel-body">
           <div id="chart-notice" class="notice-strip" hidden></div>
           <div class="chart-block">
-            <div class="chart-title">1 · DISCHARGE VALVE PRESSURE <span class="mono muted">DV_pressure (bar)</span></div>
+            <div class="chart-title">1 · ÁP SUẤT van xả <span class="mono muted">DV_pressure (bar)</span></div>
             <div class="chart-canvas-wrap"><canvas id="chart-dv"></canvas></div>
           </div>
           <div class="chart-block">
-            <div class="chart-title">2 · COMPRESSOR OIL TEMPERATURE <span class="mono muted">Oil_temp (°C)</span></div>
+            <div class="chart-title">2 · NHIỆT ĐỘ dầu nén <span class="mono muted">Oil_temp (°C)</span></div>
             <div class="chart-canvas-wrap"><canvas id="chart-oil"></canvas></div>
           </div>
           <div class="chart-block">
-            <div class="chart-title">3 · MOTOR CURRENT &amp; OPERATING REGIME <span class="mono muted">Motor_current (A)</span></div>
+            <div class="chart-title">3 · DÒNG điện &amp; chế độ <span class="mono muted">Motor_current (A)</span></div>
             <div class="chart-canvas-wrap"><canvas id="chart-current"></canvas></div>
           </div>
           <div class="chart-block">
-            <div class="chart-title">4 · BRAKE AIR NETWORK <span class="mono muted">TP2 / TP3 / reservoirs (bar)</span></div>
+            <div class="chart-title">4 · MẠNG PHANH KHÍ NÉN <span class="mono muted">TP2 / TP3 / bình chứa (bar)</span></div>
             <div class="chart-canvas-wrap"><canvas id="chart-tp"></canvas></div>
           </div>
           <div class="gauge-row">
             <div class="gauge-card">
-              <div class="kpi-label">ML CORROBORATION · ISOLATION FOREST (5 LOADED FEATURES)</div>
+              <div class="kpi-label">ML XÁC NHẬN · ISOLATION FOREST</div>
               <div class="gauge-bar"><span class="gauge-fill" id="if-fill"></span><span class="gauge-mark" id="if-mark"></span></div>
-              <div class="mono gauge-read" id="if-read">awaiting evidence</div>
+              <div class="mono gauge-read" id="if-read">chờ bằng chứng</div>
             </div>
           </div>
         </div>
@@ -217,19 +217,19 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
 
     <div class="panel panel-bottom">
       <div class="panel-head">
-        <h2 class="panel-title">REAL-TIME ANOMALY &amp; ANTI-FATIGUE SUPPRESSION STREAM</h2>
-        <span class="panel-meta mono" data-bind="suppression-count">transients suppressed: —</span>
+        <h2 class="panel-title">BẤT THƯỜNG &amp; CHỐNG NHIỄU TRỰC TIẾP</h2>
+        <span class="panel-meta mono" data-bind="suppression-count">nhiễu đã chặn: —</span>
       </div>
       <div class="panel-body">
         <div class="table-wrap scroll-soft">
           <table class="data-table dense" id="suppression-stream">
             <thead>
-              <tr><th>Time (event_time)</th><th>Asset</th><th>Signal &amp; reading</th><th>Deviation</th><th>Regime</th><th>Engine disposition</th></tr>
+              <tr><th>Thời điểm</th><th>Tài sản</th><th>Tín hiệu</th><th>Độ lệch</th><th>Chế độ</th><th>Phán định</th></tr>
             </thead>
             <tbody data-dynamic="api/telemetry/analytics"></tbody>
           </table>
         </div>
-        <p class="empty-note" id="suppression-empty" hidden>No suppressed transient excursions in the evaluated window.</p>
+        <p class="empty-note" id="suppression-empty" hidden>Không có nhiễu bị chặn.</p>
       </div>
     </div>
   </section>
@@ -238,38 +238,38 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
   <section class="view" id="view-queue">
     <div class="panel">
       <div class="panel-head">
-        <h2 class="panel-title">ACTIVE OPERATIONAL CASES</h2>
+        <h2 class="panel-title">CA VẬN HÀNH ĐANG MỞ</h2>
         <div class="grid-toolbar inline">
-          <input type="search" id="case-search" class="ctl-input" placeholder="Search case ID / asset / train…">
+          <input type="search" id="case-search" class="ctl-input" placeholder="Tìm ca, tài sản, tàu…">
           <select id="filter-ack" class="ctl-select">
-            <option value="ALL">ACK: ALL</option><option value="ACKED">ACK: ACKNOWLEDGED</option><option value="UNACKED">ACK: UNACKNOWLEDGED</option>
+            <option value="ALL">XÁC NHẬN: TẤT CẢ</option><option value="ACKED">ĐÃ XÁC NHẬN</option><option value="UNACKED">CHƯA XÁC NHẬN</option>
           </select>
-          <label class="chk mono">Single-case invariant <input type="checkbox" id="invariant-chk" checked disabled></label>
+          <label class="chk mono">Một ca mỗi tài sản <input type="checkbox" id="invariant-chk" checked disabled></label>
         </div>
       </div>
       <div class="panel-body">
         <div class="queue-cards" id="queue-cards" data-dynamic="api/operations+api/action/guard-status"></div>
-        <p class="empty-note" id="queue-empty" hidden>The engine has no open case on this asset right now — the stream is in monitoring state.</p>
+        <p class="empty-note" id="queue-empty" hidden>Không có ca mở — luồng đang giám sát.</p>
         <div class="invariant-banner" id="invariant-banner">
           <span class="inv-icon mono">i</span>
-          <span><strong>Single Active Case Invariant.</strong> New corroborating evidence upgrades the <em>phase</em> of the existing case instead of opening a duplicate ticket. One asset = at most one open case.</span>
+          <span><strong>Bất biến một ca mở.</strong> Bằng chứng mới <em>nâng giai đoạn</em> ca hiện có, không mở vé trùng.</span>
         </div>
       </div>
     </div>
 
     <div class="panel panel-bottom">
       <div class="panel-head">
-        <h2 class="panel-title">RESOLVED &amp; CLOSED CASE ARCHIVE (POST-MORTEM LEDGER)</h2>
-        <span class="panel-meta mono" data-bind="archive-count">signed off: —</span>
+        <h2 class="panel-title">LƯU TRỮ CA ĐÃ KHÉP</h2>
+        <span class="panel-meta mono" data-bind="archive-count">đã nghiệm thu: —</span>
       </div>
       <div class="panel-body">
         <div class="table-wrap scroll-soft">
           <table class="data-table" id="archive-grid">
-            <thead><tr><th>Case ID</th><th>Asset / Train</th><th>Root cause classification</th><th>Closed at (event_time)</th><th>Recovery</th></tr></thead>
+            <thead><tr><th>Mã ca</th><th>Tài sản / Tàu</th><th>Nguyên nhân</th><th>Khép lúc</th><th>Phân loại</th></tr></thead>
             <tbody data-dynamic="api/case/events"></tbody>
           </table>
         </div>
-        <p class="empty-note" id="archive-empty" hidden>No case has been signed off in the current replay session yet.</p>
+        <p class="empty-note" id="archive-empty" hidden>Chưa có ca nghiệm thu phiên này.</p>
       </div>
     </div>
   </section>
@@ -278,21 +278,20 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
   <section class="view" id="view-workbench">
     <div class="wb-head">
       <div class="wb-id">
-        <span class="mono wb-case" data-bind="wb-case-id">NO ACTIVE CASE</span>
+        <span class="mono wb-case" data-bind="wb-case-id">KHÔNG CA MỞ</span>
         <span class="mono muted" data-bind="wb-asset">—</span>
       </div>
       <div class="wb-states">
-        <span class="state-chip" data-bind="chip-phase">PHASE —</span>
-        <span class="state-chip" data-bind="chip-health">HEALTH —</span>
-        <span class="state-chip" data-bind="chip-ack">ACK —</span>
-        <span class="state-chip" data-bind="chip-guard">GUARD —</span>
+        <span class="state-chip" data-bind="chip-health">SỨC KHỎE —</span>
+        <span class="state-chip" data-bind="chip-ack">XÁC NHẬN —</span>
+        <span class="state-chip" data-bind="chip-guard">CHỐT —</span>
       </div>
       <div class="wb-focus" id="wb-focus-tabs">
-        <button class="focus-btn is-active" data-focus="changed">1. WHAT CHANGED?</button>
-        <button class="focus-btn" data-focus="evidence">2. WHY? (EVIDENCE)</button>
-        <button class="focus-btn" data-focus="guard">3. PLAYBOOK &amp; GUARD</button>
-        <button class="focus-btn" data-focus="recovery">4. RECOVERY</button>
-        <button class="focus-btn" data-focus="audit">5. AUDIT</button>
+        <button class="focus-btn is-active" data-focus="changed">1. DIỄN BIẾN</button>
+        <button class="focus-btn" data-focus="evidence">2. BẰNG CHỨNG</button>
+        <button class="focus-btn" data-focus="guard">3. CHỐT AN TOÀN</button>
+        <button class="focus-btn" data-focus="recovery">4. NGHIỆM THU</button>
+        <button class="focus-btn" data-focus="audit">5. SỔ THEO DÕI</button>
       </div>
     </div>
 
@@ -317,60 +316,52 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
         </div>
 
         <div class="block" data-block="changed">
-          <div class="block-head">LAYER A/B — OPERATIONAL CONDITION</div>
+          <div class="block-head">TÌNH TRẠNG VẬN HÀNH</div>
           <dl class="kv-list" data-dynamic="api/incident">
-            <div><dt>Summary</dt><dd data-bind="wb-summary">—</dd></div>
-            <div><dt>Confidence</dt><dd class="mono" data-bind="wb-confidence">—</dd></div>
+            <div><dt>Tóm tắt</dt><dd data-bind="wb-summary">—</dd></div>
+            <div><dt>Độ tin cậy</dt><dd class="mono" data-bind="wb-confidence">—</dd></div>
           </dl>
         </div>
 
         <div class="block" data-block="changed">
-          <div class="block-head">LAYER A — BUSINESS CONTEXT <span class="mono muted">AssetRegistry</span></div>
+          <div class="block-head">BỐI CẢNH TÀI SẢN <span class="mono muted">AssetRegistry</span></div>
           <dl class="kv-list" data-dynamic="api/operations"></dl>
         </div>
 
         <div class="block" data-block="evidence">
-          <div class="block-head">4-SIGNAL EVIDENCE PACK <span class="mono muted">provenance expanded</span></div>
+          <div class="block-head">GÓI BẰNG CHỨNG 4 TÍN HIỆU <span class="mono muted">kèm nguồn gốc</span></div>
           <div class="evidence-list" id="evidence-list" data-dynamic="api/evidence"></div>
           <div class="persistence-box">
-            <div class="kpi-label">TEMPORAL PERSISTENCE</div>
+            <div class="kpi-label">ĐỘ BỀN THEO THỜI GIAN</div>
             <div class="persist-dots" id="persist-dots"></div>
             <div class="mono muted" data-bind="persist-text">—</div>
           </div>
         </div>
 
         <div class="block" data-block="evidence">
-          <div class="block-head">LAYER C — VALIDATION REFERENCE</div>
-          <p class="block-text">Ground truth is isolated in the Validation Reference drawer and is <strong>never</strong> consumed by the online detectors.</p>
-          <button class="ghost-btn wide" data-open-vr><span aria-hidden="true">&#128451;</span> Open Validation Drawer</button>
+          <div class="block-head">LAYER C — ĐỐI CHỨNG</div>
+          <p class="block-text">Ground truth nằm riêng trong ngăn đối chứng, <strong>không</strong> rò rỉ vào detector.</p>
+          <button class="ghost-btn wide" data-open-vr><span aria-hidden="true">&#128451;</span> Mở ngăn đối chứng</button>
         </div>
       </div>
 
       <!-- CENTER PANE -->
       <div class="pane pane-center">
         <div class="block" data-block="changed">
-          <div class="block-head">LIVE STEP-CHANGE &amp; THERMAL DRIFT <span class="mono muted" data-bind="wb-window-label">—</span></div>
-          <div class="chart-block compact">
-            <div class="chart-title">DV_pressure vs loaded baseline band</div>
-            <div class="chart-canvas-wrap"><canvas id="chart-wb-dv"></canvas></div>
-          </div>
-          <div class="chart-block compact">
-            <div class="chart-title">Oil_temp vs recovery threshold</div>
-            <div class="chart-canvas-wrap"><canvas id="chart-wb-oil"></canvas></div>
-          </div>
+          <div class="block-head">BƯỚC NHẢY ÁP &amp; TRÔI NHIỆT <span class="mono muted" data-bind="wb-window-label">—</span></div>
           <div class="table-wrap scroll-soft">
             <table class="data-table dense" id="delta-table">
-              <thead><tr><th>Metric</th><th>Observed</th><th>Baseline</th><th>Sigma</th><th>Status</th></tr></thead>
+              <thead><tr><th>Đại lượng</th><th>Quan trắc</th><th>Baseline</th><th>Sigma</th><th>Trạng thái</th></tr></thead>
               <tbody data-dynamic="api/evidence"></tbody>
             </table>
           </div>
         </div>
 
         <div class="block" data-block="guard">
-          <div class="block-head">DYNAMIC ACTIONGUARD PRE-FLIGHT <span class="mono" data-bind="guard-count">—</span></div>
+          <div class="block-head">ACTIONGUARD TIỀN KIỂM <span class="mono" data-bind="guard-count">—</span></div>
           <div class="table-wrap">
             <table class="data-table dense" id="guard-table">
-              <thead><tr><th>Gate</th><th>Policy condition</th><th>Live value</th><th>Result</th></tr></thead>
+              <thead><tr><th>Chốt</th><th>Điều kiện</th><th>Giá trị trực</th><th>Kết quả</th></tr></thead>
               <tbody data-dynamic="api/action/guard-status"></tbody>
             </table>
           </div>
@@ -378,110 +369,105 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
         </div>
 
         <div class="block" data-block="recovery">
-          <div class="block-head">5-SAMPLE LOADED RECOVERY VERIFICATION <span class="mono" data-bind="recovery-count">—</span></div>
+          <div class="block-head">NGHIỆM THU PHỤC HỒI 5 MẪU <span class="mono" data-bind="recovery-count">—</span></div>
           <div class="verify-steps" id="verify-steps" data-dynamic="api/recovery"></div>
           <div class="gauge-row two">
             <div class="gauge-card">
-              <div class="kpi-label">DV_PRESSURE (LOADED)</div>
+              <div class="kpi-label">DV_pressure (LOADED)</div>
               <div class="gauge-value mono" data-bind="rec-dv">—</div>
               <div class="mono muted" data-bind="rec-dv-max">max —</div>
               <div class="mono badge-slot" data-bind="rec-dv-state">—</div>
             </div>
             <div class="gauge-card">
-              <div class="kpi-label">OIL_TEMP (LOADED)</div>
+              <div class="kpi-label">Oil_temp (LOADED)</div>
               <div class="gauge-value mono" data-bind="rec-oil">—</div>
               <div class="mono muted" data-bind="rec-oil-max">max —</div>
               <div class="mono badge-slot" data-bind="rec-oil-state">—</div>
             </div>
           </div>
-          <div class="sub-head">CONSECUTIVE LOADED OBSERVATION LOG <span class="mono muted">(live window, evaluated against recovery criteria)</span></div>
+          <div class="sub-head">NHẬT KÝ LOADED LIÊN TỤC <span class="mono muted">so với tiêu chí phục hồi</span></div>
           <div class="table-wrap scroll-soft">
             <table class="data-table dense" id="recovery-log">
-              <thead><tr><th>#</th><th>Timestamp (event_time)</th><th>Regime</th><th>DV (bar)</th><th>Oil (°C)</th><th>Criterion</th></tr></thead>
+              <thead><tr><th>#</th><th>Thời điểm</th><th>Chế độ</th><th>DV (bar)</th><th>Oil (°C)</th><th>Tiêu chí</th></tr></thead>
               <tbody data-dynamic="api/telemetry/window+api/recovery"></tbody>
             </table>
           </div>
-        </div>
-
-        <div class="block" data-block="audit">
-          <div class="block-head">LEDGER PREVIEW <span class="mono muted">append-only CaseEvent</span></div>
-          <div class="ledger-mini" id="ledger-mini" data-dynamic="api/case/events"></div>
         </div>
       </div>
 
       <!-- RIGHT PANE -->
       <div class="pane pane-right">
-        <div class="rail-note mono">HUMAN-IN-THE-LOOP · OPERATOR ACTIONS ONLY</div>
+        <div class="rail-note mono">NGƯỜI VẬN HÀNH QUYẾT ĐỊNH</div>
 
         <div class="block op-block" data-step="1" data-block="changed">
-          <div class="step-head"><span class="step-num mono">STEP 1</span> ACKNOWLEDGE &amp; TRIAGE</div>
+          <div class="step-head"><span class="step-num mono">BƯỚC 1</span> XÁC NHẬN &amp; PHÂN LOẠI</div>
           <div class="mono ack-state" data-bind="ack-state">—</div>
-          <label class="field"><span>Priority</span>
+          <label class="field"><span>Độ ưu tiên</span>
             <select id="ack-priority" class="ctl-select">
               <option value="P1-CRITICAL">P1-CRITICAL</option>
               <option value="P2-HIGH">P2-HIGH</option>
               <option value="P3-MEDIUM">P3-MEDIUM</option>
             </select>
           </label>
-          <label class="field"><span>Initial triage note</span>
-            <textarea id="ack-note" class="ctl-textarea" rows="3" placeholder="e.g. Pressure step breach confirmed on leading cab APU; monitoring thermal drift."></textarea>
+          <label class="field"><span>Ghi chú phân loại</span>
+            <textarea id="ack-note" class="ctl-textarea" rows="3" placeholder="Ví dụ: quan sát cabin đầu, trôi nhiệt."></textarea>
           </label>
           <div class="btn-row">
-            <button class="primary-btn" id="btn-acknowledge">Acknowledge Case</button>
-            <button class="danger-btn" id="btn-false-positive">Mark False Positive</button>
+            <button class="primary-btn" id="btn-acknowledge">Xác nhận ca</button>
+            <button class="danger-btn" id="btn-false-positive">Báo báo động giả</button>
           </div>
-          <label class="field"><span>False-positive reason (audit)</span>
-            <input id="fp-reason" class="ctl-input" type="text" placeholder="Sensor calibration transient verified by field technician.">
+          <label class="field"><span>Lý do báo động giả</span>
+            <input id="fp-reason" class="ctl-input" type="text" placeholder="KTV hiện trường xác nhận nhiễu hiệu chuẩn.">
           </label>
         </div>
 
         <div class="block op-block" data-step="2" data-block="changed">
-          <div class="step-head"><span class="step-num mono">STEP 2</span> FORENSIC NOTES</div>
-          <label class="field"><span>Diagnostic / handover note</span>
-            <textarea id="note-body" class="ctl-textarea" rows="3" placeholder="Append an operator observation to the immutable CaseEvent ledger."></textarea>
+          <div class="step-head"><span class="step-num mono">BƯỚC 2</span> GHI CHÉP ĐIỀU TRA</div>
+          <label class="field"><span>Ghi chú bàn giao</span>
+            <textarea id="note-body" class="ctl-textarea" rows="3" placeholder="Thêm quan sát vào sổ theo dõi."></textarea>
           </label>
-          <button class="primary-btn" id="btn-add-note">Append to Ledger</button>
+          <button class="primary-btn" id="btn-add-note">Ghi vào sổ</button>
         </div>
 
         <div class="block op-block" data-step="3" data-block="guard">
-          <div class="step-head"><span class="step-num mono">STEP 3</span> PLAYBOOK &amp; DEPOT WORK ORDER</div>
+          <div class="step-head"><span class="step-num mono">BƯỚC 3</span> QUY TRÌNH &amp; LỆNH CÔNG TÁC</div>
           <div class="wo-state mono" data-bind="wo-state">—</div>
-          <label class="field"><span>Standard operating playbook</span>
+          <label class="field"><span>Quy trình chuẩn</span>
             <select id="wo-playbook" class="ctl-select" data-dynamic="api/telemetry/analytics"></select>
           </label>
-          <label class="field"><span>Target maintenance depot</span>
+          <label class="field"><span>Depot tiếp nhận</span>
             <select id="wo-depot" class="ctl-select" data-dynamic="api/operations"></select>
           </label>
-          <label class="field"><span>Intervention window</span>
+          <label class="field"><span>Thời điểm sửa chữa</span>
             <select id="wo-window" class="ctl-select">
-              <option value="NEXT_TERMINAL_STOP">Next terminal turnaround</option>
-              <option value="NIGHT_DEPOT_SWAP">Night depot swap (derated load-sharing)</option>
-              <option value="IMMEDIATE_TOW">Immediate tow &amp; revenue-service suspension</option>
+              <option value="NEXT_TERMINAL_STOP">Tàu về ga cuối</option>
+              <option value="NIGHT_DEPOT_SWAP">Đổi Depot ban đêm</option>
+              <option value="IMMEDIATE_TOW">Kéo về ngay</option>
             </select>
           </label>
-          <label class="field"><span>Dispatcher instructions</span>
+          <label class="field"><span>Chỉ thị điều độ</span>
             <textarea id="wo-instructions" class="ctl-textarea" rows="3" data-dynamic="api/telemetry/analytics"></textarea>
           </label>
-          <button class="primary-btn" id="btn-work-order">Dispatch Work Order</button>
+          <button class="primary-btn" id="btn-work-order">Phát lệnh công tác</button>
         </div>
 
         <div class="block op-block" data-step="4" data-block="guard">
-          <div class="step-head"><span class="step-num mono">STEP 4</span> DISPATCH SAFE MODE</div>
-          <div class="branch-info mono" data-bind="branch-info">Stream branch target: —</div>
-          <button class="action-btn" id="btn-safe-mode">Execute Safe Mode Intervention</button>
-          <p class="hint mono" data-bind="safe-hint">ActionGuard gates must all pass before dispatch is permitted.</p>
+          <div class="step-head"><span class="step-num mono">BƯỚC 4</span> CHẾ ĐỘ AN TOÀN</div>
+          <div class="branch-info mono" data-bind="branch-info">Nhánh luồng: —</div>
+          <button class="action-btn" id="btn-safe-mode">Chạy chế độ an toàn</button>
+          <p class="hint mono" data-bind="safe-hint">Cần đủ mọi chốt ActionGuard trước khi điều độ.</p>
         </div>
 
         <div class="block op-block" data-step="5" data-block="recovery">
-          <div class="step-head"><span class="step-num mono">STEP 5</span> ROOT-CAUSE SIGN-OFF</div>
-          <label class="field"><span>Confirmed root cause</span>
+          <div class="step-head"><span class="step-num mono">BƯỚC 5</span> CHỐT NGUYÊN NHÂN</div>
+          <label class="field"><span>Nguyên nhân xác nhận</span>
             <select id="close-root-cause" class="ctl-select" data-dynamic="api/telemetry/analytics"></select>
           </label>
-          <label class="field"><span>Engineering sign-off notes</span>
-            <textarea id="close-notes" class="ctl-textarea" rows="4" placeholder="Required for audit: state the verified criteria and the release decision."></textarea>
+          <label class="field"><span>Ghi chú nghiệm thu</span>
+            <textarea id="close-notes" class="ctl-textarea" rows="4" placeholder="Nêu tiêu chí đã kiểm và quyết định trả tàu."></textarea>
           </label>
-          <button class="signoff-btn" id="btn-close-case">Sign Off, Close Case &amp; Release Asset</button>
-          <p class="hint mono" data-bind="close-hint">Sign-off stays locked until the live recovery verifier reports all consecutive healthy LOADED observations.</p>
+          <button class="signoff-btn" id="btn-close-case">Nghiệm thu, khép ca, trả tài sản</button>
+          <p class="hint mono" data-bind="close-hint">Chốt chỉ mở khi verifier báo đủ 5 LOADED lành.</p>
         </div>
       </div>
     </div>
@@ -491,48 +477,48 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
   <section class="view" id="view-timeline">
     <div class="panel">
       <div class="panel-head">
-        <h2 class="panel-title">APPEND-ONLY CASEEVENT AUDIT LEDGER</h2>
+        <h2 class="panel-title">SỔ THEO DÕI CA (APPEND-ONLY)</h2>
         <div class="grid-toolbar inline">
           <select id="filter-actor" class="ctl-select">
-            <option value="ALL">ACTOR: ALL (SYSTEM + OPERATOR)</option>
-            <option value="system">ACTOR: SYSTEM ONLY</option>
-            <option value="operator">ACTOR: OPERATOR ONLY</option>
+            <option value="ALL">TÁC NHÂN: TẤT CẢ</option>
+            <option value="system">TÁC NHÂN: SYSTEM</option>
+            <option value="operator">TÁC NHÂN: VẬN HÀNH</option>
           </select>
           <select id="filter-type" class="ctl-select" data-dynamic="api/case/events">
-            <option value="ALL">TYPE: ALL EVENT TYPES</option>
+            <option value="ALL">LOẠI: TẤT CẢ</option>
           </select>
-          <input type="search" id="event-search" class="ctl-input" placeholder="Filter events…">
-          <button class="ghost-btn" id="btn-export">Export Dossier</button>
+          <input type="search" id="event-search" class="ctl-input" placeholder="Lọc sự kiện…">
+          <button class="ghost-btn" id="btn-export">Xuất hồ sơ</button>
         </div>
       </div>
       <div class="panel-body">
         <div class="timeline" id="timeline-list" data-dynamic="api/case/events"></div>
-        <p class="empty-note" id="timeline-empty" hidden>The ledger is empty — no case event has been recorded in this replay session.</p>
+        <p class="empty-note" id="timeline-empty" hidden>Sổ trống — chưa có sự kiện nào phiên này.</p>
       </div>
     </div>
   </section>
 </main>
 
 <!-- ══════════════════════════════ REPLAY STUDIO DRAWER ══════════════════════════════ -->
-<aside class="replay-drawer collapsed" id="replay-drawer" aria-label="Replay Studio simulation controls">
-  <button class="replay-tab" id="replay-tab" title="Toggle Replay Studio (Shift + S)">
-    <span aria-hidden="true">&#127899;</span> <span id="replay-tab-label">REPLAY STUDIO</span> <span class="mono" id="replay-tab-meta">—</span>
+<aside class="replay-drawer collapsed" id="replay-drawer" aria-label="Điều khiển phòng phát lại">
+  <button class="replay-tab" id="replay-tab" title="Mở/đóng phòng phát lại (Shift + S)">
+    <span aria-hidden="true">&#127899;</span> <span id="replay-tab-label">PHÁT LẠI</span> <span class="mono" id="replay-tab-meta">—</span>
   </button>
   <div class="replay-body">
     <div class="replay-head">
-      <h3 class="panel-title">REPLAY STUDIO — SIMULATION CONTROLS</h3>
-      <span class="mono muted">server-side stream worker</span>
+      <h3 class="panel-title">PHÒNG PHÁT LẠI</h3>
+      <span class="mono muted">worker phát luồng phía server</span>
     </div>
 
     <div class="replay-grid">
       <div class="replay-col">
-        <div class="sub-head">PLAYBACK</div>
+        <div class="sub-head">PHÁT</div>
         <div class="btn-row">
-          <button class="primary-btn" id="btn-play">Play</button>
-          <button class="ghost-btn" id="btn-pause">Pause</button>
+          <button class="primary-btn" id="btn-play">Chạy</button>
+          <button class="ghost-btn" id="btn-pause">Dừng</button>
         </div>
-        <div class="mono muted replay-state" data-bind="replay-state">reading /demo/status…</div>
-        <div class="sub-head">SPEED MULTIPLIER</div>
+        <div class="mono muted replay-state" data-bind="replay-state">đang đọc /demo/status…</div>
+        <div class="sub-head">TỐC ĐỘ</div>
         <div class="seg-bar" id="speed-seg">
           <button class="seg-btn" data-speed="1">1x</button>
           <button class="seg-btn" data-speed="10">10x</button>
@@ -542,35 +528,39 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
       </div>
 
       <div class="replay-col">
-        <div class="sub-head">SCENARIO SWITCHER <span class="mono muted">api/scenarios</span></div>
+        <div class="sub-head">CHUYỂN KỊCH BẢN <span class="mono muted">api/scenarios</span></div>
         <select id="scenario-select" class="ctl-select wide" data-dynamic="api/scenarios"></select>
-        <button class="ghost-btn wide" id="btn-apply-scenario">Apply Scenario</button>
-        <div class="sub-head">DIAGNOSTIC MILESTONE BOOKMARKS</div>
+        <button class="ghost-btn wide" id="btn-apply-scenario">Áp dụng kịch bản</button>
+        <div class="sub-head">MỐC CHẨN ĐOÁN</div>
         <div class="bookmark-grid" id="bookmark-grid" data-dynamic="api/scenarios"></div>
-        <div class="sub-head">SESSION</div>
-        <button class="danger-btn wide" id="btn-reset-stream">Reset Stream</button>
+        <div class="sub-head">PHIÊN</div>
+        <button class="danger-btn wide" id="btn-reset-stream">Reset luồng</button>
       </div>
     </div>
-    <p class="replay-foot mono">Producer / consumer separation: this console never pumps telemetry with a timer. Data is written to MongoDB by the backend worker; the UI only re-reads state.</p>
+    <p class="replay-foot mono">Dashboard không bơm telemetry bằng timer. Worker ghi vào MongoDB, UI chỉ đọc lại.</p>
   </div>
 </aside>
 
 <!-- ══════════════════════════════ VALIDATION REFERENCE DRAWER ══════════════════════════════ -->
 <aside class="vr-backdrop" id="vr-backdrop" hidden></aside>
-<aside class="vr-drawer" id="vr-drawer" aria-label="Validation Reference ground truth">
+<aside class="vr-drawer" id="vr-drawer" aria-label="Dữ liệu đối chứng Layer C">
   <div class="vr-head">
     <div>
-      <h3 class="panel-title">VALIDATION REFERENCE — LAYER C</h3>
+      <h3 class="panel-title">ĐỐI CHỨNG — LAYER C</h3>
       <span class="mono muted">api/validation-reference</span>
     </div>
-    <button class="ghost-btn" id="vr-close" aria-label="Close validation reference">✕</button>
+    <button class="ghost-btn" id="vr-close" aria-label="Đóng ngăn đối chứng">✕</button>
   </div>
   <div class="vr-warn">
     <strong>Đối chứng lịch sử, không phải cảnh báo trực tiếp.</strong>
-    These fields are used only for post-hoc comparison in this drawer. They are never fed to the online detectors, the decision engine or ActionGuard.
+    Chỉ dùng để so sánh hồi cứu trong ngăn này, không đưa vào detector, decision engine hay ActionGuard.
   </div>
   <div class="vr-body" id="vr-body" data-dynamic="api/validation-reference"></div>
 </aside>
+
+<footer class="source-note mono">
+  Cảm biến: MetroPT-3 (Metro Lisboa, 2020). Tên tuyến, đoàn tàu là bối cảnh mô phỏng.
+</footer>
 
 <!-- ══════════════════════════════ TOASTS ══════════════════════════════ -->
 <div class="toast-stack" id="toast-stack" aria-live="polite"></div>

@@ -483,6 +483,14 @@ button { font-family: inherit; }
 .hero-facts dt { text-transform: none; letter-spacing: .3px; }
 .calm-note { margin: 0; font-size: 12.5px; color: var(--txt-1); }
 
+/* Provenance line: what is real data and what is illustrative context. */
+.source-note {
+  padding: 4px 14px 16px;
+  font-size: 10px;
+  letter-spacing: .3px;
+  color: var(--txt-3);
+}
+
 .kv-list { margin: 0; display: grid; gap: 3px; }
 .kv-list > div { display: grid; grid-template-columns: 1fr 1.15fr; gap: 8px; align-items: baseline; }
 .kv-list dt { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .6px; text-transform: uppercase; color: var(--txt-2); }
