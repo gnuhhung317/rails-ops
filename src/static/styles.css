@@ -627,6 +627,7 @@ button[disabled] { opacity: .42; cursor: not-allowed; }
 .rb-dev { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-top: 1px solid var(--line-0); }
 .rb-dev[hidden] { display: none; }
 .rb-state { font-size: 10px; color: var(--txt-3); }
+body.dev-open .view-root { padding-bottom: 210px; }
 
 /* STARTUP EMPTY STATE */
 .boot-state {
@@ -678,6 +679,7 @@ body.is-booting .view-root > .view { display: none; }
 .toast .mono { font-size: 10.5px; color: var(--txt-2); overflow-wrap: anywhere; }
 @keyframes toast-in { from { transform: translateX(18px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 .toast.leaving { opacity: 0; transform: translateX(18px); transition: all .2s ease; }
+body.dev-open .toast-stack { bottom: 176px; }
 
 /* ─────────────────────────── RESPONSIVE ─────────────────────────── */
 @media (max-width: 1500px) {

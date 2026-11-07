@@ -142,7 +142,13 @@ const MESSAGE_VI = {
   'Discharge valve pressure < 0.05 bar and oil temp < 67°C verified across 5 consecutive loaded observations.': 'Áp van xả < 0.05 bar, dầu < 67 °C đạt trên 5 kỳ LOADED liên tiếp.',
   'Case Signed Off & Closed': 'Đã chốt và đóng vụ việc',
   'Operator Shift / Diagnostic Note': 'Ghi chú vận hành / chẩn đoán',
-  'Case Closed as False Positive (Operator Override)': 'Đóng vụ việc: dương tính giả (operator bỏ qua)'
+  'Case Closed as False Positive (Operator Override)': 'Đóng vụ việc: dương tính giả (operator bỏ qua)',
+  'Failure #1 — High-Duty Pneumatic Air Leak': 'Hỏng #1 — Rò khí do tải cao',
+  'Failure #3 — Dryer Discharge Pilot Valve Leakage & Thermal Drift': 'Hỏng #3 — Rò van xả khí sấy, trôi nhiệt',
+  'Failure #4 — Compressor Oil Contamination & Severe Thermal Stress': 'Hỏng #4 — Dầu nhiễm bẩn, ứng nhiệt nghiêm trọng',
+  'Loaded-regime baseline (sigma > 5.0)': 'Baseline kỳ LOADED (σ > 5.0)',
+  'Isolation Forest (5 features, LOADED baseline)': 'Isolation Forest (5 đặc trưng, baseline LOADED)',
+  'Independent Corroboration': 'Xác nhận độc lập'
 };
 
 const MESSAGE_RX = [
@@ -1456,11 +1462,11 @@ function renderEvidenceCards() {
     const top = el('div', 'ev-top');
     top.appendChild(el('span', 'ev-name', evidenceTitleOf(card)));
     const statusWrap = el('span');
-    statusWrap.appendChild(badge(card.status, tone(card.status)));
+    statusWrap.appendChild(badge(vlabel(card.status), tone(card.status)));
     if (card.is_primary) statusWrap.appendChild(el('span', 'cell-sub mono', 'chính'));
     top.appendChild(statusWrap);
     box.appendChild(top);
-    box.appendChild(el('div', 'ev-name mono', card.signal_name || card.code));
+    box.appendChild(el('div', 'ev-name mono', mtxt(card.signal_name) || card.code));
 
     const vals = el('div', 'ev-vals');
     vals.appendChild(miniVal('Quan trắc', `${num(card.observed_value, 4)} ${card.unit || ''}`));
@@ -1471,7 +1477,7 @@ function renderEvidenceCards() {
     const prov = el('div', 'ev-prov');
     const p = card.provenance || {};
     prov.appendChild(provLine('source', p.source || p.detector_class || DASH));
-    prov.appendChild(provLine('method', p.method || DASH));
+    prov.appendChild(provLine('method', mtxt(p.method) || DASH));
     prov.appendChild(provLine('event_time', utcOf(p.event_time)));
     prov.appendChild(provLine('regime', regimeLabel(p.regime)));
     if (p.feature_count || p.feature_names) {
@@ -1480,7 +1486,7 @@ function renderEvidenceCards() {
     if (p.step_diff !== undefined) {
       prov.appendChild(provLine('step Δ', `${num(p.step_diff, 4)} bar · ${p.recent_observations}/${p.required_observations} kỳ gần đây · liên tục ${p.is_temporally_contiguous ? 'có' : 'không'}`));
     }
-    if (p.role) prov.appendChild(provLine('role', p.role));
+    if (p.role) prov.appendChild(provLine('role', mtxt(p.role)));
     box.appendChild(prov);
     host.appendChild(box);
   });
@@ -1541,7 +1547,7 @@ function renderDeltaTable() {
     tr.appendChild(el('td', 'mono', num(card.baseline_value, 4)));
     tr.appendChild(el('td', 'mono', card.sigma_deviation === null || card.sigma_deviation === undefined ? DASH : `${signed(card.sigma_deviation)}σ`));
     const st = el('td');
-    st.appendChild(badge(card.status, tone(card.status)));
+    st.appendChild(badge(vlabel(card.status), tone(card.status)));
     st.appendChild(el('span', 'cell-sub mono', `${card.code} · ${card.provenance && card.provenance.source ? card.provenance.source : DASH}`));
     tr.appendChild(st);
     tbody.appendChild(tr);
@@ -1837,6 +1843,8 @@ function toggleReplay(force) {
   if (!panel) return;
   const wantOpen = force === undefined ? panel.hidden : force;
   panel.hidden = !wantOpen;
+  /* The bar grows upward, so the page reserves the extra height while Dev is open. */
+  document.body.classList.toggle('dev-open', wantOpen);
   const btn = $('#btn-dev');
   if (btn) btn.setAttribute('aria-expanded', String(wantOpen));
 }
@@ -1919,7 +1927,7 @@ function renderOperatorRail() {
   fillDepotOptions(ops, inc);
   fillRootCauseOptions(an);
 
-  bind('ack-state', active
+  bind('ack-state', active && inc
     ? (inc.acknowledged ? `${vlabel('ACKNOWLEDGED')} bởi ${inc.acknowledged_by || 'operator'} · ưu tiên ${inc.priority}` : `${vlabel('UNACKNOWLEDGED')} · giai đoạn ${vlabel(state)}`)
     : 'chưa có vụ việc mở', inc && inc.acknowledged ? 'ok' : (active ? 'warn' : null));
 
@@ -1971,7 +1979,7 @@ function fillPlaybookOptions(an) {
     sel.appendChild(o);
   }
   matches.forEach((m) => {
-    const o = el('option', null, `${m.recommended_playbook} · ${m.title} · giống ${num(m.similarity_score * 100, 1)}%`);
+    const o = el('option', null, `${m.recommended_playbook} · ${mtxt(m.title)} · giống ${num(m.similarity_score * 100, 1)}%`);
     o.value = m.recommended_playbook;
     o.dataset.action = m.recommended_action || '';
     sel.appendChild(o);

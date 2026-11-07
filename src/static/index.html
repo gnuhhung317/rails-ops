@@ -127,7 +127,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
   <!-- STARTUP: nothing streamed yet -->
   <section class="boot-state" id="boot-state" hidden>
     <p class="boot-title">Luồng chưa phát mẫu nào</p>
-    <p class="boot-note mono">worker phía server ghi mẫu vào MongoDB; console chỉ đọc lại.</p>
+    <p class="boot-note mono">worker ghi mẫu; console chỉ đọc.</p>
     <button class="primary-btn" id="btn-boot-play">&#9654; Bắt đầu mô phỏng</button>
   </section>
 
@@ -168,7 +168,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
               <tbody data-dynamic="api/operations+api/incident"></tbody>
             </table>
           </div>
-          <p class="empty-note" id="asset-grid-empty" hidden>Không tài sản nào khớp bộ lọc.</p>
+          <p class="empty-note" id="asset-grid-empty" hidden>Không tài sản khớp bộ lọc.</p>
 
           <div class="sub-head">LƯỚI CẢM BIẾN TRỰC TIẾP <span class="mono muted" data-bind="matrix-clock">—</span></div>
           <div class="table-wrap scroll-soft">
@@ -253,7 +253,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
       </div>
       <div class="panel-body">
         <div class="queue-cards" id="queue-cards" data-dynamic="api/operations+api/action/guard-status"></div>
-        <p class="empty-note" id="queue-empty" hidden>Không có ca mở — luồng đang giám sát.</p>
+        <p class="empty-note" id="queue-empty" hidden>Chưa có ca mở.</p>
         <div class="invariant-banner" id="invariant-banner">
           <span class="inv-icon mono">i</span>
           <span><strong>Bất biến một ca mở.</strong> Bằng chứng mới <em>nâng giai đoạn</em> ca hiện có, không mở vé trùng.</span>
@@ -273,7 +273,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
             <tbody data-dynamic="api/case/events"></tbody>
           </table>
         </div>
-        <p class="empty-note" id="archive-empty" hidden>Chưa có ca nghiệm thu phiên này.</p>
+        <p class="empty-note" id="archive-empty" hidden>Chưa có ca nghiệm thu.</p>
       </div>
     </div>
   </section>
@@ -459,7 +459,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
           <div class="step-head"><span class="step-num mono">BƯỚC 4</span> CHẾ ĐỘ AN TOÀN</div>
           <div class="branch-info mono" data-bind="branch-info">Nhánh luồng: —</div>
           <button class="action-btn" id="btn-safe-mode">Chạy chế độ an toàn</button>
-          <p class="hint mono" data-bind="safe-hint">Cần đủ mọi chốt ActionGuard trước khi điều độ.</p>
+          <p class="hint mono" data-bind="safe-hint">Cần đủ mọi chốt ActionGuard.</p>
         </div>
 
         <div class="block op-block" data-step="5" data-block="recovery">
@@ -470,8 +470,8 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
           <label class="field"><span>Ghi chú nghiệm thu</span>
             <textarea id="close-notes" class="ctl-textarea" rows="4" placeholder="Nêu tiêu chí đã kiểm và quyết định trả tàu."></textarea>
           </label>
-          <button class="signoff-btn" id="btn-close-case">Nghiệm thu, khép ca, trả tài sản</button>
-          <p class="hint mono" data-bind="close-hint">Chốt chỉ mở khi verifier báo đủ 5 LOADED lành.</p>
+          <button class="signoff-btn" id="btn-close-case">Nghiệm thu, khép ca</button>
+          <p class="hint mono" data-bind="close-hint">Mở khi đủ 5 LOADED lành.</p>
         </div>
       </div>
     </div>
@@ -497,7 +497,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
       </div>
       <div class="panel-body">
         <div class="timeline" id="timeline-list" data-dynamic="api/case/events"></div>
-        <p class="empty-note" id="timeline-empty" hidden>Sổ trống — chưa có sự kiện nào phiên này.</p>
+        <p class="empty-note" id="timeline-empty" hidden>Sổ trống — chưa có sự kiện.</p>
       </div>
     </div>
   </section>
@@ -542,7 +542,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
   </div>
   <div class="vr-warn">
     <strong>Đối chứng lịch sử, không phải cảnh báo trực tiếp.</strong>
-    Chỉ dùng để so sánh hồi cứu trong ngăn này, không đưa vào detector, decision engine hay ActionGuard.
+    Không đưa vào detector, decision engine hay ActionGuard.
   </div>
   <div class="vr-body" id="vr-body" data-dynamic="api/validation-reference"></div>
 </aside>
