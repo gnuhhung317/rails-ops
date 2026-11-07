@@ -1,9 +1,15 @@
-# RailOps VN — CompressorGuard local stack (MongoDB + MQTT edge + console).
+# RailOps VN — CompressorGuard stack (MongoDB + MQTT edge + console + Datadog Agent).
 #
-#   docker compose up -d mongo mosquitto            # infrastructure
-#   docker compose up --build console               # http://localhost:8000
-#   docker compose run --rm verify                  # MongoDB Time Series proof
-#   docker compose --profile iot run producer       # MQTT telemetry publisher
+#   docker compose up -d                        # infra + agent + console
+#   docker compose up -d --build console        # rebuild after code changes
+#   docker compose run --rm verify              # MongoDB Time Series proof
+#   docker compose --profile iot run producer    # MQTT telemetry publisher
+#
+# Published ports are bound to 127.0.0.1 on purpose. This stack is routinely run
+# on a host with a public IP, and neither mongod nor mosquitto here has a
+# password, so "0.0.0.0" would expose the whole data layer to the internet.
+# Reach it from a laptop with a tunnel instead:
+#   ssh -N -L 8000:127.0.0.1:8000 <host>
 #
 # No bind mounts: every file the image needs is in git, so this behaves the same
 # on a clean clone as it does here.
@@ -12,7 +18,7 @@ services:
     image: mongo:7
     container_name: compressorguard-mongo
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo-data:/data/db
     healthcheck:
@@ -25,7 +31,7 @@ services:
     image: eclipse-mosquitto:2
     container_name: compressorguard-mqtt
     ports:
-      - "1883:1883"
+      - "127.0.0.1:1883:1883"
     command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
 
   console:
@@ -35,11 +41,17 @@ services:
     environment:
       MONGODB_URI: mongodb://mongo:27017
       MONGODB_DB_NAME: compressorguard
+      DD_AGENT_HOST: agent
+      DD_DOGSTATSD_PORT: "8125"
+      DD_TRACE_AGENT_PORT: "8126"
+      DD_ENV: hackathon-2026
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       mongo:
         condition: service_healthy
+      agent:
+        condition: service_started
 
   # The edge side of the story: a separate process that publishes real MetroPT-3
   # rows to MQTT. The dashboard never asks for them (decoupled producer/consumer).
@@ -50,10 +62,47 @@ services:
       MONGODB_URI: mongodb://mongo:27017
       MONGODB_DB_NAME: compressorguard
       MQTT_BROKER: tcp://mosquitto:1883
+      DD_AGENT_HOST: agent
+      DD_DOGSTATSD_PORT: "8125"
+      DD_TRACE_AGENT_PORT: "8126"
+      DD_ENV: hackathon-2026
     command: ["python", "scripts/stream_telemetry.py", "--speed", "60"]
     depends_on:
       - mosquitto
       - mongo
+
+  # The observability leg. Run it here rather than as a host daemon so the
+  # console has an agent to flush to on any machine, including a clean clone.
+  # DD_API_KEY comes from the environment and is never written into this file.
+  agent:
+    image: registry.datadoghq.com/agent:7
+    container_name: compressorguard-dd-agent
+    pid: host
+    # On a cgroup v2 host the official agent docs also want --cgroupns=host.
+    # Compose has no key for it, so per-container CPU/memory limits may be
+    # coarser here; the APM + DogStatsD leg this project is judged on is unaffected.
+    environment:
+      DD_API_KEY: ${DD_API_KEY:?set DD_API_KEY in the shell before docker compose up}
+      DD_SITE: ${DD_SITE:-ap2.datadoghq.com}
+      DD_ENV: hackathon-2026
+      DD_TAGS: team:railops solution:compressorguard
+      DD_DOGSTATSD_NON_LOCAL_TRAFFIC: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"
+      DD_LOGS_ENABLED: "true"
+      DD_LOGS_CONTAINER_COLLECT_ALL: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup/:ro
+      - /:/hostroot:ro
+    # Only needed for the variant where the console runs outside this stack
+    # (e.g. `python run_demo.py` on a laptop against a remote agent). Bound to
+    # loopback, so an unauthenticated DogStatsD/APM port is not network
+    # reachable; bridge it with
+    #   ssh -L 8126:127.0.0.1:8126 -L 8125:127.0.0.1:8125/udp <host>
+    ports:
+      - "127.0.0.1:8125:8125/udp"
+      - "127.0.0.1:8126:8126"
 
   # Proves Time Series + $setWindowFields + $facet on a real mongod, and refuses
   # to run at all against the in-memory fallback. Uses its own database name so it
