@@ -5,3 +5,8 @@ __pycache__/
 dataset/MetroPT3(AirCompressor).csv
 *repomix-output.xml
 scratch/
+
+# Local secrets (docker compose reads .env automatically) — never commit
+.env
+.env.*
+!.env.example
