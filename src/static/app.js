@@ -517,7 +517,7 @@ function render() {
   renderQueue();
   renderWorkbench();
   renderTimeline();
-  renderReplayDrawer();
+  renderReplayBar();
   renderValidationDrawer();
   renderOperatorRail();
   renderPhaseGates();
@@ -527,31 +527,28 @@ function render() {
 function renderHeader() {
   const ops = S.data.operations;
   const sim = S.data.simStatus;
+  renderBootState();
   const point = latestPoint();
 
   if (ops) {
+    /* Two levels on screen; the full Layer A path lives in the tooltip. */
     const crumb = clear($('#breadcrumb'));
     const chain = [
-      { id: ops.fleet.fleet_id, label: ops.fleet.name, chip: ops.fleet.depot_location },
-      { id: ops.train.train_id, label: `${ops.train.model} · ${ops.train.car_number}`, chip: ops.train.service_status },
-      { id: ops.subsystem.subsystem_id, label: ops.subsystem.name, chip: ops.subsystem.subsystem_code },
-      { id: ops.asset.asset_id, label: ops.asset.name, chip: ops.asset.criticality }
+      [ops.fleet.fleet_id, ops.fleet.name],
+      [ops.train.train_id, `${ops.train.model} · ${ops.train.car_number}`],
+      [ops.subsystem.subsystem_id, ops.subsystem.name],
+      [ops.asset.asset_id, ops.asset.name]
     ];
-    chain.forEach((c, i) => {
+    crumb.title = chain.map(([id, label]) => `${id} ${label}`).join(' › ');
+    [[ops.train.train_id, null], [ops.asset.asset_id, 'crumb-leaf']].forEach(([id, cls], i) => {
       if (i > 0) crumb.appendChild(el('span', 'crumb-arrow mono', '›'));
-      const node = el('span', `crumb${i === chain.length - 1 ? ' crumb-leaf' : ''}`);
-      node.appendChild(el('b', 'mono', c.id));
-      node.appendChild(el('span', 'muted', c.label));
-      if (c.chip) node.appendChild(el('span', 'crumb-chip', c.chip));
-      crumb.appendChild(node);
+      crumb.appendChild(el('b', 'mono', id));
     });
   }
 
   const simClock = sim && sim.current_event_time ? sim.current_event_time : (point ? point.timestamp : null);
   const clockNode = $('#event-clock');
   if (clockNode) clockNode.textContent = txt(simClock ? `${utcOf(simClock)} UTC` : (S.degraded ? 'API gián đoạn' : 'luồng dừng'));
-  const pointsNode = $('#sim-points');
-  if (pointsNode) pointsNode.textContent = sim ? `${sim.total_points_emitted} điểm` : DASH;
 
   if (sim) {
     const label = $('#stream-pill-label');
@@ -1752,10 +1749,10 @@ function renderTimeline() {
 }
 
 /* ══════════════════════════════ Replay Studio drawer ══════════════════════════════ */
-function renderReplayDrawer() {
+function renderReplayBar() {
   const sim = S.data.simStatus;
   const meta = $('#replay-tab-meta');
-  if (meta && sim) meta.textContent = `${sim.scenario_name} · ${num(sim.speed_multiplier, 0)}x · ${sim.is_paused ? 'ĐÃ DỪNG' : 'ĐANG PHÁT'}`;
+  if (meta && sim) meta.textContent = `${num(sim.speed_multiplier, 0)}x · ${sim.is_paused ? 'ĐÃ DỪNG' : 'ĐANG PHÁT'}`;
   bind('replay-state', sim
     ? `${sim.is_paused ? 'ĐÃ DỪNG' : 'ĐANG PHÁT'} · ${num(sim.speed_multiplier, 0)}x · ${sim.total_points_emitted} mẫu đã phát · cursor ${sim.current_event_time ? utcOf(sim.current_event_time) : 'chưa bắt đầu'} · ${sim.mode}`
     : DASH);
@@ -1783,7 +1780,7 @@ function renderReplayDrawer() {
     sel.dataset.signature = `${catalog.active_scenario_id}|${(catalog.scenarios || []).length}`;
   }
 
-  const grid = $('#bookmark-grid');
+  const grid = $('#chapter-bar');
   if (grid && catalog) {
     const active = (catalog.scenarios || []).find((s) => s.scenario_id === catalog.active_scenario_id) || (catalog.scenarios || [])[0];
     const milestones = (active && active.milestones) || {};
@@ -1793,15 +1790,29 @@ function renderReplayDrawer() {
       const keys = Object.keys(milestones);
       if (!keys.length) grid.appendChild(el('span', 'mono muted', 'kịch bản này không có mốc chẩn đoán'));
       keys.forEach((key) => {
-        const b = el('button', 'mini-btn', key);
+        const b = el('button', 'chapter-btn', chapterLabel(key));
         /* The milestone clock stays out of the DOM: it can name a future LPS breach. */
-        b.title = `${milestones[key]} · POST /demo/jump {milestone: "${key}"}`;
+        b.dataset.milestone = key;
         b.addEventListener('click', () => jumpTo(key));
         grid.appendChild(b);
       });
       grid.dataset.signature = sig;
     }
   }
+}
+
+/* Chapter labels key off the milestone stem from /api/scenarios, never off its clock. */
+const CHAPTER_VI = [
+  [/early_excursion/, 'Nhiễu thoáng qua'],
+  [/ml_corroborated/, 'AI xác nhận'],
+  [/lps_reactive/, 'Rơ-le cũ kêu'],
+  [/post_maintenance/, 'Nghiệm thu'],
+  [/onset/, 'Phát hiện']
+];
+
+function chapterLabel(key) {
+  const hit = CHAPTER_VI.find(([rx]) => rx.test(String(key)));
+  return hit ? hit[1] : String(key);
 }
 
 async function postDemo(path, body) {
@@ -1818,15 +1829,25 @@ async function postDemo(path, body) {
 
 async function jumpTo(milestone) {
   const res = await postDemo('/demo/jump', { milestone });
-  if (res) toast('info', 'Đã dời cursor', `mốc ${res.milestone} → ${res.lifecycle_state}`);
+  if (res) toast('info', 'Đã dời cursor', `mốc ${res.milestone} → ${res.lifecycle_state}`, 4000);
 }
 
 function toggleReplay(force) {
-  const drawer = $('#replay-drawer');
-  const collapsed = drawer.classList.contains('collapsed');
-  const wantOpen = force === undefined ? collapsed : force;
-  drawer.classList.toggle('collapsed', !wantOpen);
-  $('#replay-tab-label').textContent = wantOpen ? 'REPLAY STUDIO · ĐANG MỞ' : 'REPLAY STUDIO';
+  const panel = $('#dev-panel');
+  if (!panel) return;
+  const wantOpen = force === undefined ? panel.hidden : force;
+  panel.hidden = !wantOpen;
+  const btn = $('#btn-dev');
+  if (btn) btn.setAttribute('aria-expanded', String(wantOpen));
+}
+
+/* A paused stream with zero samples is not a fault: it is a demo that has not started. */
+function renderBootState() {
+  const sim = S.data.simStatus;
+  const booting = Boolean(sim) && Number(sim.total_points_emitted) === 0;
+  const box = $('#boot-state');
+  if (box) box.hidden = !booting;
+  document.body.classList.toggle('is-booting', booting);
 }
 
 /* ══════════════════════════════ Validation Reference drawer ══════════════════════════════ */
@@ -2125,7 +2146,6 @@ function wireEvents() {
 
   $('#btn-toggle-vr').addEventListener('click', () => toggleVr());
   $('#btn-toggle-replay').addEventListener('click', () => toggleReplay());
-  $('#replay-tab').addEventListener('click', () => toggleReplay());
   $('#vr-close').addEventListener('click', () => toggleVr(false));
   $('#vr-backdrop').addEventListener('click', () => toggleVr(false));
   $$('[data-open-vr]').forEach((b) => b.addEventListener('click', () => toggleVr(true)));
@@ -2151,7 +2171,10 @@ function wireEvents() {
       toast('error', 'Đổi kịch bản thất bại', err.message);
     }
   });
+  $('#btn-boot-play').addEventListener('click', async () => { await postDemo('/demo/play'); });
+
   $('#btn-reset-stream').addEventListener('click', async () => {
+    if (!window.confirm('Đặt lại toàn bộ phiên phát?')) return;
     const res = await postDemo('/demo/reset', {});
     if (res) toast('warn', 'Đã đặt lại phiên', 'State machine, detector và sổ dựng lại từ đầu CSV.');
   });

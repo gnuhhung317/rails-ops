@@ -606,33 +606,37 @@ button[disabled] { opacity: .42; cursor: not-allowed; }
 .tl-body-detail { font-size: 11px; color: var(--txt-2); margin-top: 1px; }
 .tl-src { font-family: var(--font-mono); font-size: 9.5px; color: var(--txt-3); margin-top: 2px; }
 
-/* ─────────────────────────── REPLAY STUDIO DRAWER ─────────────────────────── */
-.replay-drawer {
-  position: fixed; right: 16px; bottom: 0; z-index: 80;
-  width: min(620px, 92vw);
+/* REPLAY STUDIO BAR */
+.replay-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 80;
   background: linear-gradient(180deg, #121b25, #0b1015);
-  border: 1px solid var(--line-2); border-bottom: 0;
-  border-radius: 8px 8px 0 0;
+  border-top: 1px solid var(--line-2);
   box-shadow: var(--shadow-2);
-  transition: transform .22s ease;
 }
-.replay-drawer.collapsed { transform: translateY(calc(100% - 30px)); }
-.replay-tab {
-  display: flex; align-items: center; gap: 9px; width: 100%;
-  background: #16212d; border: 0; border-bottom: 1px solid var(--line-1);
-  color: #cfe3f5; cursor: pointer;
-  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 1.1px;
-  padding: 6px 12px; border-radius: 8px 8px 0 0;
+.rb-row { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px; }
+.rb-brand { font-size: 10px; letter-spacing: 1.1px; color: var(--txt-2); white-space: nowrap; }
+.rb-btn { flex: none; }
+.rb-chapters { display: flex; gap: 5px; flex: 1 1 auto; min-width: 0; overflow: hidden; }
+.chapter-btn {
+  background: transparent; border: 1px solid var(--line-1); color: var(--txt-2);
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .5px;
+  padding: 3px 8px; border-radius: 3px; cursor: pointer; white-space: nowrap;
 }
-.replay-tab:hover { background: var(--bg-hover); }
-#replay-tab-meta { margin-left: auto; color: var(--txt-2); }
-.replay-body { padding: 10px 12px 12px; }
-.replay-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
-.replay-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 14px; }
-.replay-col { min-width: 0; }
-.replay-state { margin: 7px 0; color: var(--txt-1); font-size: 10.5px; }
-.bookmark-grid { display: flex; flex-wrap: wrap; gap: 5px; }
-.replay-foot { font-size: 9.5px; color: var(--txt-3); margin: 10px 0 0; }
+.chapter-btn:hover { color: var(--txt-0); background: var(--bg-hover); border-color: var(--accent-dim); }
+.rb-meta { margin-left: auto; font-size: 10px; color: var(--txt-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-dev { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-top: 1px solid var(--line-0); }
+.rb-dev[hidden] { display: none; }
+.rb-state { font-size: 10px; color: var(--txt-3); }
+
+/* STARTUP EMPTY STATE */
+.boot-state {
+  display: grid; justify-items: center; gap: 8px; margin-bottom: 12px;
+  padding: 64px 20px; border: 1px dashed var(--line-2); border-radius: var(--radius);
+}
+.boot-state[hidden] { display: none; }
+.boot-title { margin: 0; font-size: 15px; color: var(--txt-0); }
+.boot-note { margin: 0; font-size: 10.5px; color: var(--txt-3); }
+body.is-booting .view-root > .view { display: none; }
 
 /* ─────────────────────────── VALIDATION REFERENCE DRAWER ─────────────────────────── */
 .vr-backdrop { position: fixed; inset: 0; background: rgba(3, 6, 10, .6); z-index: 90; }
@@ -660,7 +664,7 @@ button[disabled] { opacity: .42; cursor: not-allowed; }
 .vr-item .computed { color: var(--accent); }
 
 /* ─────────────────────────── TOASTS ─────────────────────────── */
-.toast-stack { position: fixed; right: 18px; top: 76px; z-index: 120; display: grid; gap: 7px; width: min(400px, 92vw); }
+.toast-stack { position: fixed; right: 18px; bottom: 62px; z-index: 120; display: grid; gap: 7px; width: min(400px, 92vw); }
 .toast {
   background: #16212d; border: 1px solid var(--line-2); border-left: 3px solid var(--accent);
   border-radius: var(--radius); box-shadow: var(--shadow-2);

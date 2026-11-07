@@ -78,9 +78,6 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
       <span class="ctl-label">Giờ mô phỏng</span>
       <span class="mono" id="event-clock">—</span>
       <span class="clock-tag">event_time</span>
-      <span class="ctl-label sim-label">Con trỏ luồng</span>
-      <span class="mono" id="sim-points">—</span>
-      <span class="clock-tag">điểm đã phát</span>
     </div>
   </div>
 
@@ -126,6 +123,13 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
 </section>
 
 <main class="view-root">
+
+  <!-- STARTUP: nothing streamed yet -->
+  <section class="boot-state" id="boot-state" hidden>
+    <p class="boot-title">Luồng chưa phát mẫu nào</p>
+    <p class="boot-note mono">worker phía server ghi mẫu vào MongoDB; console chỉ đọc lại.</p>
+    <button class="primary-btn" id="btn-boot-play">&#9654; Bắt đầu mô phỏng</button>
+  </section>
 
   <!-- ══════════════════════ SCREEN 01 — FLEET & TELEMETRY MATRIX ══════════════════════ -->
   <section class="view is-active" id="view-fleet">
@@ -499,47 +503,32 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
   </section>
 </main>
 
-<!-- ══════════════════════════════ REPLAY STUDIO DRAWER ══════════════════════════════ -->
-<aside class="replay-drawer collapsed" id="replay-drawer" aria-label="Điều khiển phòng phát lại">
-  <button class="replay-tab" id="replay-tab" title="Mở/đóng phòng phát lại (Shift + S)">
-    <span aria-hidden="true">&#127899;</span> <span id="replay-tab-label">PHÁT LẠI</span> <span class="mono" id="replay-tab-meta">—</span>
-  </button>
-  <div class="replay-body">
-    <div class="replay-head">
-      <h3 class="panel-title">PHÒNG PHÁT LẠI</h3>
-      <span class="mono muted">worker phát luồng phía server</span>
+<!-- REPLAY STUDIO BAR -->
+<footer class="replay-bar" id="replay-bar" aria-label="Điều khiển phát lại">
+  <div class="rb-row">
+    <span class="rb-brand mono">PHÁT LẤI</span>
+    <button class="primary-btn rb-btn" id="btn-play" title="Phát luồn">&#9654; Phát</button>
+    <button class="ghost-btn rb-btn" id="btn-pause" title="Dừng luồn">&#10074;&#10074; Dừng</button>
+    <div class="seg-bar rb-speed" id="speed-seg" aria-label="Tốc độ phát">
+      <button class="seg-btn" data-speed="1">1x</button>
+      <button class="seg-btn" data-speed="10">10x</button>
+      <button class="seg-btn is-active" data-speed="60">60x</button>
+      <button class="seg-btn" data-speed="300">300x</button>
     </div>
-
-    <div class="replay-grid">
-      <div class="replay-col">
-        <div class="sub-head">PHÁT</div>
-        <div class="btn-row">
-          <button class="primary-btn" id="btn-play">Chạy</button>
-          <button class="ghost-btn" id="btn-pause">Dừng</button>
-        </div>
-        <div class="mono muted replay-state" data-bind="replay-state">đang đọc /demo/status…</div>
-        <div class="sub-head">TỐC ĐỘ</div>
-        <div class="seg-bar" id="speed-seg">
-          <button class="seg-btn" data-speed="1">1x</button>
-          <button class="seg-btn" data-speed="10">10x</button>
-          <button class="seg-btn is-active" data-speed="60">60x</button>
-          <button class="seg-btn" data-speed="300">300x</button>
-        </div>
-      </div>
-
-      <div class="replay-col">
-        <div class="sub-head">CHUYỂN KỊCH BẢN <span class="mono muted">api/scenarios</span></div>
-        <select id="scenario-select" class="ctl-select wide" data-dynamic="api/scenarios"></select>
-        <button class="ghost-btn wide" id="btn-apply-scenario">Áp dụng kịch bản</button>
-        <div class="sub-head">MỐC CHẨN ĐOÁN</div>
-        <div class="bookmark-grid" id="bookmark-grid" data-dynamic="api/scenarios"></div>
-        <div class="sub-head">PHIÊN</div>
-        <button class="danger-btn wide" id="btn-reset-stream">Reset luồng</button>
-      </div>
-    </div>
-    <p class="replay-foot mono">Dashboard không bơm telemetry bằng timer. Worker ghi vào MongoDB, UI chỉ đọc lại.</p>
+    <div class="rb-chapters" id="chapter-bar" data-dynamic="api/scenarios"></div>
+    <span class="mono rb-meta" id="replay-tab-meta">—</span>
+    <button class="ghost-btn rb-btn rb-dev-btn" id="btn-dev" aria-expanded="false" title="Điều khiển kỹ thuật">Dev</button>
   </div>
-</aside>
+  <div class="rb-dev" id="dev-panel" hidden>
+    <label class="ctl-group">
+      <span class="ctl-label">Kịch bản</span>
+      <select id="scenario-select" class="ctl-select" data-dynamic="api/scenarios"></select>
+      <button class="ghost-btn" id="btn-apply-scenario">Áp dụng</button>
+    </label>
+    <button class="danger-btn" id="btn-reset-stream">Reset luồng</button>
+    <span class="mono muted rb-state" data-bind="replay-state">đang đọc /demo/status…</span>
+  </div>
+</footer>
 
 <!-- ══════════════════════════════ VALIDATION REFERENCE DRAWER ══════════════════════════════ -->
 <aside class="vr-backdrop" id="vr-backdrop" hidden></aside>
