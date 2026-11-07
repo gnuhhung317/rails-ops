@@ -39,7 +39,11 @@ services:
     image: compressorguard:local
     container_name: compressorguard-console
     environment:
-      MONGODB_URI: mongodb://mongo:27017
+      # Default is the mongod container so a judge with no cloud account gets a
+      # self-contained stack; put MONGODB_URI in .env (Atlas works) and the whole
+      # stack switches to it without editing this file. The mongo container still
+      # starts — it is loopback-bound and simply unused in that mode.
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
       MONGODB_DB_NAME: compressorguard
       DD_AGENT_HOST: agent
       DD_DOGSTATSD_PORT: "8125"
@@ -59,7 +63,11 @@ services:
     image: compressorguard:local
     profiles: ["iot"]
     environment:
-      MONGODB_URI: mongodb://mongo:27017
+      # Default is the mongod container so a judge with no cloud account gets a
+      # self-contained stack; put MONGODB_URI in .env (Atlas works) and the whole
+      # stack switches to it without editing this file. The mongo container still
+      # starts — it is loopback-bound and simply unused in that mode.
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
       MONGODB_DB_NAME: compressorguard
       MQTT_BROKER: tcp://mosquitto:1883
       DD_AGENT_HOST: agent
@@ -90,6 +98,10 @@ services:
       DD_APM_NON_LOCAL_TRAFFIC: "true"
       DD_LOGS_ENABLED: "true"
       DD_LOGS_CONTAINER_COLLECT_ALL: "true"
+      # Lets `docker compose exec agent agent dogstatsd-stats` list the metric
+      # NAMES the agent actually received. Without it the only visible number is
+      # a packet counter, which cannot tell your metrics from the agent's own.
+      DD_DOGSTATSD_METRICS_STATS_ENABLE: "true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /proc/:/host/proc/:ro
@@ -98,8 +110,10 @@ services:
     # Only needed for the variant where the console runs outside this stack
     # (e.g. `python run_demo.py` on a laptop against a remote agent). Bound to
     # loopback, so an unauthenticated DogStatsD/APM port is not network
-    # reachable; bridge it with
-    #   ssh -L 8126:127.0.0.1:8126 -L 8125:127.0.0.1:8125/udp <host>
+    # reachable. To bridge it, note that OpenSSH `-L` forwards TCP only: the APM
+    # port works (`ssh -L 8126:127.0.0.1:8126 <host>`), but DogStatsD is UDP and
+    # needs socat/`ssh -R` with a stream proxy — which is why the demo path here
+    # runs the console *inside* this network instead of tunnelling UDP out of it.
     ports:
       - "127.0.0.1:8125:8125/udp"
       - "127.0.0.1:8126:8126"
@@ -110,7 +124,11 @@ services:
   verify:
     image: compressorguard:local
     environment:
-      MONGODB_URI: mongodb://mongo:27017
+      # Default is the mongod container so a judge with no cloud account gets a
+      # self-contained stack; put MONGODB_URI in .env (Atlas works) and the whole
+      # stack switches to it without editing this file. The mongo container still
+      # starts — it is loopback-bound and simply unused in that mode.
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
       MONGODB_DB_NAME: compressorguard_verify
     command: ["python", "scripts/verify_mongodb_timeseries.py"]
     depends_on:

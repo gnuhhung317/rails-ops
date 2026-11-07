@@ -141,7 +141,8 @@ class EdgePublisher:
 
 
 def _frame_from(point) -> dict:
-    """Serialise a TelemetryPoint with BOTH clocks preserved."""
+    """JSON payload for the edge bus. Both clocks as strings, so it stays
+    serialisable — the storage document next to it is a different shape."""
     event_time = point.timestamp
     if event_time.tzinfo is None:
         event_time = event_time.replace(tzinfo=timezone.utc)
@@ -156,6 +157,39 @@ def _frame_from(point) -> dict:
         if value is not None:
             frame[name] = value
     return frame
+
+
+def _doc_from(point, scenario_id: str | None = None) -> dict:
+    """Storage document for the `measurements` Time Series collection.
+
+    Deliberately not the MQTT frame: mongod requires `timestamp` to be a BSON
+    date because it is the collection's timeField (an ISO string is rejected
+    with code 2, which the in-memory emulator happily accepted), and
+    `metadata` is the metaField every rolling-window query partitions and
+    filters on ($match metadata.asset_id, partitionBy $metadata.asset_id) — a
+    document without it is stored but invisible to those pipelines.
+    """
+    event_time = point.timestamp
+    if event_time.tzinfo is None:
+        event_time = event_time.replace(tzinfo=timezone.utc)
+    doc = {
+        "timestamp": event_time,
+        "metadata": {
+            "asset_id": point.asset_id,
+            "scenario": scenario_id,
+            "train_id": "TRAIN-302",
+            "fleet_id": "FLEET-METRO-01",
+            "source": "edge-producer",
+        },
+        "event_time": event_time.isoformat(),
+        "simulation_time": _utcnow().isoformat(),
+        "regime": point.regime.value if getattr(point, "regime", None) is not None else None,
+    }
+    for name in SENSOR_FIELDS:
+        value = getattr(point, name, None)
+        if value is not None:
+            doc[name] = value
+    return doc
 
 
 def _sleep_for(manager, fallback: float = 0.02) -> float:
@@ -223,7 +257,7 @@ def run_local(args: argparse.Namespace) -> int:
             if args.hours is not None and _to_dt(frame["event_time"]) >= budget_end:
                 print("[PRODUCER] Simulated budget exhausted; stopping.")
                 break
-            batch.append(frame)
+            batch.append(_doc_from(point, scenario_id=getattr(manager.scenario, "scenario_id", None)))
             publisher.publish(frame)
 
             if manager.lifecycle_state != previous_state:

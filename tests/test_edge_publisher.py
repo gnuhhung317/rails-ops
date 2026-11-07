@@ -7,6 +7,7 @@ absent, because that is the state this repository was developed in.
 
 import importlib.util
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -86,3 +87,55 @@ def test_unreachable_broker_degrades_instead_of_crashing(producer):
     assert pub.published == 0
     assert len(pub.buffer) == 1
     pub.close()
+
+
+class _RegimeEnum:
+    value = "LOADED"
+
+
+class _Point:
+    """One MetroPT-3 row shaped like TelemetryPoint, without importing the engine."""
+
+    asset_id = "APU-COMP-01"
+    timestamp = datetime(2020, 6, 5, 9, 40, 5, tzinfo=timezone.utc)
+    regime = _RegimeEnum()
+    tp2_bar = -0.012
+    tp3_bar = 9.278
+    h1_bar = 9.264
+    dv_pressure_bar = -0.02
+    reservoirs_bar = 9.278
+    oil_temp_c = 66.25
+    motor_current_a = 0.0425
+    comp_val = 1.0
+    dv_electric = 0.0
+    towers_val = 1.0
+    mpg_val = 1.0
+    lps_active = 0.0
+    pressure_switch = 1.0
+    oil_level_low = 1.0
+    caudal_impulses = 1.0
+
+
+def test_storage_document_is_mongod_shaped(producer):
+    """Against a real Time Series collection the producer used to die here with
+    code 2 ("'timestamp' must be present and contain a valid BSON UTC datetime").
+    The emulator accepted the ISO string, so only a real server could reveal it."""
+    doc = producer._doc_from(_Point(), scenario_id="failure_3")
+    assert isinstance(doc["timestamp"], datetime), "timeField must be a datetime, not a string"
+    assert doc["timestamp"].tzinfo is not None
+    assert doc["metadata"]["asset_id"] == "APU-COMP-01"
+    assert doc["metadata"]["scenario"] == "failure_3"
+    assert doc["dv_pressure_bar"] == -0.02
+
+
+def test_storage_document_keeps_both_clocks(producer):
+    doc = producer._doc_from(_Point())
+    assert doc["event_time"] == "2020-06-05T09:40:05+00:00"
+    assert doc["simulation_time"] != doc["event_time"]
+
+
+def test_edge_frame_stays_json_serialisable(producer):
+    frame = producer._frame_from(_Point())
+    assert json.dumps(frame), "the MQTT payload must never carry a raw datetime"
+    assert frame["event_time"] == "2020-06-05T09:40:05+00:00"
+    assert "timestamp" not in frame
