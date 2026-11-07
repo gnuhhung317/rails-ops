@@ -526,3 +526,93 @@ it:
 
 Also learned the hard way that the health endpoint is `/health`, not `/api/health`, so my readiness
 poll was reporting "NEVER CAME UP" against a perfectly healthy server.
+
+### The evidence the judges will actually generate: clone from GitHub, not from my disk (05:30 UTC)
+
+Everything above was proven against *this* working tree. The submission object is the **remote repo**,
+so I pushed and then tested the thing a judge's laptop will contain.
+
+- `origin` = `git@github.com:gnuhhung317/rails-ops.git`. `master` was 60 commits behind HEAD and
+  `git merge-base --is-ancestor master HEAD` said fast-forward-safe, so I moved it with
+  `git update-ref refs/heads/master HEAD` rather than merging — no merge commit, no history rewrite.
+  Pushed `master` and `feature/temporal-correctness-and-scenario-validation`, both at `94e7585`.
+- Secret scan over **all** history (`git log --all -p | grep -c`): 0 hits for the Atlas password,
+  0 for the Datadog key, `.env` never tracked. Biggest blob ever committed: the 39 MB real-data slice.
+- Fresh **SSH** clone into `/tmp/gh-clone`. First attempt used HTTPS and returned "Repository not
+  found" — the repo is private and unauthenticated HTTPS is not the same as a missing repo; I did not
+  treat that as evidence about the push. `dataset/` in the clone is exactly
+  `Data Description_Metro.pdf` + `MetroPT3-demo-slice.csv` (41,468,972 bytes). The 208 MB CSV and
+  `.env` are absent, as intended.
+- With **every** env var unset, inside the clone: `python_exit=0`,
+  `Data source: MetroPT3-demo-slice.csv`, `ReplayEngine loaded 286,855 rows`,
+  Gates 1–5 all `[PASS]`, `ALL 5 EVALUATION GATES (G1-G5) PASSED WITH ZERO REGRESSION!`.
+- Then the piece that matters most, because last time it bit me: the app booted **from the clone**
+  against Atlas, and the journey ran against it — `23/23 assertions passed`, `event_time` 2020-06-05
+  against `ingested_at` 2026-11-07 in the same frame.
+- Proof that those 23/23 were real MongoDB and not the emulator: database
+  `compressorguard_clonecheck` exists in Atlas holding `measurements` 247, `operational_cases` 1,
+  `case_events` 10 with newest `EVT-010 / CASE_CLOSED`, `anomaly_signals` 2. An in-memory
+  `InMemoryCollection` cannot create a database on a remote cluster, so the database's existence is
+  the evidence — not the exit code.
+
+The trap repeated itself one step later and I caught it the same way. My first verification query read
+the **wrong database**: `set -a; . .env` re-exported `MONGODB_DB_NAME=compressorguard`, overwriting
+the `compressorguard_clonecheck` I had meant to inspect, and it cheerfully returned `case_events 20`
+— the count from the *previous* session's run. Had I stopped there I'd have reported stale data as the
+clone's result. Comparing both databases side by side settled it: clonecheck has 10 (this journey),
+default has 20 (older), and clonecheck's newest `_id` (`6aeeb61f…`) is a later ObjectId than the
+default's (`6aee9c15…`). Reading a number is not the same as reading which number it is.
+
+### The docker legs finally ran — and one of them was broken the whole time (05:45 UTC)
+
+`docker context remote-vm` was still dead after the IP change, so instead of fighting `~/.ssh/config`
+(a stale `Host test-2g2c` block with the old IP sits *above* the one `gcloud compute config-ssh
+--quiet` generated, and SSH takes the first match) I drove the VM with `gcloud compute ssh/scp`.
+No user config was rewritten. I uploaded `git archive HEAD` (7.9 MB gzipped — the 39 MB slice
+compresses that well) and ran the compose stack on `test-2g2c` next to the live trading bots, with
+`--memory=512m` on the agent and `DD_CONTAINER_EXCLUDE` for `quant/bot/moonshot`.
+
+What got proven, all of it previously only claimed:
+
+- **compose builds and boots on a clean box**: `up -d --build agent mosquitto console` → all four
+  containers healthy, `ReplayEngine loaded 286,855 rows` from inside the image, no bind mounts.
+- **MongoDB, a second real server**: journey **23/23** against **mongod 7.0.45**, and `mongosh`
+  confirms `measurements` is `type: 'timeseries'` with `timeField=timestamp metaField=metadata
+  granularity=seconds bucketMaxSpanSeconds=3600`, 247/10/1 documents.
+- **Datadog, live**: agent 7.85.2, **3.246 DogStatsD metric packets, 0 parse errors**, every
+  `*.ap2.datadoghq.com` endpoint `success`, and `agent dogstatsd-stats` naming *my* metrics with the
+  tags the dashboard filters on (`compressorguard.telemetry.dv_pressure_bar … env:hackathon-2026`).
+  APM too: `datadog.trace_agent.receiver.serve_traces_ms … service:compressorguard success:true`.
+  A packet counter alone proves nothing — it cannot tell my metrics from the agent's own — which is
+  why `DD_DOGSTATSD_METRICS_STATS_ENABLE` is now in compose.
+- **MQTT, real broker**: producer connected to `mosquitto:1883`, `mqtt_published=4`, and
+  `mosquitto_sub` received exactly those 4 frames on the edge topic.
+- After that first run, compose switched to Atlas by env alone (`MONGODB_URI` `${…:-mongodb://mongo:27017}`):
+  the container reported `backend host = cluster0.zmsfrn9.mongodb.net/`, `srv-style = True`.
+
+The bug this run paid for. `stream_telemetry.py` was passing its **MQTT payload** straight into
+`insert_measurements_batch`. `measurements` is a Time Series collection, so mongod requires
+`timestamp` as a BSON date; the frame only had ISO strings under `event_time`/`simulation_time`, and
+the insert died with `BulkWriteError code 2 — "'timestamp' must be present and contain a valid BSON
+UTC datetime value"`. The producer had **never written a single document to real MongoDB** — the
+emulator accepted the strings silently, the unit tests only ever exercised `EdgePublisher`, and the
+console's own insert is wrapped in `except Exception: pass`, which is exactly the kind of silence
+that lets a shape error like this survive an entire build. Missing `metadata` too, so even accepted
+documents would be invisible to `$match metadata.asset_id` / `partitionBy $metadata.asset_id`.
+Fixed by splitting `_frame_from()` (JSON-safe bus payload) from `_doc_from()` (storage document),
+re-run clean (`exit 0`, 4 frames on the bus), and verified in Atlas directly: 4 docs with
+`metadata.source: "edge-producer"`, `timestamp` a `datetime`, and a server-side
+`$setWindowFields` over them producing `avg_dv`. Three new assertions in
+`tests/test_edge_publisher.py` (5 → 8) so the shape can't regress unnoticed.
+
+Two of my own mistakes worth keeping: an unquoted `DD_TAGS="a:b c:d"` was re-split by the remote
+shell and turned `solution:compressorguard` into an image reference (`invalid reference format`), and
+the compose comment recommending `ssh -L 8125:127.0.0.1:8125/udp` to bridge DogStatsD is simply not a
+thing OpenSSH does — `-L` is TCP only, which is why the console has to live inside the compose network
+for the metrics leg to work at all.
+
+Cleaned up afterwards: `docker compose down -v`, demo volume gone, agent container gone, the three
+bots verified still `Up`, 6 GB free back. Images and `/tmp/cg` stay so the stack comes back with one
+command. Not claimed anywhere: a screenshot of the Datadog UI — `/api/v1/series` needs an
+Application Key and this session only ever had the API key, so the dashboard is still only proven up
+to the agent, not visually confirmed.

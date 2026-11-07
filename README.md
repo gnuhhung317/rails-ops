@@ -68,15 +68,22 @@ it does not fail silently and it never substitutes synthetic data.
 | Prerequisite | Env var | Effect if unset |
 |:---|:---|:---|
 | MongoDB (Atlas or local) | `MONGODB_URI` | Falls back to the in-memory repository; Time Series + `$setWindowFields` demo not visible. `mongodb+srv://…` (Atlas) works directly — `dnspython` is pinned for it, and the verified run used a real `mongod 8.0.37`. `run_demo.py` prints which backend it actually got: `REAL MongoDB Atlas v8.0.37` vs `IN-MEMORY EMULATION`. Put the URI in `.env` (gitignored), never in a commit. |
-| Datadog Agent | `DD_API_KEY`, agent on `:8125`/`:8126` | Metrics/traces are dropped with a warning; app still runs |
-| MQTT broker (IoT edge path) | `MQTT_BROKER` | Producer uses store-and-forward buffering only |
+| Datadog Agent | `DD_API_KEY`, agent on `:8125`/`:8126` | Metrics/traces are dropped with a warning; app still runs. Verified live against `agent 7.85.2`: `agent dogstatsd-stats` lists `compressorguard.telemetry.*` / `ml.*` / `incident.*` tagged `service:compressorguard env:hackathon-2026`, and the APM receiver logs `success:true` for Python spans. |
+| MQTT broker (IoT edge path) | `MQTT_BROKER` | Producer falls back to its store-and-forward buffer and keeps publishing to storage. Verified against `eclipse-mosquitto:2` — `mosquitto_sub -t "railops/#" -v` receives the real MetroPT-3 frames on `railops/metro-line-1/APU-COMP-01/telemetry`. |
 
 ### Independent telemetry producer (the dashboard never pulls data)
 
 ```bash
 python scripts/stream_telemetry.py --scenario failure_3 --speed 300 --hours 4
 python scripts/stream_telemetry.py --mode remote --play --speed 300   # steer a running server
+
+# the edge path, broker included:
+MQTT_BROKER=tcp://localhost:1883 python scripts/stream_telemetry.py --scenario failure_3 --speed 300 --hours 1
 ```
+
+Writes to MongoDB as a Time Series document (`timestamp` as a BSON datetime plus the `metadata`
+metaField) and publishes a separate JSON frame to MQTT — the two shapes are deliberately not shared,
+because mongod rejects the bus payload's ISO strings and the emulator does not.
 
 
 - **Operations Command Console:** `http://localhost:8000/` or `http://localhost:8000/console`
@@ -149,7 +156,7 @@ timestamps on the wire, and the append-only `case_events` ledger.
 
 ## 🧪 Running the Full Automated Test Suite
 
-CompressorGuard ships **116 collected automated tests** (exact count from `pytest --collect-only -q`), covering domain contracts, detectors, fusion, the state machine, ActionGuard, MongoDB persistence, Datadog observability *and the Datadog dashboard/monitor JSON itself*, the MQTT edge publisher, dataset provisioning for a clean clone, and the operator journey:
+CompressorGuard ships **119 collected automated tests** (exact count from `pytest --collect-only -q`), covering domain contracts, detectors, fusion, the state machine, ActionGuard, MongoDB persistence, Datadog observability *and the Datadog dashboard/monitor JSON itself*, the MQTT edge publisher **including the mongod-shaped storage document that a real Time Series collection demands**, dataset provisioning for a clean clone, and the operator journey:
 
 > Note: the full suite replays the real 1,516,948-row CSV, so it takes several minutes. For a
 > 60-second evidence moment, prefer the two verifiers below — they assert the same guarantees
