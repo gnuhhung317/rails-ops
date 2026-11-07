@@ -17,6 +17,8 @@ const CFG = {
   pollMs: 1500,
   requestTimeoutMs: 20000,
   samplingIntervalSeconds: 10,
+  gapBreakSeconds: 30,
+  detectionWindowSeconds: 1200,
   timeframeLimits: { '5m': 30, '15m': 90, '1h': 360, '6h': 500, 'all': 500 },
   timeframeLabels: { '5m': 'Last 5m', '15m': 'Last 15m', '1h': 'Last 1h', '6h': 'Last 6h', 'all': 'Max buffer' },
   api: {
@@ -43,6 +45,7 @@ const S = {
   thresholds: true,
   degraded: false,
   lastGoodPoll: 0,
+  engineering: false,
   data: {
     operations: null, incident: null, evidence: null, events: [],
     guard: null, recovery: null, window: null, analytics: null,
@@ -117,6 +120,12 @@ function signed(value, digits) {
   return `${n >= 0 ? '+' : '−'}${Math.abs(n).toFixed(digits === undefined ? 2 : digits)}`;
 }
 
+/* The API prefixes the elapsed warning with '+'; the hero label already carries the sign. */
+function stripPlus(value) {
+  if (value === null || value === undefined || value === '') return DASH;
+  return String(value).replace(/^\+/, '');
+}
+
 function clockOf(iso) {
   if (!iso) return DASH;
   const s = String(iso);
@@ -137,6 +146,31 @@ const STATUS_TONE = {
   CORROBORATED: 'info', OBSERVING: 'info', INVESTIGATING: 'info', MITIGATING: 'info', VERIFYING_RECOVERY: 'info'
 };
 const tone = (value) => STATUS_TONE[String(value || '').toUpperCase()] || 'idle';
+
+const PHASE_LABEL = {
+  NONE: 'Giám sát',
+  DETECTED: 'Phát hiện',
+  INVESTIGATING: 'Đang điều tra',
+  MITIGATING: 'Đang xử lý',
+  VERIFYING_RECOVERY: 'Đang nghiệm thu',
+  RESOLVED: 'Đã khắc phục'
+};
+const phaseLabel = (value) => PHASE_LABEL[String(value || 'NONE').toUpperCase()] || txt(value);
+
+/* UI = f(state): a control or a status lamp only exists once the lifecycle really needs it. */
+const PHASE_VISIBILITY = {
+  NONE: { steps: [], guard: false, recovery: false },
+  DETECTED: { steps: [1], guard: true, recovery: false },
+  INVESTIGATING: { steps: [2, 3], guard: true, recovery: false },
+  MITIGATING: { steps: [4], guard: true, recovery: false },
+  VERIFYING_RECOVERY: { steps: [5], guard: false, recovery: true },
+  RESOLVED: { steps: [], guard: false, recovery: true }
+};
+const PHASE_FOCUS = {
+  NONE: 'changed', DETECTED: 'changed', INVESTIGATING: 'changed',
+  MITIGATING: 'guard', VERIFYING_RECOVERY: 'recovery', RESOLVED: 'recovery'
+};
+const recoveryPhase = (state) => ['MITIGATING', 'VERIFYING_RECOVERY', 'RESOLVED'].includes(state);
 
 /* ══════════════════════════════ transport ══════════════════════════════ */
 async function request(path, options = {}) {
@@ -323,6 +357,58 @@ function closeable() {
   return Boolean(S.data.recovery && S.data.recovery.is_verified);
 }
 
+/* ══════════════════════════════ causal gating (ADR-008) ══════════════════════════════ */
+/* Every event_time in this replay is a naive Lisbon timestamp; comparing them as UTC
+   keeps the ordering self-consistent without inventing an offset. */
+function tsMs(value) {
+  if (!value) return null;
+  const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+  if (!m) return null;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+}
+
+function eventNowMs() {
+  const sim = S.data.simStatus;
+  const fromSim = sim && sim.current_event_time ? tsMs(sim.current_event_time) : null;
+  if (fromSim !== null) return fromSim;
+  const point = latestPoint();
+  return point ? tsMs(point.timestamp) : null;
+}
+
+/* Milestone clocks are read from the active scenario catalog, never hardcoded here. */
+function milestoneMs(fragment) {
+  const catalog = S.data.scenarios;
+  if (!catalog) return null;
+  const active = (catalog.scenarios || []).find((s) => s.scenario_id === catalog.active_scenario_id);
+  const milestones = (active && active.milestones) || {};
+  const key = Object.keys(milestones).find((k) => k.toLowerCase().includes(fragment));
+  return key ? tsMs(milestones[key]) : null;
+}
+
+/* The counterfactual benchmark (lead time, LPS breach stamp, anything derived from it)
+   describes an event in the future until the event clock reaches it. Sealed until then. */
+function benchmarkUnlocked() {
+  const lpsMs = milestoneMs('lps');
+  const now = eventNowMs();
+  return lpsMs !== null && now !== null && now >= lpsMs;
+}
+
+function detectionMs() {
+  const inc = S.data.incident;
+  const fromLead = inc && inc.lead_time ? tsMs(inc.lead_time.earliest_detection_timestamp) : null;
+  if (fromLead !== null) return fromLead;
+  const card = evidenceCardBySensor('DV_pressure');
+  return card && card.provenance ? tsMs(card.provenance.event_time) : null;
+}
+
+/* The brake safety threshold is the ActionGuard policy condition returned by the API. */
+function brakeSafeThresholdBar() {
+  const check = guardCheck('BRAKE_RESERVOIR_PRESSURE_SAFE');
+  const label = check && check.label ? String(check.label) : '';
+  const m = label.match(/(-?\d+(?:\.\d+)?)\s*bar/);
+  return m ? Number(m[1]) : null;
+}
+
 /* ══════════════════════════════ master render ══════════════════════════════ */
 function render() {
   renderHeader();
@@ -334,6 +420,7 @@ function render() {
   renderReplayDrawer();
   renderValidationDrawer();
   renderOperatorRail();
+  renderPhaseGates();
 }
 
 /* ─────────────── header ─────────────── */
@@ -401,12 +488,8 @@ function renderKpis() {
     }
   }
 
-  const lead = (inc && inc.lead_time && inc.lead_time.lead_time_formatted)
-    || (ops && ops.operations_summary && ops.operations_summary.confirmed_intervention_window);
-  kpi('lead_window', lead || 'STANDBY', lead ? 'crit' : 'ok');
-  kpiNote('conventional', inc && inc.lead_time && inc.lead_time.conventional_alert_timestamp
-    ? `benchmark LPS: ${clockOf(inc.lead_time.conventional_alert_timestamp)} UTC`
-    : 'benchmark: not reached in window');
+  const state = (inc && inc.lifecycle_state) || 'NONE';
+  kpi('phase', state === 'NONE' ? PHASE_LABEL.NONE : txt(PHASE_LABEL[state] || state), state === 'NONE' ? 'ok' : 'crit');
   kpiNote('provenance', sim ? `stream: ${sim.provenance}` : 'stream: awaiting /demo/status');
 
   kpi('regime', ev ? regimeLabel(ev.regime) : DASH, ev && isLoaded(ev.regime) ? 'info' : 'idle');
@@ -480,8 +563,7 @@ function renderAssetGrid() {
     train: `${ops.train.train_id} · ${ops.fleet.name}`,
     criticality: ops.asset.criticality,
     health: inc ? inc.asset_health : DASH,
-    regime: ev ? regimeLabel(ev.regime) : DASH,
-    lead: inc && inc.lead_time && inc.lead_time.lead_time_formatted ? inc.lead_time.lead_time_formatted : 'STANDBY'
+    regime: ev ? regimeLabel(ev.regime) : DASH
   }];
 
   const q = ($('#asset-search') ? $('#asset-search').value : '').trim().toLowerCase();
@@ -504,7 +586,6 @@ function renderAssetGrid() {
     tr.appendChild(el('td')).appendChild(badge(r.criticality, r.criticality === 'CRITICAL' ? 'crit' : 'idle'));
     tr.appendChild(el('td')).appendChild(badge(r.health, tone(r.health)));
     tr.appendChild(el('td')).appendChild(badge(r.regime, isLoaded(r.regime) ? 'info' : 'idle'));
-    tr.appendChild(el('td', 'mono', r.lead));
     const action = el('td');
     const btn = el('button', 'mini-btn', 'Inspect workbench');
     btn.addEventListener('click', () => setView('workbench'));
@@ -636,7 +717,7 @@ function makeChart(canvasId, series, opts) {
   if (typeof window.Chart === 'undefined') return renderFallbackChart(canvas, series);
   const config = {
     type: 'line',
-    data: { labels: [], datasets: series.map((s, i) => ({
+    data: { datasets: series.map((s, i) => ({
       label: s.label,
       data: [],
       borderColor: s.color || CHART_THEME.series[i % CHART_THEME.series.length],
@@ -644,7 +725,8 @@ function makeChart(canvasId, series, opts) {
       borderWidth: 1.6,
       pointRadius: 0,
       pointHoverRadius: 3,
-      tension: 0.15,
+      tension: 0,
+      spanGaps: false,
       yAxisID: s.axis || 'y',
       stepped: !!s.stepped
     })) },
@@ -661,33 +743,76 @@ function makeChart(canvasId, series, opts) {
           callbacks: {
             title: (items) => `${opts && opts.title ? opts.title : ''} ${items[0].label}`.trim(),
             afterBody: (items) => {
-              const p = items[0].chart.$pointMeta ? items[0].chart.$pointMeta[items[0].dataIndex] : null;
-              return p ? [`regime: ${p.regime}`, `event_time: ${p.eventTime}`] : [];
+              const meta = items[0].chart.$pointMeta ? items[0].chart.$pointMeta[items[0].dataIndex] : null;
+              return meta && meta.p ? [`regime: ${meta.p.regime}`, `event_time: ${meta.p.timestamp}`] : [];
             }
           }
         }
       },
       scales: {
-        x: { grid: { color: CHART_THEME.grid }, ticks: { color: CHART_THEME.tick, font: { size: 9, family: 'JetBrains Mono' }, maxTicksLimit: 8, autoSkip: true } },
-        y: { grid: { color: CHART_THEME.grid }, ticks: { color: CHART_THEME.tick, font: { size: 9, family: 'JetBrains Mono' } }, suggestedMin: opts && opts.min, suggestedMax: opts && opts.max }
+        x: {
+          type: 'linear',
+          grid: { color: CHART_THEME.grid },
+          ticks: {
+            color: CHART_THEME.tick, font: { size: 9, family: 'JetBrains Mono' }, maxTicksLimit: 8, autoSkip: true,
+            callback(value) {
+              const chart = this && this.chart;
+              return hmsOfAxis(value, chart ? chart.$t0 : null);
+            }
+          }
+        },
+        y: { grid: { color: CHART_THEME.grid }, ticks: { color: CHART_THEME.tick, font: { size: 9, family: 'JetBrains Mono' } } }
       }
     },
-    plugins: [regimeBandPlugin(), thresholdLinePlugin()]
+    plugins: [regimeBandPlugin(), thresholdLinePlugin(), markerLinePlugin()]
   };
   const chart = new window.Chart(canvas.getContext('2d'), config);
   chart.$seriesSpec = series;
   chart.$lines = (opts && opts.lines) || [];
+  chart.$markers = [];
   return chart;
+}
+
+/* x is elapsed seconds since the first sample of the plotted window. */
+function hmsOfAxis(seconds, t0) {
+  if (t0 === null || t0 === undefined) return String(Math.round(seconds));
+  const d = new Date(t0 + seconds * 1000);
+  return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}:${String(d.getUTCSeconds()).padStart(2, '0')}`;
+}
+
+/* Samples are placed at their real event_time; a gap wider than the break threshold
+   inserts an empty slot so the line stops instead of drawing a bridge over missing data. */
+function chartSlots(rows) {
+  const t0 = rows.length ? tsMs(rows[0].timestamp) : null;
+  const slots = [];
+  rows.forEach((p, i) => {
+    const t = tsMs(p.timestamp);
+    const x = (t === null || t0 === null) ? i : (t - t0) / 1000;
+    if (i > 0 && t !== null && slots.length) {
+      const prevT = tsMs(rows[i - 1].timestamp);
+      if (prevT !== null && (t - prevT) / 1000 > CFG.gapBreakSeconds) {
+        slots.push({ x: (prevT + t) / 2000 - t0 / 1000, p: null });
+      }
+    }
+    slots.push({ x, p });
+  });
+  return { t0, slots };
 }
 
 function updateChart(chart, rows, keys) {
   if (!chart) return;
   if (chart.$fallback) { updateFallbackChart(chart, rows, keys); return; }
-  chart.data.labels = rows.map((p) => clockOf(p.timestamp));
-  keys.forEach((k, i) => {
-    if (chart.data.datasets[i]) chart.data.datasets[i].data = rows.map((p) => (typeof p[k] === 'number' ? p[k] : null));
+  const { t0, slots } = chartSlots(rows);
+  chart.$t0 = t0;
+  chart.$slots = slots;
+  chart.data.datasets.forEach((dataset, i) => {
+    const key = keys[i];
+    dataset.data = slots.map((s) => ({
+      x: s.x,
+      y: s.p && key && typeof s.p[key] === 'number' ? s.p[key] : null
+    }));
   });
-  chart.$pointMeta = rows.map((p) => ({ regime: p.regime, eventTime: p.timestamp }));
+  chart.$pointMeta = slots.map((s) => ({ x: s.x, p: s.p }));
   chart.update('none');
 }
 
@@ -696,20 +821,22 @@ function regimeBandPlugin() {
     id: 'regimeBands',
     beforeDraw(chart) {
       if (!S.shading) return;
-      const meta = chart.$pointMeta || [];
+      const meta = (chart.$pointMeta || []).filter((m) => m.p);
       const { ctx, chartArea, scales } = chart;
-      if (!chartArea || !meta.length) return;
+      if (!chartArea || meta.length < 2) return;
+      const half = Math.max(1, (chartArea.width / meta.length) / 2);
       ctx.save();
       let i = 0;
       while (i < meta.length) {
-        const loaded = isLoaded(meta[i].regime);
+        const loaded = isLoaded(meta[i].p.regime);
         let j = i;
-        while (j + 1 < meta.length && isLoaded(meta[j + 1].regime) === loaded) j += 1;
-        const x0 = i === 0 ? chartArea.left : scales.x.getPixelForValue(i) - (chartArea.width / meta.length) / 2;
-        const x1 = j === meta.length - 1 ? chartArea.right : scales.x.getPixelForValue(j) + (chartArea.width / meta.length) / 2;
+        while (j + 1 < meta.length && isLoaded(meta[j + 1].p.regime) === loaded
+          && meta[j + 1].x - meta[j].x <= CFG.gapBreakSeconds) j += 1;
+        const x0 = i === 0 ? chartArea.left : scales.x.getPixelForValue(meta[i].x) - half;
+        const x1 = j === meta.length - 1 ? chartArea.right : scales.x.getPixelForValue(meta[j].x) + half;
         ctx.fillStyle = loaded ? CHART_THEME.loaded : CHART_THEME.unloaded;
         ctx.fillRect(x0, chartArea.top, Math.max(1, x1 - x0), chartArea.bottom - chartArea.top);
-        if (loaded && (i === 0 || !isLoaded(meta[i - 1].regime))) {
+        if (loaded && (i === 0 || !isLoaded(meta[i - 1].p.regime))) {
           ctx.fillStyle = 'rgba(55,196,244,.55)';
           ctx.fillRect(x0, chartArea.top, 1, chartArea.bottom - chartArea.top);
         }
@@ -725,7 +852,7 @@ function thresholdLinePlugin() {
     id: 'thresholdLines',
     afterDatasetsDraw(chart) {
       if (!S.thresholds) return;
-      const lines = chart.$lines || [];
+      const lines = (chart.$lines || []).filter((l) => !l.engineering || S.engineering);
       const { ctx, chartArea, scales } = chart;
       ctx.save();
       lines.filter((l) => typeof l.value === 'number' && !Number.isNaN(l.value)).forEach((line) => {
@@ -742,6 +869,34 @@ function thresholdLinePlugin() {
         ctx.fillStyle = line.color || '#f5b544';
         ctx.font = '9px JetBrains Mono, monospace';
         ctx.fillText(`${line.label} ${num(line.value, line.digits === undefined ? 3 : line.digits)}`, chartArea.left + 4, y - 3);
+      });
+      ctx.restore();
+    }
+  };
+}
+
+/* Vertical event markers, e.g. the moment the case opened. */
+function markerLinePlugin() {
+  return {
+    id: 'eventMarkers',
+    afterDatasetsDraw(chart) {
+      const markers = chart.$markers || [];
+      const { ctx, chartArea, scales } = chart;
+      ctx.save();
+      markers.forEach((marker) => {
+        const x = scales.x.getPixelForValue(marker.x);
+        if (x < chartArea.left || x > chartArea.right) return;
+        ctx.beginPath();
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = marker.color || '#ff8a5c';
+        ctx.lineWidth = 1.2;
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = marker.color || '#ff8a5c';
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.fillText(marker.label, Math.min(x + 4, chartArea.right - 60), chartArea.top + 9);
       });
       ctx.restore();
     }
@@ -804,21 +959,64 @@ function chartLines() {
   const maxUnloaded = unloaded.length ? Math.max(...unloaded.map((p) => p.motor_current_a)) : null;
   const loadGate = (currentStats && maxUnloaded !== null) ? (currentStats.min + maxUnloaded) / 2 : null;
   const an = S.data.analytics;
+  /* The plotted baselines are the same healthy baselines the evidence table quotes;
+     the rolling 3σ band is MongoDB $setWindowFields work and stays behind the engineering toggle. */
   return {
     dv: [
-      { label: 'loaded baseline', value: dvCard ? dvCard.baseline_value : (dvStats ? dvStats.mean : null), color: '#7aa2ff' },
-      { label: 'recovery max', value: rec && rec.criteria ? rec.criteria.dv_pressure_max : null, color: '#3ddc97' },
-      { label: 'window 3σ upper', value: dvStats ? dvStats.mean + 3 * dvStats.std : null, color: '#f5b544' }
+      { label: 'baseline lành', value: dvCard ? dvCard.baseline_value : null, color: '#7aa2ff' },
+      { label: 'ngưỡng nghiệm thu', value: rec && rec.criteria ? rec.criteria.dv_pressure_max : null, color: '#3ddc97' },
+      { label: 'băng 3σ cửa sổ', value: dvStats ? dvStats.mean + 3 * dvStats.std : null, color: '#f5b544', engineering: true }
     ],
     oil: [
-      { label: 'loaded baseline', value: oilCard ? oilCard.baseline_value : (oilStats ? oilStats.mean : null), color: '#7aa2ff' },
-      { label: 'recovery max', value: rec && rec.criteria ? rec.criteria.oil_temp_max : null, color: '#3ddc97' },
-      { label: 'window 3σ upper', value: oilStats ? oilStats.mean + 3 * oilStats.std : null, color: '#f5b544' }
+      { label: 'baseline lành', value: oilCard ? oilCard.baseline_value : null, color: '#7aa2ff' },
+      { label: 'ngưỡng nghiệm thu', value: rec && rec.criteria ? rec.criteria.oil_temp_max : null, color: '#3ddc97' },
+      { label: 'băng 3σ cửa sổ', value: oilStats ? oilStats.mean + 3 * oilStats.std : null, color: '#f5b544', engineering: true }
     ],
-    current: [{ label: 'LOADED/UNLOADED boundary (derived)', value: loadGate, color: '#37c4f4', digits: 2 }],
-    tp: [{ label: 'window min TP3', value: an && an.regime_analytics ? an.regime_analytics.min_tp3_bar : null, color: '#f5b544', digits: 2 }],
+    current: [{ label: 'ngưỡng LOADED/UNLOADED (suy từ dữ liệu)', value: loadGate, color: '#37c4f4', digits: 2 }],
+    tp: [{ label: 'TP3 thấp nhất cửa sổ', value: an && an.regime_analytics ? an.regime_analytics.min_tp3_bar : null, color: '#f5b544', digits: 2 }],
     ifScore: [{ label: 'corroboration threshold', value: (evidenceCardByCode('CORROBORAT') || {}).baseline_value, color: '#f5b544', digits: 3 }]
   };
+}
+
+/* When a case is open the charts frame the event instead of the whole buffer. */
+function chartWindowRows() {
+  const rows = chronologicalPoints();
+  const det = detectionMs();
+  if (det === null || rows.length < 2) return rows;
+  const from = det - CFG.detectionWindowSeconds * 1000;
+  const kept = rows.filter((p) => {
+    const t = tsMs(p.timestamp);
+    return t === null || t >= from;
+  });
+  return kept.length > 1 ? kept : rows;
+}
+
+/* Honest scale: the Y axis never auto-zooms noise into a trend. */
+function applyYBounds(chart, rows, keys, lines) {
+  if (!chart || chart.$fallback || !chart.options || !chart.options.scales) return;
+  const y = chart.options.scales.y;
+  const values = [];
+  keys.forEach((k) => rows.forEach((p) => { if (typeof p[k] === 'number') values.push(p[k]); }));
+  const refs = (lines || []).filter((l) => !l.engineering && typeof l.value === 'number');
+  if (!values.length) { delete y.min; delete y.max; return; }
+  const dataMin = Math.min(...values);
+  const dataMax = Math.max(...values);
+  const refMin = refs.length ? Math.min(...refs.map((l) => l.value)) : dataMin;
+  const refMax = refs.length ? Math.max(...refs.map((l) => l.value)) : dataMax;
+  const floor = chart.$zeroAnchored ? Math.min(0, dataMin) : Math.min(dataMin, refMin);
+  const top = Math.max(dataMax, refMax * 1.2);
+  const pad = Math.max((top - floor) * 0.06, 0.01);
+  y.min = Number((floor - pad).toFixed(3));
+  y.max = Number((top + pad).toFixed(3));
+}
+
+function applyDetectionMarker(chart) {
+  if (!chart || chart.$fallback) return;
+  const det = detectionMs();
+  const t0 = chart.$t0;
+  chart.$markers = (det !== null && t0 !== null && det >= t0)
+    ? [{ x: (det - t0) / 1000, label: 'Phát hiện', color: '#ff8a5c' }]
+    : [];
 }
 
 let chartsReady = false;
@@ -833,6 +1031,7 @@ function ensureCharts() {
   ], { lines: lines.tp, title: 'Brake air network' });
   S.charts.wbDv = makeChart('chart-wb-dv', [{ label: 'DV_pressure (bar)' }], { lines: lines.dv, title: 'DV_pressure' });
   S.charts.wbOil = makeChart('chart-wb-oil', [{ label: 'Oil_temp (°C)' }], { lines: lines.oil, title: 'Oil_temp' });
+  [S.charts.dv, S.charts.wbDv].forEach((c) => { if (c) c.$zeroAnchored = true; });
   S.chartsReady = chartsReady = true;
   const notice = $('#chart-notice');
   if (notice && typeof window.Chart === 'undefined') {
@@ -843,7 +1042,7 @@ function ensureCharts() {
 
 function renderCharts() {
   ensureCharts();
-  const rows = chronologicalPoints();
+  const rows = chartWindowRows();
   const lines = chartLines();
   setLines(S.charts.dv, lines.dv);
   setLines(S.charts.oil, lines.oil);
@@ -852,14 +1051,21 @@ function renderCharts() {
   setLines(S.charts.wbDv, lines.dv);
   setLines(S.charts.wbOil, lines.oil);
 
-  updateChart(S.charts.dv, rows, ['dv_pressure_bar']);
-  updateChart(S.charts.oil, rows, ['oil_temp_c']);
-  updateChart(S.charts.current, rows, ['motor_current_a']);
-  updateChart(S.charts.tp, rows, ['tp2_bar', 'tp3_bar', 'reservoirs_bar']);
-  updateChart(S.charts.wbDv, rows, ['dv_pressure_bar']);
-  updateChart(S.charts.wbOil, rows, ['oil_temp_c']);
+  paintChart(S.charts.dv, rows, ['dv_pressure_bar'], lines.dv);
+  paintChart(S.charts.oil, rows, ['oil_temp_c'], lines.oil);
+  paintChart(S.charts.current, rows, ['motor_current_a'], lines.current);
+  paintChart(S.charts.tp, rows, ['tp2_bar', 'tp3_bar', 'reservoirs_bar'], lines.tp);
+  paintChart(S.charts.wbDv, rows, ['dv_pressure_bar'], lines.dv);
+  paintChart(S.charts.wbOil, rows, ['oil_temp_c'], lines.oil);
 
   renderIfGauge();
+}
+
+function paintChart(chart, rows, keys, lines) {
+  updateChart(chart, rows, keys);
+  applyYBounds(chart, rows, keys, lines);
+  applyDetectionMarker(chart);
+  if (chart && !chart.$fallback) chart.update('none');
 }
 
 function setLines(chart, lines) {
@@ -934,7 +1140,6 @@ function renderQueueCards() {
   if (ackFilter !== 'ALL' && ackFilter !== ackToken) return;
 
   const guard = S.data.guard;
-  const ev = S.data.evidence;
   const card = el('div', 'case-card');
   card.setAttribute('data-ack', acked ? 'true' : 'false');
   const top = el('div', 'case-top');
@@ -954,8 +1159,7 @@ function renderQueueCards() {
     ['Evidence', dvCard ? `DV ${signed(dvCard.sigma_deviation)}σ (${num(dvCard.observed_value, 4)} ${dvCard.unit})` : DASH],
     ['Thermal', oilCard ? `Oil ${signed(oilCard.sigma_deviation)}σ (${num(oilCard.observed_value, 2)} ${oilCard.unit})` : 'awaiting thermal drift'],
     ['ML', ifCard ? `${num(ifCard.observed_value, 4)} → ${ifCard.status}` : 'awaiting corroboration'],
-    ['ActionGuard', guard ? `${guard.passed_count}/${guard.total_checks} ${guard.is_permitted ? 'PERMITTED' : 'DENIED'}` : DASH],
-    ['Lead window', active.lead_time && active.lead_time.lead_time_formatted ? active.lead_time.lead_time_formatted : 'computing benchmark'],
+    ['ActionGuard', guardSummary(guard)],
     ['Work order', inc && inc.work_order ? `${inc.work_order.work_order_id} · ${inc.work_order.status} → ${inc.work_order.target_depot}` : 'not drafted'],
     ['Summary', active.summary || DASH]
   ]);
@@ -976,9 +1180,6 @@ function renderQueueCards() {
   const tlBtn = el('button', 'mini-btn', 'Audit ledger');
   tlBtn.addEventListener('click', () => setView('timeline'));
   actions.appendChild(tlBtn);
-  if (ev && ev.persistence) {
-    actions.appendChild(el('span', 'mono muted', `persistence ${ev.persistence.recent_observations}/${ev.persistence.required_observations}`));
-  }
   card.appendChild(actions);
   host.appendChild(card);
 }
@@ -1024,32 +1225,47 @@ function renderArchive() {
 function renderWorkbench() {
   const inc = S.data.incident;
   const ops = S.data.operations;
-  const ev = S.data.evidence;
   const guard = S.data.guard;
   const rec = S.data.recovery;
+  const an = S.data.analytics;
 
   bind('wb-case-id', activeCaseId() || 'NO ACTIVE CASE');
   bind('wb-asset', ops ? `${ops.asset.asset_id} · ${ops.train.train_id} · ${ops.fleet.name}` : DASH);
 
-  setChip('[data-bind="chip-phase"]', inc ? `PHASE ${inc.lifecycle_state}` : 'PHASE —', tone(inc && inc.lifecycle_state));
+  const hasCase = hasActiveCase();
+  const state = (inc && inc.lifecycle_state) || 'NONE';
+  setChip('[data-bind="chip-phase"]', hasCase ? phaseLabel(state) : phaseLabel('NONE'), tone(hasCase ? state : 'HEALTHY'));
   setChip('[data-bind="chip-health"]', inc ? `HEALTH ${inc.asset_health}` : 'HEALTH —', tone(inc && inc.asset_health));
-  setChip('[data-bind="chip-ack"]', inc ? (inc.acknowledged ? `ACKED ${inc.acknowledged_by || ''}` : 'UNACKNOWLEDGED') : 'ACK —', inc && inc.acknowledged ? 'ok' : 'crit');
-  setChip('[data-bind="chip-guard"]', guard ? `GUARD ${guard.passed_count}/${guard.total_checks} ${guard.is_permitted ? 'PERMITTED' : 'DENIED'}` : 'GUARD —', guard && guard.is_permitted ? 'ok' : 'warn');
+  setChip('[data-bind="chip-ack"]', hasCase && inc ? (inc.acknowledged ? `ACKED ${inc.acknowledged_by || ''}` : 'UNACKNOWLEDGED') : 'ACK —', hasCase ? (inc && inc.acknowledged ? 'ok' : 'crit') : null);
+  setChip('[data-bind="chip-guard"]', hasCase && guard ? `Chốt an toàn ${guard.passed_count}/${guard.total_checks}` : 'Chốt an toàn —', hasCase && guard ? (guard.is_permitted ? 'ok' : 'warn') : null);
 
-  const lead = inc && inc.lead_time && inc.lead_time.lead_time_formatted;
-  bind('wb-lead', lead || (ops && ops.operations_summary && ops.operations_summary.confirmed_intervention_window) || 'No confirmed intervention window yet', lead ? 'crit' : 'idle');
+  const rw = inc ? inc.runtime_warning : null;
+  const warningActive = Boolean(rw && rw.is_warning_active);
+  const unlocked = benchmarkUnlocked();
+  const lead = unlocked && inc && inc.lead_time ? inc.lead_time.lead_time_formatted : null;
+  const leadRow = $('#wb-lead-row');
+  if (leadRow) leadRow.hidden = !lead;
+  bind('wb-lead', lead || DASH, lead ? 'crit' : 'idle');
+  bind('wb-elapsed', warningActive ? stripPlus(rw.elapsed_warning_formatted) : DASH, warningActive ? 'crit' : 'idle');
   bind('wb-onset', inc && inc.lead_time ? utcOf(inc.lead_time.earliest_detection_timestamp) : DASH);
-  bind('wb-lps', inc && inc.lead_time ? utcOf(inc.lead_time.conventional_alert_timestamp) : DASH);
-  bind('wb-rul', inc && inc.runtime_warning ? inc.runtime_warning.projected_rul_window : DASH);
-  bind('wb-legacy', inc && inc.runtime_warning
-    ? (inc.runtime_warning.legacy_lps_still_silent
-      ? `silent · ${inc.runtime_warning.elapsed_warning_formatted} elapsed · TP3 ${num(inc.runtime_warning.brake_reservoir_tp3_bar, 2)} bar`
-      : 'LPS already tripped in this segment')
-    : DASH);
+  bind('wb-legacy', rw ? (rw.legacy_lps_still_silent ? 'im lặng' : 'đã kích hoạt') : DASH, rw && rw.legacy_lps_still_silent ? 'ok' : 'crit');
+  const tp3 = rw ? rw.brake_reservoir_tp3_bar : null;
+  bind('wb-tp3', tp3 === null || tp3 === undefined ? DASH : `${num(tp3, 2)} bar`);
+  const brakeThreshold = brakeSafeThresholdBar();
+  const margin = (typeof tp3 === 'number' && brakeThreshold !== null) ? tp3 - brakeThreshold : null;
+  bind('wb-margin', margin === null ? DASH : `${signed(margin, 2)} bar`, margin !== null && margin > 0 ? 'ok' : 'crit');
+
+  const calm = $('#wb-calm');
+  if (calm) {
+    const suppressed = an && an.alert_fatigue_protection ? an.alert_fatigue_protection.suppressed_transients_count : null;
+    calm.textContent = suppressed === null ? 'Đang giám sát' : `Đang giám sát · đã chặn ${suppressed} nhiễu`;
+    calm.hidden = hasCase;
+  }
+  const alertBox = $('#wb-alert');
+  if (alertBox) alertBox.hidden = !hasCase;
+
   bind('wb-summary', inc ? inc.summary : DASH);
   bind('wb-confidence', inc ? `${inc.operational_confidence}` : DASH);
-  bind('wb-persistence', ev && ev.persistence ? `${ev.persistence.recent_observations}/${ev.persistence.required_observations} LOADED cycles${ev.persistence.confirmed ? ' · confirmed' : ' · not yet confirmed'}` : DASH);
-  bind('wb-warning', inc && inc.runtime_warning && inc.runtime_warning.is_warning_active ? 'INTERVENTION CLOCK RUNNING' : 'no active benchmark warning');
 
   renderBusinessContext();
   renderEvidenceCards();
@@ -1067,6 +1283,37 @@ function setChip(selector, text, toneValue) {
   if (toneValue) node.setAttribute('data-tone', toneValue); else node.removeAttribute('data-tone');
 }
 
+function setChipVisible(selector, visible) {
+  const node = $(selector);
+  if (node) node.hidden = !visible;
+}
+
+function blockPhaseVisible(block, vis) {
+  if (block.dataset.step) return vis.steps.includes(Number(block.dataset.step));
+  if (block.closest('.pane-center')) {
+    const name = block.getAttribute('data-block');
+    if (name === 'guard') return vis.guard;
+    if (name === 'recovery') return vis.recovery;
+  }
+  return true;
+}
+
+function renderPhaseGates() {
+  const state = (S.data.incident && S.data.incident.lifecycle_state) || 'NONE';
+  const vis = PHASE_VISIBILITY[state] || PHASE_VISIBILITY.NONE;
+  const hasCase = hasActiveCase();
+
+  /* The workbench opens exactly the step the case is in: focus tab AND lifecycle phase must allow it. */
+  const focusMap = { changed: ['changed'], evidence: ['evidence'], guard: ['guard'], recovery: ['recovery'], audit: ['guard', 'recovery'] };
+  const show = focusMap[S.wbFocus] || ['changed'];
+  $$('#view-workbench .block[data-block]').forEach((b) => {
+    b.hidden = !(show.includes(b.getAttribute('data-block')) && blockPhaseVisible(b, vis));
+  });
+
+  setChipVisible('[data-bind="chip-ack"]', hasCase);
+  setChipVisible('[data-bind="chip-guard"]', hasCase);
+}
+
 function renderBusinessContext() {
   const host = $('.pane-left .block:nth-child(3) .kv-list');
   if (!host || !S.data.operations) return;
@@ -1080,7 +1327,6 @@ function renderBusinessContext() {
     ['Asset', `${ops.asset.name} (${ops.asset.asset_id}) · ${ops.asset.service_role}`],
     ['Hardware', `${ops.asset.discharge_valve_model} · rated ${num(ops.asset.rated_pressure_bar, 1)} bar`],
     ['Depot', ops.fleet.depot_location],
-    ['Risk path', 'H1 / TP3 brake reservoir depressurisation → emergency stop risk for the leading cab'],
     ['Context tier', ops.fleet.is_illustrative_context ? 'Layer A hierarchy is illustrative; telemetry is MetroPT-3 real data' : 'Layer A hierarchy verified']
   ];
   pairs.forEach(([k, v]) => {
@@ -1116,8 +1362,8 @@ function renderEvidenceCards() {
   const pack = (S.data.evidence && S.data.evidence.evidence_pack) || [];
   if (!pack.length) {
     const box = el('div', 'ev-card');
-    box.appendChild(el('div', 'ev-name', 'No detector has raised evidence for the current sample'));
-    box.appendChild(el('div', 'ev-prov', `regime ${regimeLabel(S.data.evidence && S.data.evidence.regime)} · persistence ${S.data.evidence && S.data.evidence.persistence ? S.data.evidence.persistence.recent_observations : 0}/${S.data.evidence && S.data.evidence.persistence ? S.data.evidence.persistence.required_observations : 0} LOADED cycles · detectors evaluated live on every server tick`));
+    box.appendChild(el('div', 'ev-name', 'Chưa có bằng chứng ở mẫu hiện tại'));
+    box.appendChild(el('div', 'ev-prov', `chế độ ${regimeLabel(S.data.evidence && S.data.evidence.regime)} · detector chạy mỗi nhịp`));
     host.appendChild(box);
   }
   pack.forEach((card) => {
@@ -1157,15 +1403,23 @@ function renderEvidenceCards() {
 
   const dots = clear($('#persist-dots'));
   const persistence = S.data.evidence && S.data.evidence.persistence;
-  const required = persistence ? persistence.required_observations : 3;
-  const recent = persistence ? persistence.recent_observations : 0;
-  for (let i = 0; i < Math.max(required, 1); i += 1) {
-    const dot = el('span', 'pdot');
-    dot.setAttribute('data-on', i < recent ? 'true' : 'false');
-    dots.appendChild(dot);
+  const required = persistence ? persistence.required_observations : null;
+  const recent = persistence ? persistence.recent_observations : null;
+  if (persistence) {
+    for (let i = 0; i < Math.max(required, 1); i += 1) {
+      const dot = el('span', 'pdot');
+      dot.setAttribute('data-on', i < recent ? 'true' : 'false');
+      dots.appendChild(dot);
+    }
   }
+  /* This counter only ever describes the window being polled now, never the case:
+     an open case was confirmed on an earlier window, so 0/3 here is not a contradiction. */
   bind('persist-text', persistence
-    ? `${recent}/${required} consecutive LOADED cycles · ${persistence.confirmed ? 'step CONFIRMED → case creation authorised' : 'not yet confirmed — transient excursions are suppressed'}`
+    ? `${recent}/${required} chu kỳ LOADED cửa sổ hiện tại · ${
+        hasActiveCase()
+          ? (persistence.confirmed ? 'đang tái xác nhận' : 'ca đã mở, cửa sổ này chưa đủ')
+          : (persistence.confirmed ? 'đủ điều kiện mở ca' : 'chưa đủ — chặn nhiễu thoáng qua')
+      }`
     : DASH);
 }
 
@@ -1190,6 +1444,7 @@ function renderDeltaTable() {
   const pack = (S.data.evidence && S.data.evidence.evidence_pack) || [];
   const rec = S.data.recovery;
   const point = latestPoint();
+  const state = (S.data.incident && S.data.incident.lifecycle_state) || 'NONE';
   if (!pack.length) {
     const tr = el('tr'); const td = el('td', 'muted', 'No evidence rows for the current sample.');
     td.colSpan = 5; tr.appendChild(td); tbody.appendChild(tr);
@@ -1207,7 +1462,7 @@ function renderDeltaTable() {
     tr.appendChild(st);
     tbody.appendChild(tr);
   });
-  if (point && rec && rec.criteria) {
+  if (point && rec && rec.criteria && recoveryPhase(state)) {
     const tr = el('tr');
     tr.appendChild(el('td', 'strong', 'Recovery gate (latest sample)'));
     tr.appendChild(el('td', 'mono', `DV ${num(point.dv_pressure_bar, 4)} · Oil ${num(point.oil_temp_c, 2)}`));
@@ -1221,13 +1476,21 @@ function renderDeltaTable() {
   }
 }
 
+/* "4/5 DENIED" reads as if four gates were refused; the console states what passes and what is missing. */
+function guardSummary(guard) {
+  if (!guard) return DASH;
+  const missing = (guard.checklist || []).filter((c) => !c.passed).map((c) => c.id);
+  const head = `Chốt an toàn ${guard.passed_count}/${guard.total_checks} đạt`;
+  return missing.length ? `${head} · còn thiếu: ${missing.join(', ')}` : `${head} · được phép điều độ`;
+}
+
 function renderGuardTable() {
   const tbody = $('#guard-table tbody');
   const box = $('#guard-denial');
   const guard = S.data.guard;
   if (!tbody) return;
   clear(tbody);
-  bind('guard-count', guard ? `${guard.passed_count}/${guard.total_checks} gates passed` : DASH);
+  bind('guard-count', guard ? `${guard.passed_count}/${guard.total_checks} chốt đạt` : DASH);
   const list = (guard && guard.checklist) || [];
   if (!list.length) {
     const tr = el('tr'); const td = el('td', 'muted', 'ActionGuard has not been evaluated yet.');
@@ -1246,15 +1509,10 @@ function renderGuardTable() {
   });
   if (box) {
     clear(box);
-    if (!guard) { box.setAttribute('data-tone', 'denied'); box.textContent = 'ActionGuard status unavailable.'; return; }
-    if (guard.is_permitted) {
-      box.setAttribute('data-tone', 'permitted');
-      box.textContent = `ACTION PERMITTED · ${guard.passed_count}/${guard.total_checks} gates passed. Operator dispatch is authorised.`;
-    } else {
-      box.setAttribute('data-tone', 'denied');
-      const failed = list.filter((c) => !c.passed).map((c) => `${c.id}=${c.current_value}`).join(', ');
-      box.textContent = `ACTION DENIED · ${guard.passed_count}/${guard.total_checks} gates passed — ${guard.denial_reason || 'no denial reason returned'}${failed ? ` | blocking gate(s): ${failed}` : ''}`;
-    }
+    if (!guard) { box.setAttribute('data-tone', 'denied'); box.textContent = 'Chưa đọc được chốt an toàn.'; return; }
+    box.setAttribute('data-tone', guard.is_permitted ? 'permitted' : 'denied');
+    const detail = guard.is_permitted ? '' : ` — ${guard.denial_reason || ''}`;
+    box.textContent = `${guardSummary(guard)}${detail}`;
   }
 }
 
@@ -1347,12 +1605,15 @@ function renderLedgerMini() {
   });
 }
 
+let lastAutoPhase = null;
 function applyWorkbenchFocus() {
-  const map = { changed: ['changed'], evidence: ['evidence'], guard: ['guard'], recovery: ['recovery'], audit: ['guard', 'recovery'] };
-  const show = map[S.wbFocus] || ['changed'];
-  $$('#view-workbench .block[data-block]').forEach((b) => {
-    b.setAttribute('data-dim', show.includes(b.getAttribute('data-block')) ? 'false' : 'true');
-  });
+  const state = (S.data.incident && S.data.incident.lifecycle_state) || 'NONE';
+  if (state !== lastAutoPhase) {
+    lastAutoPhase = state;
+    S.wbFocus = PHASE_FOCUS[state] || 'changed';
+    $$('#wb-focus-tabs .focus-btn').forEach((x) => x.classList.toggle('is-active', x.dataset.focus === S.wbFocus));
+  }
+  renderPhaseGates();
 }
 
 /* ══════════════════════════════ SCREEN 07: timeline ══════════════════════════════ */
@@ -1461,8 +1722,9 @@ function renderReplayDrawer() {
       const keys = Object.keys(milestones);
       if (!keys.length) grid.appendChild(el('span', 'mono muted', 'this scenario exposes no diagnostic milestones'));
       keys.forEach((key) => {
-        const b = el('button', 'mini-btn', `${key} @ ${milestones[key].slice(11) || milestones[key]}`);
-        b.title = `POST /demo/jump {milestone: "${key}"}`;
+        const b = el('button', 'mini-btn', key);
+        /* The milestone clock stays out of the DOM: it can name a future LPS breach. */
+        b.title = `${milestones[key]} · POST /demo/jump {milestone: "${key}"}`;
         b.addEventListener('click', () => jumpTo(key));
         grid.appendChild(b);
       });
@@ -1764,6 +2026,7 @@ function wireEvents() {
 
   $('#toggle-regime-shading').addEventListener('change', (e) => { S.shading = e.target.checked; renderCharts(); });
   $('#toggle-thresholds').addEventListener('change', (e) => { S.thresholds = e.target.checked; renderCharts(); });
+  $('#toggle-engineering').addEventListener('change', (e) => { S.engineering = e.target.checked; renderCharts(); });
 
   ['asset-search', 'filter-health', 'filter-regime'].forEach((id) => {
     const node = document.getElementById(id);
