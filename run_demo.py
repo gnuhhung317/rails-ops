@@ -28,6 +28,28 @@ if str(REPO_ROOT) not in sys.path:
 DEFAULT_CSV_PATH = REPO_ROOT / "dataset" / "MetroPT3(AirCompressor).csv"
 PORT = int(os.environ.get("PORT", "8000"))
 HOST = os.environ.get("HOST", "127.0.0.1")
+
+
+def load_dotenv(path: Path = REPO_ROOT / ".env") -> int:
+    """Seed os.environ from .env for the one-click demo, without overriding anything
+    the operator already exported. Docker Compose reads .env on its own but plain
+    `python run_demo.py` does not, so without this the Atlas URI sits in a file that
+    the launcher ignores and the run silently lands on the in-memory emulator.
+    Values stay out of the transcript: this only reports how many keys were set.
+    """
+    if not path.exists():
+        return 0
+    loaded = 0
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+            loaded += 1
+    return loaded
 URL = f"http://{HOST}:{PORT}/"
 
 
@@ -60,6 +82,9 @@ def _missing_dependencies():
 
 def preflight_checks():
     print("[PREFLIGHT] Checking environment & dataset...")
+    seeded = load_dotenv()
+    if seeded:
+        print(f"[OK] Loaded {seeded} setting(s) from .env (values not printed).")
     missing = _missing_dependencies()
     if missing:
         print(f"[ERROR] Missing Python dependencies: {', '.join(missing)}")
