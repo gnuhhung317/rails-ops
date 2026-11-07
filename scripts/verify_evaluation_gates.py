@@ -33,7 +33,7 @@ from src.engine.detectors import (
 )
 from src.engine.lifecycle import IncidentLifecycleManager
 from src.engine.recovery import RecoveryVerifier, RecoveryCriteria
-from src.engine.replay import ReplayEngine, DEFAULT_CSV_PATH
+from src.engine.replay import ReplayEngine, resolve_csv_path
 from src.engine.simulation import SimulationRunner, HistoricalScenarioStream
 
 
@@ -44,9 +44,10 @@ def verify_gate_1_zero_fake_telemetry() -> bool:
     Validation reference ground truth is strictly isolated from runtime detectors.
     """
     print("\n[GATE 1] Checking Zero Fake Telemetry & Data Layer Separation...")
-    assert DEFAULT_CSV_PATH.exists(), f"Dataset not found at {DEFAULT_CSV_PATH}"
+    csv_path = resolve_csv_path()  # full file, else the committed slice; raises with the DOI
+    print(f"    Data source: {csv_path.name}")
     
-    replay = ReplayEngine(DEFAULT_CSV_PATH)
+    replay = ReplayEngine(str(csv_path))
     stream = replay.stream_telemetry("2020-06-05 09:40:00", "2020-06-05 09:45:00")
     first_pt = next(stream)
     assert first_pt is not None

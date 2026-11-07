@@ -66,11 +66,18 @@ def preflight_checks():
         print("Install them with:  python -m pip install -r requirements.txt")
         sys.exit(1)
     print("[OK] Runtime dependencies importable (fastapi/uvicorn/pandas/numpy/sklearn/pymongo).")
-    if not DEFAULT_CSV_PATH.exists():
-        print(f"[ERROR] Historical dataset not found at: {DEFAULT_CSV_PATH}")
-        print("Please place 'MetroPT3(AirCompressor).csv' into the dataset/ directory.")
+    from src.engine.replay import resolve_csv_path
+
+    try:
+        csv_path = resolve_csv_path()
+    except FileNotFoundError as exc:
+        print(f"[ERROR] {exc}")
         sys.exit(1)
-    print(f"[OK] Dataset confirmed: {DEFAULT_CSV_PATH.name} ({DEFAULT_CSV_PATH.stat().st_size / (1024*1024):.1f} MB)")
+    print(f"[OK] Dataset confirmed: {csv_path.name} "
+          f"({csv_path.stat().st_size / (1024*1024):.1f} MB)")
+    if csv_path.name != DEFAULT_CSV_PATH.name:
+        print("     This is the committed real-data slice (same instrument, same rows). "
+              "Drop the full 1,516,948-row CSV in dataset/ to use it instead -- see README.")
     print("[OK] Zero Fake Telemetry gate verified: historical replay engine ready.")
 
 

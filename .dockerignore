@@ -1,0 +1,15 @@
+# The 218 MB original is not in git and would otherwise dominate the build context.
+dataset/MetroPT3(AirCompressor).csv
+metropt+3+dataset.zip
+.git
+__pycache__
+**/__pycache__
+.pytest_cache
+repomix-*
+docs
+tests
+screen
+task_plan.md
+findings.md
+progress.md
+master_context.md

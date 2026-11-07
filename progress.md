@@ -414,3 +414,50 @@ Same failure class as the metric names: `docs/COMPRESSORGUARD_MASTER_CONTEXT_EN.
 enforcement: the contract test now asserts `len(widgets) == 8` and `len(monitors) == 3`, so the next
 widget added without updating the docs fails a test instead of silently making a claim wrong.
 Verified by re-running the file: 5 passed, which is also the proof the counts are real.
+
+### Clean-clone runnability: the 208 MB problem is gone (00:34 UTC)
+
+The single largest submission risk was not code quality — it was that a judge who clones the repo
+gets **nothing**. The 208 MB `MetroPT3(AirCompressor).csv` is gitignored by design, and every entry
+point hard-coded that path, so `run_demo.py`, the gates and the console journey all died at
+preflight on a fresh machine. The README told the user to go download a Nature Scientific Data file
+before the product could run, which is not a product.
+
+Fix: commit a **real-data slice** and make the code resolve to it.
+
+- `scripts/build_demo_slice.py` cuts `dataset/MetroPT3-demo-slice.csv` (286,855 rows / 39.5 MB) out
+  of the original CSV. Every row is verbatim from the instrument — nothing synthesised, interpolated
+  or reordered. It keeps the four scenario windows (Failure #3/1/4 + healthy, including all
+  `milestones`, `recovery_*` and `lps_milestone` rows) at full resolution and strides the Feb
+  baseline month.
+- `src/engine/replay.py` now has `resolve_csv_path()` with precedence
+  `$TELEMETRY_CSV` → full CSV → committed slice, plus `describe_data_source()` and a `_resolve_quietly()`
+  wrapper so `import` never throws. `run_demo.py` preflight and Gate 1 of
+  `scripts/verify_evaluation_gates.py` both go through the resolver instead of assuming the full file.
+- The resolver has **no silent fallback**: a `$TELEMETRY_CSV` pointing at a nonexistent path raises
+  with the fix-it instructions, as does having no data at all (the message carries the DOI and states
+  that nothing in this repo synthesises sensor values). That second case caught a real bug — the
+  override used to be accepted silently.
+
+Evidence that the slice is not a downgrade:
+1. `golden_path_evidence_artifact.json` is **byte-identical** run on the slice vs run on the full CSV.
+2. `verify_console_journey.py` → **23/23 PASS** on the slice (ActionGuard 5/5, 10 ledger events).
+3. `verify_evaluation_gates.py` → **ALL 5 EVALUATION GATES PASSED**, `ReplayEngine loaded 286,855 rows`.
+
+Striding was tested and **rejected** as a size lever: stride=3 flipped `is_anomalous: true → false`
+and shifted `operational_ml_score`, i.e. it changed the science. The slice therefore runs
+`--stride 1` inside the scenario windows and only thins the non-critical baseline month.
+
+`tests/test_dataset_resolution.py` (4 tests, all passing) pins the invariants: the slice exists and is
+>10 MB, full-then-slice preference, override wins, missing override raises, the no-data message
+contains the DOI and "synthesises", and load fails at `load_data()` not at import. README test count
+112 → **116**.
+
+Honest environment finding, recorded so the checklist cannot overclaim: Docker CLI on this machine is
+bound to the `remote-vm` SSH context and Docker Desktop's named pipe is absent, so
+`scripts/verify_mongodb_timeseries.py` **has still never executed against a real mongod here**. The
+compose file, Dockerfile, `.dockerignore` and that verifier are committed and ready, but `docs/SUBMISSION_CHECKLIST.md`
+downgrades the MongoDB row from ✅ to 🟡 with the reproduce command, rather than shipping a claim the
+code hasn't proven. Consequence to clean up: `compressorguard-mongo`, the `iot-hackathon_mongo-data`
+volume and the `compressorguard:local` image were created on the remote GCP VM, which is now
+unreachable from here.

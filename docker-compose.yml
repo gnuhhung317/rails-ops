@@ -1,0 +1,72 @@
+# RailOps VN — CompressorGuard local stack (MongoDB + MQTT edge + console).
+#
+#   docker compose up -d mongo mosquitto            # infrastructure
+#   docker compose up --build console               # http://localhost:8000
+#   docker compose run --rm verify                  # MongoDB Time Series proof
+#   docker compose --profile iot run producer       # MQTT telemetry publisher
+#
+# No bind mounts: every file the image needs is in git, so this behaves the same
+# on a clean clone as it does here.
+services:
+  mongo:
+    image: mongo:7
+    container_name: compressorguard-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: compressorguard-mqtt
+    ports:
+      - "1883:1883"
+    command: ["mosquitto", "-c", "/mosquitto-no-auth.conf"]
+
+  console:
+    build: .
+    image: compressorguard:local
+    container_name: compressorguard-console
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB_NAME: compressorguard
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  # The edge side of the story: a separate process that publishes real MetroPT-3
+  # rows to MQTT. The dashboard never asks for them (decoupled producer/consumer).
+  producer:
+    image: compressorguard:local
+    profiles: ["iot"]
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB_NAME: compressorguard
+      MQTT_BROKER: tcp://mosquitto:1883
+    command: ["python", "scripts/stream_telemetry.py", "--speed", "60"]
+    depends_on:
+      - mosquitto
+      - mongo
+
+  # Proves Time Series + $setWindowFields + $facet on a real mongod, and refuses
+  # to run at all against the in-memory fallback. Uses its own database name so it
+  # never rewrites the data the console is serving.
+  verify:
+    image: compressorguard:local
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB_NAME: compressorguard_verify
+    command: ["python", "scripts/verify_mongodb_timeseries.py"]
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo-data:

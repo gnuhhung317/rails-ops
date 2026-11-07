@@ -39,18 +39,29 @@ python run_demo.py
 
 The server initializes at `http://localhost:8000/` and opens your default browser automatically.
 
-### ⚠️ One required manual step before first run: place the dataset
+### Data source: works from a clean clone, no manual step
 
-The 208 MB CSV is **not committed** (it is the authors' published file, redistributed from source,
-and would bloat the repo). Every sensor reading in this project comes from it, so nothing runs without it:
+`dataset/MetroPT3-demo-slice.csv` **is committed** — 286,855 real MetroPT-3 rows (39.5 MB),
+cut by `scripts/build_demo_slice.py` from the original file. It keeps the whole
+Isolation-Forest baseline month (Feb 2020) plus every scenario window at the original
+10 s resolution, so `git clone` → `pip install` → `python run_demo.py` is a complete demo.
+
+That is a claim, not a hope: `python scripts/verify_golden_path_evidence.py` run with
+`TELEMETRY_CSV` pointed at the slice produces a `docs/golden_path_evidence_artifact.json`
+**byte-identical** to the one produced from the full file (same milestones, same ML scores).
+No row is generated, interpolated or reordered — striding was tested and rejected because it
+changed ML verdicts, so the baseline month is kept at full resolution.
+
+For the full 1,516,948-row file (208 MB, not in git — GitHub would reject it):
 
 1. Download **MetroPT-3** (Air Compressor Predictive Maintenance Dataset), published in
    *Scientific Data* 2022 — [doi:10.1038/s41597-022-01877-3](https://www.nature.com/articles/s41597-022-01877-3).
-2. Save it as `dataset/MetroPT3(AirCompressor).csv` (exact filename — parentheses included).
-3. Expect **1,516,948** rows; Gate 1 prints that count when you run the evaluation gates.
+2. Save it as `dataset/MetroPT3(AirCompressor).csv` (exact filename — parentheses included). It is
+   preferred automatically over the slice; `TELEMETRY_CSV` overrides either way.
+3. Expect **1,516,948** rows; Gate 1 prints the count of whichever file is loaded.
 
-If the file is missing, `run_demo.py` stops with the expected path printed — it does not fail silently
-and it never substitutes synthetic data.
+If neither file is present, the replay engine stops with the expected paths and the DOI printed —
+it does not fail silently and it never substitutes synthetic data.
 
 **Optional but recommended for a judge-grade run:**
 
@@ -138,7 +149,7 @@ timestamps on the wire, and the append-only `case_events` ledger.
 
 ## 🧪 Running the Full Automated Test Suite
 
-CompressorGuard ships **112 collected automated tests** (exact count from `pytest --collect-only -q`), covering domain contracts, detectors, fusion, the state machine, ActionGuard, MongoDB persistence, Datadog observability *and the Datadog dashboard/monitor JSON itself*, the MQTT edge publisher, API integration, and the operator journey:
+CompressorGuard ships **116 collected automated tests** (exact count from `pytest --collect-only -q`), covering domain contracts, detectors, fusion, the state machine, ActionGuard, MongoDB persistence, Datadog observability *and the Datadog dashboard/monitor JSON itself*, the MQTT edge publisher, dataset provisioning for a clean clone, and the operator journey:
 
 > Note: the full suite replays the real 1,516,948-row CSV, so it takes several minutes. For a
 > 60-second evidence moment, prefer the two verifiers below — they assert the same guarantees
