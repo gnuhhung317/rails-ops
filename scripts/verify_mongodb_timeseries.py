@@ -103,7 +103,7 @@ def ingest_slice() -> pd.DataFrame:
     repo = CompressorGuardRepository()
     repo.db["measurements"].delete_many({})
     inserted = repo.insert_measurements_batch(docs)
-    print(f"\n[MONGO 1] Ingested {inserted} real MetroPT-3 rows into {db_collection()}.measurements")
+    print(f"\n[MONGO 1] Ingested {inserted} real MetroPT-3 rows into {db_collection()}")
     return df
 
 
@@ -123,13 +123,19 @@ def check_structure(client: pymongo.MongoClient) -> None:
           ts.get("timeField") == "timestamp" and ts.get("metaField") == "metadata",
           f"timeField={ts.get('timeField')} metaField={ts.get('metaField')} granularity={ts.get('granularity')}")
 
-    stats = db.command("collstats", "measurements")
-    buckets = int(stats.get("bucketCount") or 0)
-    docs = int(stats.get("count") or 0)
+    # `measurements` is a view over its bucket collection, so collstats on the view
+    # reports no data at all. And on mongod 8.0 / Atlas, collstats does not populate
+    # `bucketCount` or `count` for either namespace at all — they come back as None,
+    # which a naive `int(stats.get(...) or 0)` turns into a false "0 buckets" failure.
+    # Count the physical bucket documents instead: that is deployment-independent.
+    docs = db["measurements"].count_documents({})
+    buckets = db["system.buckets.measurements"].count_documents({})
+    stats = db.command("collstats", "system.buckets.measurements")
     check("server actually bucketed the data", buckets > 0,
-          f"{docs} docs → {buckets} buckets ({docs / max(buckets, 1):.1f} docs/bucket), "
-          f"storage={stats.get('storageSize', 0) / 1024:.0f} KiB, "
-          f"rawBson={stats.get('totalBytesForBuckets', 0) / 1024:.0f} KiB")
+          f"{docs} docs → {buckets} physical bucket(s) "
+          f"({docs / max(buckets, 1):.0f} docs/bucket), "
+          f"storage={stats.get('storageSize', 0) / 1024:.0f} KiB "
+          f"[collstats bucketCount={stats.get('bucketCount')}]")
 
     validation = db.command("validate", "measurements")
     check("collection validates", bool(validation.get("valid")), f"valid={validation.get('valid')}")
@@ -195,7 +201,7 @@ def check_window_fields(repo: CompressorGuardRepository, df: pd.DataFrame) -> No
     check("every server row is matched to a CSV timestamp", missing == 0, f"{missing} unmatched")
 
     # What the in-memory emulation would have reported instead.
-    fallback = frame.tail(len(frame))["dv_pressure_bar"].rolling(window=60, min_periods=1)
+    fallback = frame["dv_pressure_bar"].rolling(window=60, min_periods=1).mean()
     real = pd.Series([e["avg"] for e in expected])
     drift = float((fallback.reset_index(drop=True) - real).abs().max())
     gaps = frame["timestamp"].diff().dropna().dt.total_seconds()
@@ -267,6 +273,7 @@ def main() -> int:
     check_facet(repo, df)
     check_query_planner(client)
 
+    version = client.server_info()["version"]
     client.close()
     print("\n" + "=" * 78)
     if _failures:
@@ -274,8 +281,7 @@ def main() -> int:
         for f in _failures:
             print(f"  - {f}")
         return 1
-    print(f"RESULT: PASS — Time Series + $setWindowFields + $facet proven on a real mongod "
-          f"{client.server_info()['version']}")
+    print(f"RESULT: PASS — Time Series + $setWindowFields + $facet proven on a real mongod {version}")
     return 0
 
 

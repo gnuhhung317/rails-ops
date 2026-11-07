@@ -461,3 +461,42 @@ downgrades the MongoDB row from ✅ to 🟡 with the reproduce command, rather t
 code hasn't proven. Consequence to clean up: `compressorguard-mongo`, the `iot-hackathon_mongo-data`
 volume and the `compressorguard:local` image were created on the remote GCP VM, which is now
 unreachable from here.
+
+### MongoDB leg: proven on a real server, and the verifier itself was the bug (03:30 UTC)
+
+The 🟡 on the MongoDB row existed because this machine had no reachable `mongod`. It is now ✅,
+but the route there matters more than the badge: the first run against a real server failed in a way
+no amount of local emulation could have shown.
+
+User supplied a MongoDB Atlas SRV string (`mongod 8.0.37`), which removes Docker from the equation
+entirely — Time Series collections are accepted on this shared tier, so `scripts/verify_mongodb_-
+timeseries.py` runs straight from the laptop. Added `dnspython` to `requirements.txt` first: without
+it a `mongodb+srv://` URI dies at *parse* time, so a judge cloning the repo and pointing it at Atlas
+would have hit the wrong error.
+
+Run 1 against real Atlas: 12 PASS / 1 FAIL / 1 crash, full 1,516,948-row CSV as source. All three
+problems were in the verifier, not the product:
+
+1. `collstats` on a Time Series **view** returns nothing useful, and on mongod 8.0/Atlas it does not
+   populate `bucketCount` or `count` at all — they come back `None`. `int(stats.get(...) or 0)`
+   turned that `None` into a fabricated "0 buckets" FAIL. The real answer was obtained by counting
+   documents in `system.buckets.measurements`: **726 docs → 2 physical buckets (363 docs/bucket,
+   24 KiB)**. Bucketing was never broken; the measurement was.
+2. `.rolling(window=60, min_periods=1)` without `.mean()` returns a `Rolling` object, so the
+   fallback-drift line raised `AttributeError: 'Rolling' object has no attribute 'reset_index'`.
+3. The success summary called `client.server_info()` **after** `client.close()`.
+
+Run 3 (final): **16/16 PASS, exit 0.** Numbers now quoted in the checklist: rolling avg/std vs
+independent pandas recompute at 8.9e-16 / 5.3e-16, server window = 61 samples at median 10 s
+spacing, duty cycle 92.98% = 92.98%, peak 2.754 = 2.754, 0 unmatched rows, 0 TTL on historical
+`timestamp`, exactly one `expireAfterSeconds=604800` on `anomaly_signals.ingested_at`, and an explain
+plan that proves the server executed the pipeline. One honest caution the run also produced: the
+in-memory fixed-60-document emulation drifts 0.0365 bar from the real range window — the emulator is
+an approximation, which is exactly why the script refuses to run without a real server.
+
+Infrastructure side of the same session: the `remote-vm` GCP box was memory-starved (e2-small, 2 GB,
+serial console looping "Under memory pressure" while four containers ran), which is what made SSH
+time out mid-build. Resized to `e2-standard-2` (now 7 GB total / 6 GB available, load 0.77) and the
+leftover exposure was closed: the old ephemeral IP is released and silent, `compressorguard-mongo`
+came back `Exited (255)` and has been removed along with its volume. Consequence flagged to the
+user: the NAT IP changed, so any exchange API-key IP whitelist needs updating.
