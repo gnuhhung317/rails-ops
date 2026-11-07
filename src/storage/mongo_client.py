@@ -1,14 +1,18 @@
+import logging
 import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 import pymongo
 from pymongo.database import Database
 
+logger = logging.getLogger("compressorguard.storage")
+
 DEFAULT_MONGO_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
 DATABASE_NAME = os.getenv("MONGODB_DB_NAME", "compressorguard")
 
 _CLIENT = None
 _MONGO_AVAILABLE: Optional[bool] = None
+_BACKEND_ANNOUNCED = False
 
 
 class InMemoryCollection:
@@ -288,10 +292,32 @@ def get_mongo_client() -> Optional[pymongo.MongoClient]:
 
 
 def get_mongo_db() -> Any:
-    global _IN_MEMORY_DB
+    """Returns the real database handle, or the in-memory emulation.
+
+    The choice is announced once, on first use, because the two look identical to
+    the operator: without this line a demo silently running on the emulator can be
+    mistaken for one running on MongoDB. The URI itself is never logged - it
+    carries credentials.
+    """
+    global _IN_MEMORY_DB, _BACKEND_ANNOUNCED
     if is_mongo_available():
         client = get_mongo_client()
+        if not _BACKEND_ANNOUNCED:
+            _BACKEND_ANNOUNCED = True
+            flavour = "Atlas (SRV)" if DEFAULT_MONGO_URI.startswith("mongodb+srv") else "mongod"
+            version = ""
+            try:
+                version = f" v{client.server_info()['version']}"
+            except Exception:
+                pass
+            logger.info("Storage backend: REAL %s%s, database=%s. Time Series and "
+                        "$setWindowFields run server-side.", flavour, version, DATABASE_NAME)
         return client[DATABASE_NAME]
+    if not _BACKEND_ANNOUNCED:
+        _BACKEND_ANNOUNCED = True
+        logger.warning("Storage backend: IN-MEMORY EMULATION (no mongod reachable at the "
+                       "configured MONGODB_URI). Aggregations here are approximations - do NOT "
+                       "present this run as MongoDB evidence.")
     if _IN_MEMORY_DB is None:
         _IN_MEMORY_DB = InMemoryDatabase(DATABASE_NAME)
     return _IN_MEMORY_DB

@@ -78,6 +78,23 @@ def preflight_checks():
     if csv_path.name != DEFAULT_CSV_PATH.name:
         print("     This is the committed real-data slice (same instrument, same rows). "
               "Drop the full 1,516,948-row CSV in dataset/ to use it instead -- see README.")
+    # Which storage backend this run will actually use. Without this line the
+    # console looks identical whether it is on a real server or on the in-memory
+    # emulator, and the emulator is not MongoDB evidence. The URI is never
+    # printed: it carries credentials.
+    from src.storage.mongo_client import DATABASE_NAME, get_mongo_client, is_mongo_available
+
+    if is_mongo_available():
+        try:
+            server_version = get_mongo_client().server_info()["version"]
+        except Exception:
+            server_version = "?"
+        flavour = "MongoDB Atlas" if os.getenv("MONGODB_URI", "").startswith("mongodb+srv") else "mongod"
+        print(f"[OK] Storage backend: REAL {flavour} v{server_version}, database={DATABASE_NAME}.")
+    else:
+        print("[WARN] Storage backend: IN-MEMORY EMULATION (no reachable MONGODB_URI). "
+              "Server-side aggregations are approximated here -- do not present this run as "
+              "MongoDB evidence.")
     print("[OK] Zero Fake Telemetry gate verified: historical replay engine ready.")
 
 

@@ -500,3 +500,29 @@ time out mid-build. Resized to `e2-standard-2` (now 7 GB total / 6 GB available,
 leftover exposure was closed: the old ephemeral IP is released and silent, `compressorguard-mongo`
 came back `Exited (255)` and has been removed along with its volume. Consequence flagged to the
 user: the NAT IP changed, so any exchange API-key IP whitelist needs updating.
+
+### The app itself writes to Atlas — and one near-miss false claim (04:05 UTC)
+
+Proving the verifier on a real server is not the same as proving the product uses it. Running the
+console journey against an Atlas-backed uvicorn instance and then querying Atlas directly shows the
+write path is genuine: `case_events` **10 → 20** across two runs (the append-only ledger doing
+exactly what it claims), `measurements` 247 docs, `operational_cases` 1 doc with the journey's own
+`APU-INC-20200605-01`.
+
+The near-miss matters more than the result. My first Atlas server never started: port 8000 was
+already held by a stale uvicorn from an earlier session (`Errno 10048`), so the `23/23` I saw was
+produced by that **in-memory** server, not by Atlas. Had I pasted that number into the checklist, the
+central MongoDB claim would have been false while looking proven. Two structural fixes came out of
+it:
+
+- `run_demo.py` preflight now announces the storage backend — `[OK] Storage backend: REAL MongoDB
+  Atlas v8.0.37, database=compressorguard.` or `[WARN] Storage backend: IN-MEMORY EMULATION … do not
+  present this run as MongoDB evidence.` The two modes were previously indistinguishable from the
+  operator's side, which is precisely how I was fooled. Verified in both branches. The URI is never
+  printed; it carries credentials.
+- `get_mongo_db()` logs the same choice once. Note the first version of this used `logger.info`, which
+  is **dropped silently** under a bare uvicorn boot because nothing attaches a root handler — the
+  preflight print is the surface that is actually guaranteed to reach a human.
+
+Also learned the hard way that the health endpoint is `/health`, not `/api/health`, so my readiness
+poll was reporting "NEVER CAME UP" against a perfectly healthy server.

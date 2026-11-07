@@ -67,7 +67,7 @@ it does not fail silently and it never substitutes synthetic data.
 
 | Prerequisite | Env var | Effect if unset |
 |:---|:---|:---|
-| MongoDB (Atlas or local) | `MONGODB_URI` | Falls back to the in-memory repository; Time Series + `$setWindowFields` demo not visible |
+| MongoDB (Atlas or local) | `MONGODB_URI` | Falls back to the in-memory repository; Time Series + `$setWindowFields` demo not visible. `mongodb+srv://…` (Atlas) works directly — `dnspython` is pinned for it, and the verified run used a real `mongod 8.0.37`. `run_demo.py` prints which backend it actually got: `REAL MongoDB Atlas v8.0.37` vs `IN-MEMORY EMULATION`. Put the URI in `.env` (gitignored), never in a commit. |
 | Datadog Agent | `DD_API_KEY`, agent on `:8125`/`:8126` | Metrics/traces are dropped with a warning; app still runs |
 | MQTT broker (IoT edge path) | `MQTT_BROKER` | Producer uses store-and-forward buffering only |
 
