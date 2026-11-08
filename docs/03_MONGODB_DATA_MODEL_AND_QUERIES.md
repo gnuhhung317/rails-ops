@@ -1,185 +1,46 @@
-# 03. Mô hình Dữ liệu & Mẫu Truy vấn MongoDB (MongoDB Data Model & Query Patterns)
+# 03. Lưu trữ và Xử lý Dữ liệu trên MongoDB
 
-> **Dự án:** CompressorGuard — Industrial Operations Command Platform (MUGVN Hackathon 2026: MongoDB + Datadog)  
-> **Trạng thái:** Chuẩn hóa kỹ thuật 100% theo mã nguồn thực tế tại commit `d2a2400`.
-
----
-
-## 1. Danh mục 5 Collections Thực tế trong Mã nguồn
-
-Hệ thống sử dụng MongoDB để quản trị toàn diện cả dữ liệu chuỗi thời gian tần số cao và dữ liệu nghiệp vụ có cấu trúc thông qua 5 collections chính thức:
-
-```mermaid
-erDiagram
-    measurements {
-        date timestamp "timeField (Lịch sử 2020)"
-        string asset_id "metaField (APU-COMP-01)"
-        date ingested_at "TTL 7 ngày (Simulation Clock)"
-        double dv_pressure "Độ sụt áp van xả (bar)"
-        double oil_temp "Nhiệt độ dầu (°C)"
-        double tp2 "Áp suất máy nén (bar)"
-        double tp3 "Áp suất bộ sấy (bar)"
-        double reservoirs "Áp suất bình khí chính (bar)"
-        double motor_current "Dòng điện động cơ (A)"
-        int lps "Rơ-le áp suất thấp (1/0)"
-    }
-    
-    anomaly_signals {
-        string signal_id "Khóa chính UUID"
-        string asset_id "Khóa ngoại tham chiếu"
-        date detected_at "Thời điểm phát hiện"
-        string detector_type "PHYSICAL / DRIFT / ML / MECHANICAL"
-        double severity "Mức độ nghiêm trọng (0.0 - 1.0)"
-        bool suppressed "Đã bị triệt tiêu bởi bộ lọc chống rung?"
-    }
-
-    operational_cases {
-        string case_id "Mã sự cố (ví dụ: CASE-2020-06-05-01)"
-        string asset_id "Thiết bị gặp sự cố"
-        string state "OPEN / DETECTED / INVESTIGATING / MITIGATING / RESOLVED"
-        string priority "P1-CRITICAL / P2-MAJOR"
-        date opened_at "Thời điểm mở ca"
-        string assigned_dispatcher "Mã điều độ viên"
-    }
-
-    case_events {
-        string event_id "Khóa định danh sự kiện"
-        string case_id "Mã ca sự cố liên quan"
-        string event_type "STATE_CHANGE / NOTE / WORK_ORDER / SAFE_MODE"
-        string actor "DISPATCHER-0941 / SYSTEM"
-        date event_time "Mốc thời gian ghi nhận (Append-only)"
-        json payload "Dữ liệu chi tiết sự kiện"
-    }
-
-    failure_fingerprints {
-        string fingerprint_id "FP-METROPT3-FAIL-03"
-        string episode_id "FAIL-03-AIR-LEAK"
-        string title "Rò rỉ cụm van xả nước ngưng (Drain Valve Leak)"
-        object signature_vector "Vector tham chiếu chuẩn hóa"
-        string recommended_playbook "SOP-APU-LEAK-01"
-        string recommended_action "Thay gioăng làm kín cụm van xả"
-    }
-
-    measurements ||--o{ anomaly_signals : "sinh ra"
-    anomaly_signals ||--o{ operational_cases : "tập hợp vào"
-    operational_cases ||--|{ case_events : "ghi nhật ký vào"
-    failure_fingerprints ||..o{ operational_cases : "tham chiếu SOP"
-```
-
-### 1.1. Cấu hình Time Series Collection `measurements`
-- **Tạo Collection:** 
-  ```python
-  db.create_collection(
-      "measurements",
-      timeseries={
-          "timeField": "timestamp",
-          "metaField": "asset_id",
-          "granularity": "seconds"
-      }
-  )
-  ```
-- **Quy tắc Dual-Clock & TTL Index:**
-  - Để bảo toàn dữ liệu lịch sử gốc (tháng 06/2020) không bị MongoDB tự động xóa, trường `timestamp` **tuyệt đối không** gắn TTL.
-  - Hệ thống tạo chỉ mục TTL 7 ngày ($604.800$ giây) trên trường `ingested_at` (thời điểm bản ghi được bơm vào database theo giờ mô phỏng thực tế):
-    ```python
-    db["measurements"].create_index("ingested_at", expireAfterSeconds=604800)
-    ```
+> **Mục tiêu tài liệu:** Giải thích rõ MongoDB được sử dụng để lưu trữ và phân tích dữ liệu như thế nào trong giải pháp CompressorGuard.  
+> **Bố cục:** Phần 1 dành cho người vận hành hiểu bản chất ứng dụng; Phần 2 dành cho lập trình viên tra cứu kỹ thuật.
 
 ---
 
-## 2. Các Aggregation Pipeline Thực tế
+## PHẦN 1: DÀNH CHO NGƯỜI VẬN HÀNH
 
-Trong `src/storage/repository.py`, hai pipeline tính toán được thực thi trực tiếp trên MongoDB:
+### 1. MongoDB Lưu Những Gì?
+Trong hệ thống CompressorGuard, MongoDB đóng vai trò là kho dữ liệu trung tâm, lưu giữ 4 nhóm thông tin chính:
+1. **Dữ liệu cảm biến từng giây:** Lưu toàn bộ số đo áp suất, nhiệt độ, dòng điện và trạng thái rơ-le từ 1,5 triệu điểm đo thực nghiệm của bộ dữ liệu MetroPT-3.
+2. **Hồ sơ các ca sự cố:** Theo dõi vòng đời của từng sự cố (khi nào phát hiện, mức độ ưu tiên P1, điều độ viên nào đang tiếp nhận).
+3. **Nhật ký thao tác của con người:** Sổ cái kiểm toán lưu vết từng hành động của điều độ viên (tiếp nhận ca, lập lệnh sửa chữa, ký duyệt nghiệm thu) để đảm bảo tính minh bạch và trách nhiệm giải trình.
+4. **Bộ mẫu sự cố tham chiếu:** Các đặc trưng của các đợt hỏng hóc trong lịch sử để giúp hệ thống nhận diện loại hư hỏng và gợi ý cẩm nang xử lý phù hợp.
 
-### 2.1. Pipeline #1: Vi phân Cửa sổ Trượt 60s (`$setWindowFields`)
-Pipeline này tính toán giá trị trung bình trượt và độ lệch chuẩn của cảm biến `dv_pressure` và `oil_temp` trong cửa sổ 60 giây gần nhất để phát hiện độ bất ổn định:
-
-```javascript
-db.measurements.aggregate([
-  {
-    $match: {
-      asset_id: "APU-COMP-01",
-      timestamp: { $gte: ISODate("2020-06-05T09:40:00Z"), $lte: ISODate("2020-06-05T11:40:00Z") }
-    }
-  },
-  {
-    $setWindowFields: {
-      partitionBy: "$asset_id",
-      sortBy: { timestamp: 1 },
-      output: {
-        dv_rolling_avg: {
-          $avg: "$dv_pressure",
-          window: { range: [-60, 0], unit: "second" }
-        },
-        dv_rolling_std: {
-          $stdDevSamp: "$dv_pressure",
-          window: { range: [-60, 0], unit: "second" }
-        }
-      }
-    }
-  }
-])
-```
-
-### 2.2. Pipeline #2: Phân tích Chu kỳ Tải Đa chiều (`$facet` + `$group`)
-Pipeline này phân tích tỷ lệ chu kỳ nạp tải (Duty Cycle) và phân bố nhiệt động học theo chế độ hoạt động:
-
-```javascript
-db.measurements.aggregate([
-  {
-    $match: {
-      asset_id: "APU-COMP-01",
-      timestamp: { $gte: startTime, $lte: endTime }
-    }
-  },
-  {
-    $facet: {
-      regime_distribution: [
-        {
-          $group: {
-            _id: "$regime",
-            sample_count: { $sum: 1 },
-            avg_oil_temp: { $avg: "$oil_temp" },
-            max_dv_pressure: { $max: "$dv_pressure" }
-          }
-        }
-      ],
-      total_metrics: [
-        {
-          $group: {
-            _id: null,
-            total_samples: { $sum: 1 },
-            avg_motor_current: { $avg: "$motor_current" }
-          }
-        }
-      ]
-    }
-  }
-])
-```
+### 2. Hai Phép Tính Trực Tiếp trên Cơ Sở Dữ Liệu
+Thay vì phải kéo hàng trăm ngàn dòng dữ liệu thô về máy chủ ứng dụng để tính toán (gây chậm và tốn bộ nhớ), hệ thống tận dụng sức mạnh xử lý của chính MongoDB qua hai phép phân tích:
+- **Tính toán thống kê cửa sổ trượt 60 giây (`$setWindowFields`):** Tính trực tiếp giá trị trung bình và độ lệch chuẩn của cảm biến trong 1 phút gần nhất. Phép tính này giúp phát hiện ngay các dao động áp suất bất thường của van xả ngay tại tầng cơ sở dữ liệu.
+- **Phân loại chu kỳ làm việc đa chiều (`$facet` kết hợp `$group`):** Thống kê tỷ lệ phần trăm thời gian máy nén chạy có tải hay không tải, cùng mức nhiệt độ trung bình ở từng chế độ để người vận hành nắm được hiệu suất hoạt động của máy nén.
 
 ---
 
-## 3. Đính chính Kỹ thuật Minh bạch: Truy vấn Đối sánh Fingerprint
+## PHẦN 2: CHI TIẾT KỸ THUẬT DÀNH CHO LẬP TRÌNH VIÊN
 
-> [!IMPORTANT]
-> **Đính chính Kỹ thuật về `match_failure_fingerprint()`:**
-> - Trong một số tài liệu dự thảo ban đầu, cơ chế so khớp mẫu sự cố lịch sử được gọi là *"MongoDB Vector Search Pipeline"*. Đây là một cách gọi chưa chuẩn xác với mã nguồn thực tế.
-> - **Cơ chế hoạt động thực sự trong `src/storage/repository.py`:**
->   1. Hàm `match_failure_fingerprint()` sử dụng câu lệnh query cơ bản `find({}, {"_id": 0})` để lấy danh sách các mẫu sự cố chuẩn hóa (seed fingerprints) từ collection `failure_fingerprints`.
->   2. Sau đó, thuật toán **tính toán khoảng cách Cosine Similarity trực tiếp bằng Python** (`math.sqrt` và tích vô hướng vector giữa đặc trưng quan sát và đặc trưng tham chiếu).
->   3. Kết quả được sắp xếp theo `similarity_score` giảm dần để gợi ý cẩm nang SOP và hành động khắc phục phù hợp.
-> - Đây là thiết kế thực dụng và hiệu quả cao cho số lượng tập mẫu fingerprint có giới hạn ($< 100$ mẫu sự cố chuẩn ngành).
+### 1. Cấu trúc 5 Bảng Dữ liệu (Collections)
 
----
+Mã nguồn tại `src/storage/mongo_client.py` và `repository.py` khởi tạo 5 bảng dữ liệu với các đặc tả kỹ thuật chuẩn xác sau:
 
-## 4. Bằng chứng Đo kiểm & Môi trường Kiểm thử
+| Tên Bảng | Kiểu Dữ liệu | Mục đích Sử dụng | Cấu hình Chỉ mục & Vòng đời Dữ liệu |
+| :--- | :---: | :--- | :--- |
+| `measurements` | **Time Series** | Lưu các điểm đo cảm biến 1Hz | `timeField: "timestamp"`, `metaField: "metadata"`, `granularity: "seconds"`. Chỉ mục trên `metadata.asset_id` và `timestamp`. **Không gắn TTL** để bảo toàn dữ liệu đo lịch sử năm 2020. |
+| `anomaly_signals` | Document | Lưu các tín hiệu bất thường thô và số lượng nhiễu đã lọc | Có chỉ mục tự hủy (TTL) **7 ngày** trên trường thời gian nhận thực tế: `expireAfterSeconds: 604800` gắn trên trường `ingested_at`. |
+| `operational_cases` | Document | Quản lý trạng thái và hồ sơ ca sự cố | Chỉ mục duy nhất trên mã ca `case_id` và chỉ mục tìm kiếm theo thiết bị `asset_id`. |
+| `case_events` | Document | Sổ cái kiểm toán bất biến các sự kiện vận hành | Lưu vết theo dạng chỉ thêm mới (append-only) cho mọi thao tác của điều độ viên. |
+| `failure_fingerprints` | Document | Lưu các vector mẫu sự cố chuẩn hóa từ lịch sử | Lưu trữ các bộ đặc trưng chuẩn (seed data) để tham chiếu cẩm nang xử lý. |
 
-- **Môi trường In-Memory Emulation:** Mã nguồn cung cấp lớp `InMemoryCollection` trong `src/storage/mongo_client.py` hỗ trợ chạy demo offline và unit test mà không bắt buộc cài đặt MongoDB daemon.
-- **Kiểm chứng trên MongoDB Server Thực:**
-  - Dự án cung cấp script độc lập `scripts/verify_mongodb_timeseries.py`.
-  - Script này kiểm tra 4 tiêu chí cốt lõi trên một `mongod` thật:
-    1. Cấu trúc Time Series Collection thực và tính năng tự động gom bucket.
-    2. Ràng buộc bảo toàn dữ liệu: Không có TTL trên `timestamp` lịch sử; tồn tại TTL 7 ngày trên `ingested_at`.
-    3. Kết quả tính toán của `$setWindowFields` khớp hoàn toàn với tính toán độc lập bằng `pandas`.
-    4. Kết quả thống kê `$facet` + `$group` khớp với tái tính toán `pandas`.
+### 2. Quy tắc Quan trọng về Bảo toàn Dữ liệu Lịch sử (TTL Rule)
+Trong các dự án mô phỏng dữ liệu lịch sử (năm 2020), nếu cài đặt TTL trực tiếp lên trường thời gian đo gốc `timestamp`, cơ chế tự dọn dẹp của MongoDB sẽ xóa sạch toàn bộ dữ liệu ngay khi vừa nạp vào.
+
+Do đó, hệ thống phân định rõ:
+- Trường `timestamp` (tháng 06/2020) được bảo tồn nguyên vẹn.
+- Chỉ mục tự hủy 7 ngày chỉ được đặt trên trường `ingested_at` của bảng `anomaly_signals` để dọn dẹp các tín hiệu phát sinh trong quá trình chạy thử nghiệm.
+
+### 3. Cách So khớp Mẫu Sự cố Tham chiếu
+Khi phát hiện sự cố, hàm `match_failure_fingerprint()` trong `src/storage/repository.py` truy vấn các mẫu đặc trưng từ bảng `failure_fingerprints`, sau đó **sử dụng hàm toán học Python** (`math.sqrt` và tích vô hướng vector) để tính toán độ tương đồng Cosine giữa vector đo đạc thực tế và vector mẫu tham chiếu. Đây là cách làm thực dụng, ổn định và không phụ thuộc vào hạ tầng Vector Search phức tạp bên ngoài.
