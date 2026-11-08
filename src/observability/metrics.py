@@ -1,4 +1,8 @@
 import os
+import time
+import json
+import urllib.request
+import threading
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
@@ -39,6 +43,11 @@ class DatadogMetricsClient:
         self.constant_tags = constant_tags or list(DEFAULT_TAGS)
         self.buffer_only = buffer_only
         self.buffered_metrics: List[Dict[str, Any]] = []
+        self.api_key: Optional[str] = os.getenv("DD_API_KEY")
+        self.dd_site: str = os.getenv("DD_SITE", "ap2.datadoghq.com")
+        self._http_queue: List[Dict[str, Any]] = []
+        self._last_http_flush: float = time.time()
+        self._lock = threading.Lock()
 
         self.statsd: Optional[Any] = None
         if not self.buffer_only and DogStatsd is not None:
@@ -52,15 +61,52 @@ class DatadogMetricsClient:
             except Exception:
                 self.statsd = None
 
+    def _flush_http(self) -> None:
+        if self.buffer_only or not self.api_key:
+            return
+        with self._lock:
+            if not self._http_queue:
+                return
+            batch = list(self._http_queue)
+            self._http_queue.clear()
+            self._last_http_flush = time.time()
+
+        def _worker(items: List[Dict[str, Any]], key: str, site: str):
+            try:
+                url = f"https://api.{site}/api/v1/series"
+                headers = {
+                    "Content-Type": "application/json",
+                    "DD-API-KEY": key,
+                }
+                body = json.dumps({"series": items}).encode("utf-8")
+                req = urllib.request.Request(url, data=body, headers=headers)
+                urllib.request.urlopen(req, timeout=4)
+            except Exception:
+                pass
+
+        threading.Thread(target=_worker, args=(batch, self.api_key, self.dd_site), daemon=True).start()
+
     def gauge(self, metric: str, value: float, tags: Optional[List[str]] = None) -> None:
         full_tags = list(self.constant_tags) + (tags or [])
+        metric_name = f"{self.prefix}.{metric}" if not metric.startswith(self.prefix) else metric
         self.buffered_metrics.append({
             "type": "gauge",
-            "name": f"{self.prefix}.{metric}" if not metric.startswith(self.prefix) else metric,
+            "name": metric_name,
             "value": value,
             "tags": full_tags,
             "timestamp": datetime.now().isoformat(),
         })
+        if not self.buffer_only and self.api_key:
+            now_epoch = int(time.time())
+            with self._lock:
+                self._http_queue.append({
+                    "metric": metric_name,
+                    "points": [[now_epoch, float(value)]],
+                    "type": "gauge",
+                    "tags": full_tags,
+                })
+            if len(self._http_queue) >= 12 or (time.time() - self._last_http_flush) >= 2.0:
+                self._flush_http()
         if self.statsd:
             try:
                 self.statsd.gauge(metric, value, tags=tags)
@@ -69,13 +115,25 @@ class DatadogMetricsClient:
 
     def increment(self, metric: str, value: int = 1, tags: Optional[List[str]] = None) -> None:
         full_tags = list(self.constant_tags) + (tags or [])
+        metric_name = f"{self.prefix}.{metric}" if not metric.startswith(self.prefix) else metric
         self.buffered_metrics.append({
             "type": "count",
-            "name": f"{self.prefix}.{metric}" if not metric.startswith(self.prefix) else metric,
+            "name": metric_name,
             "value": value,
             "tags": full_tags,
             "timestamp": datetime.now().isoformat(),
         })
+        if not self.buffer_only and self.api_key:
+            now_epoch = int(time.time())
+            with self._lock:
+                self._http_queue.append({
+                    "metric": metric_name,
+                    "points": [[now_epoch, float(value)]],
+                    "type": "count",
+                    "tags": full_tags,
+                })
+            if len(self._http_queue) >= 12 or (time.time() - self._last_http_flush) >= 2.0:
+                self._flush_http()
         if self.statsd:
             try:
                 self.statsd.increment(metric, value, tags=tags)

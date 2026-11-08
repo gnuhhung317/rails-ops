@@ -66,7 +66,7 @@ class ActionGuard:
                 "id": "REPLAY_BRANCH_AVAILABLE",
                 "label": "Post-maintenance commissioning stream segment available",
                 "passed": replay_branch_available,
-                "current_value": "AVAILABLE (2020-06-08T16:05:00Z)" if replay_branch_available else "UNAVAILABLE",
+                "current_value": "SẴN SÀNG" if replay_branch_available else "CHƯA SẴN SÀNG",
             },
         ]
 

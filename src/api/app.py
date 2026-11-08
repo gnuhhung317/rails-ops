@@ -32,17 +32,24 @@ def get_default_manager() -> IncidentLifecycleManager:
 
 async def _background_stream_worker(app: FastAPI) -> None:
     """Background worker that advances telemetry stream when simulation is playing (unpaused)."""
-    try:
-        while True:
+    while True:
+        try:
             mgr: Optional[IncidentLifecycleManager] = getattr(app.state, "manager", None)
             if mgr is not None and mgr.runner is not None and not mgr.runner.is_paused:
                 mgr.tick()
-                delay = max(0.05, mgr.runner.get_sleep_interval_seconds())
+                if hasattr(mgr.runner, "get_sleep_interval_seconds"):
+                    delay = max(0.05, mgr.runner.get_sleep_interval_seconds())
+                else:
+                    speed = getattr(mgr.runner.config, "speed_multiplier", 60.0)
+                    delay = max(0.05, min(2.0, 10.0 / max(0.1, speed)))
                 await asyncio.sleep(delay)
             else:
                 await asyncio.sleep(0.25)
-    except asyncio.CancelledError:
-        pass
+        except asyncio.CancelledError:
+            break
+        except Exception as exc:
+            logger.error("Background stream worker exception: %s", exc)
+            await asyncio.sleep(1.0)
 
 
 def create_app(manager: Optional[IncidentLifecycleManager] = None) -> FastAPI:

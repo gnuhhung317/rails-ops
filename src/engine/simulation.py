@@ -87,6 +87,11 @@ class SimulationRunner:
             raise ValueError(f"Speed multiplier must be positive, got {multiplier}")
         self.config.speed_multiplier = multiplier
 
+    def get_sleep_interval_seconds(self) -> float:
+        speed = max(0.1, self.config.speed_multiplier)
+        delay = 10.0 / speed
+        return min(max(0.05, delay), self.config.max_step_delay_seconds)
+
     def calculate_step_delay(self, prev_time: datetime, next_time: datetime) -> float:
         delta_sec = max(0.0, (next_time - prev_time).total_seconds())
         scaled = delta_sec / self.config.speed_multiplier

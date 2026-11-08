@@ -1,5 +1,5 @@
-from typing import List, Optional
-from pydantic import BaseModel
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field
 
 
 # --- Error Schemas ---
@@ -121,7 +121,7 @@ class JumpResponse(BaseModel):
     lifecycle_state: str
 
 
-# --- Operations & Case Governance Schemas ---
+# --- Operations & Fleet Overview Schemas (Screen 1) ---
 class OperationsSummaryInfo(BaseModel):
     monitored_assets_count: int = 1
     active_cases_count: int = 0
@@ -131,6 +131,56 @@ class OperationsSummaryInfo(BaseModel):
     confirmed_intervention_window: Optional[str] = None
 
 
+class TrainSummaryItem(BaseModel):
+    train_id: str
+    fleet_id: str = "FLEET-METRO-01"
+    name: str
+    route: str = "Bến Thành – Suối Tiên"
+    car_number: str = "Toa 1 (Cabin lái điều khiển)"
+    service_status: str = "REVENUE_SERVICE"
+    health_status: str = "NORMAL"          # "NORMAL" | "WARNING_P1"
+    health_label: str = "Bình thường"      # "Bình thường" | "Cảnh báo P1"
+    status: str = "NORMAL"
+    badge: str = "NORMAL"                 # "NORMAL" | "WARNING"
+    speed_kmh: float = 58.0
+    brake_pressure_bar: float = 9.20
+    brake_safety_margin: str = "+2.20 bar"
+    safety_buffer: str = "—"
+    subsystem_id: str = "SUB-APU-01"
+    depot_location: str = "Depot Long Bình"
+    updated_at: Optional[str] = None
+
+
+class OperationsKPIsResponse(BaseModel):
+    total_trains: str = "3/3 đang chạy"
+    total_trains_count: int = 3
+    running_trains_count: int = 3
+    normal_trains: int = 2
+    alert_trains: int = 1
+    alerted_trains: int = 1               # Đồng bộ bí danh
+    depot: str = "Depot Long Bình"
+    standby_depot: str = "Depot Long Bình" # Đồng bộ bí danh
+
+
+class OperationsHeroBannerResponse(BaseModel):
+    active: bool = True
+    is_active: bool = True                # Đồng bộ bí danh
+    train_id: str = "TRAIN-302"
+    train_name: str = "Đoàn tàu 302"
+    safety_buffer: str = "33h 52m"
+    safety_buffer_minutes: int = 2032
+    severity: str = "P1"
+    priority_label: str = "P1 - CẢNH BÁO RÒ RỈ KHÍ"
+    title: str = "CẢNH BÁO P1 — RÒ RỈ KHÍ PHÂN HỆ APU"
+    brake_margin: str = "+2.19 bar"
+    action_target: str = "view-workbench"
+    action_label: str = "Vào Phòng Điều Tra Sự Cố ➔"
+    description: str = (
+        "Phát hiện rò van xả cụm sấy khí LP49 trên đoàn tàu TRAIN-302. "
+        "Áp suất phanh hiện tại 9.19 bar (vùng an toàn +2.19 bar)."
+    )
+
+
 class OperationsResponse(BaseModel):
     fleet: dict
     train: dict
@@ -138,8 +188,166 @@ class OperationsResponse(BaseModel):
     asset: dict
     operations_summary: OperationsSummaryInfo
     active_case: Optional[dict] = None
+    trains: List[Dict[str, Any]] = Field(default_factory=list)
+    kpis: Optional[OperationsKPIsResponse] = None
+    hero_banner: Optional[OperationsHeroBannerResponse] = None
 
 
+# --- Asset & Component Management Schemas (Screen 2) ---
+class ComponentDetailResponse(BaseModel):
+    component_id: str
+    asset_id: Optional[str] = None
+    subsystem_id: str = "SUB-APU-01"
+    train_id: str = "TRAIN-302"
+    fleet_id: str = "FLEET-METRO-01"
+    name: str
+    component_type: str                   # "COMPRESSOR" | "DRYER_DRAIN_VALVE" | "RESERVOIR" | "PRESSURE_SWITCH"
+    manufacturer: str = "Knorr-Bremse"
+    model_number: str
+    installation_date: str = "15/01/2020"
+    operating_hours: int = 14280
+    rated_pressure_bar: float = 10.0
+    criticality: str = "CRITICAL"
+    service_role: str = "Main Air Supply"
+    service_role_vi: str = "Cấp khí nén hệ thống phanh & treo"
+    discharge_valve_model: Optional[str] = None
+    status: str = "NORMAL"                # "NORMAL" | "WARNING" | "LEAKING" | "SAFE"
+    status_label: str = "Bình thường"
+    badge: str = "NORMAL"
+    
+    # 6 trường cấu hình vận hành có thể chỉnh sửa
+    leak_pressure_threshold_bar: float = 0.05
+    oil_temp_threshold_c: float = 67.0
+    maintenance_depot: str = "Depot Long Bình"
+    transient_filter: bool = True
+    supervision_priority: str = "P1 - Khẩn cấp"
+    maintenance_notes: str = ""
+    
+    last_updated_by: Optional[str] = "Hùng Bùi (NV-0941)"
+    last_updated_at: Optional[str] = None
+    latest_reading: Dict[str, Any] = Field(default_factory=dict)
+    audit_event: Optional[Dict[str, Any]] = None
+
+
+class ComponentUpdateRequest(BaseModel):
+    leak_pressure_threshold_bar: Optional[float] = None
+    oil_temp_threshold_c: Optional[float] = None
+    maintenance_depot: Optional[str] = None
+    transient_filter: Optional[bool] = None
+    supervision_priority: Optional[str] = None
+    maintenance_notes: Optional[str] = None
+    operator_name: Optional[str] = "Hùng Bùi (NV-0941)"
+    operator_id: Optional[str] = "NV-0941"
+
+
+class ComponentsListResponse(BaseModel):
+    train_id: Optional[str] = "TRAIN-302"
+    total_count: int
+    tree: Dict[str, Any]
+    components: List[ComponentDetailResponse]
+
+
+class ComponentUpdateResponse(BaseModel):
+    status: str = "CONFIG_UPDATED"
+    message: str = "Cập nhật cấu hình thành công"
+    component: ComponentDetailResponse
+    audit_event: Optional[Dict[str, Any]] = None
+
+
+# --- SOP Playbooks Schemas (Screen 4) ---
+class SOPStepItem(BaseModel):
+    step_number: int
+    action: str
+    safety_check: Optional[str] = None
+    expected_result: Optional[str] = None
+    role: Optional[str] = None
+
+
+class SOPPlaybookResponse(BaseModel):
+    sop_id: str
+    title: str
+    category: str = "Hệ thống khí nén APU"
+    version: str = "v2.1"
+    effective_date: str = "2024-01-15"
+    applicable_component_id: str = "APU-DRY-LP49"
+    target_component: Optional[str] = None
+    target_depot: str = "Depot Long Bình"
+    estimated_duration_minutes: int = 45
+    priority: str = "P1"
+    maintenance_window: Optional[str] = "NEXT_TERMINAL_STOP"
+    safety_warning: Optional[str] = None
+    steps: List[Dict[str, Any]] = Field(default_factory=list)
+    safety_precautions: List[str] = Field(default_factory=list)
+    last_updated_by: Optional[str] = "Hùng Bùi (NV-0941)"
+    last_updated_at: Optional[str] = None
+
+
+class SOPPlaybookUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    category: Optional[str] = None
+    version: Optional[str] = None
+    applicable_component_id: Optional[str] = None
+    target_component: Optional[str] = None
+    target_depot: Optional[str] = None
+    estimated_duration_minutes: Optional[int] = None
+    priority: Optional[str] = None
+    maintenance_window: Optional[str] = None
+    safety_warning: Optional[str] = None
+    steps: Optional[List[Dict[str, Any]]] = None
+    safety_precautions: Optional[List[str]] = None
+    operator_name: Optional[str] = "Hùng Bùi (NV-0941)"
+
+
+class SOPPlaybooksListResponse(BaseModel):
+    total_count: int
+    playbooks: List[SOPPlaybookResponse]
+
+
+# --- Shift Operations & Handover Schemas (Screen 4) ---
+class CurrentShiftResponse(BaseModel):
+    shift_id: str = "SHIFT-20200605-01"
+    shift_name: str = "Ca 1 (06:00 – 14:00)"
+    operator_name: str = "Hùng Bùi"
+    operator_id: str = "NV-0941"
+    role: str = "Trực ban Điều hành OCC"
+    facility: str = "Trung tâm Điều hành OCC Tuyến Metro Số 1 (HURC1)"
+    depot: str = "Depot Long Bình"
+    status: str = "Đang chỉ huy trực tiếp"
+    active_train_count: int = 3
+    active_alert_count: int = 1
+    start_time: str = "06:00"
+    end_time: str = "14:00"
+    handover_pending: bool = False
+    last_handover_time: Optional[str] = None
+
+
+class ShiftHandoverRequest(BaseModel):
+    operator_name: Optional[str] = "Hùng Bùi (NV-0941)"
+    operator_id: Optional[str] = "NV-0941"
+    incoming_operator: Optional[str] = None
+    incoming_operator_name: Optional[str] = None
+    incoming_operator_id: Optional[str] = "NV-1082"
+    shift_name: Optional[str] = "Ca 2 (14:00 – 22:00)"
+    depot_location: Optional[str] = "Depot Long Bình"
+    handover_notes: Optional[str] = None
+    notes: Optional[str] = None
+    acknowledged_active_cases: List[str] = Field(default_factory=lambda: ["APU-INC-20200605-01"])
+
+
+class ShiftHandoverResponse(BaseModel):
+    handover_id: str
+    status: str = "HANDOVER_COMPLETED"
+    message: str = "Bàn giao ca trực thành công"
+    timestamp: str
+    outgoing_operator: str
+    incoming_operator: str
+    next_shift: str
+    handover_notes: str
+    event_id: Optional[str] = None
+    active_cases_transferred: List[str] = Field(default_factory=list)
+
+
+# --- Case Events & Ledger Schemas ---
 class CaseEventItem(BaseModel):
     event_id: str
     case_id: str = "APU-INC-20200605-01"
@@ -313,4 +521,32 @@ class TelemetryAnalyticsResponse(BaseModel):
     top_diagnosis: Optional[dict] = None
     alert_fatigue_protection: dict
 
+
+# --- Datadog SRE Observability Schemas ---
+class DatadogMonitorItem(BaseModel):
+    id: str
+    name: str
+    query: str
+    status: str  # "OK", "ALERT", "WARN", "PENDING"
+    threshold: str
+    target_channel: str
+    description: str
+
+
+class DatadogAPMSpanItem(BaseModel):
+    name: str
+    duration_ms: float
+    status: str = "ok"
+
+
+class DatadogStatusResponse(BaseModel):
+    connected: bool
+    site: str
+    dashboard_url: str
+    dogstatsd_packets_total: int
+    custom_metrics_count: int = 15
+    apm_latency_ms: float
+    apm_sla_ms: float = 15.0
+    apm_spans: List[DatadogAPMSpanItem]
+    monitors: List[DatadogMonitorItem]
 

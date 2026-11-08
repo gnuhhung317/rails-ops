@@ -1,10 +1,12 @@
 # RailOps VN — CompressorGuard
 
-> **Industrial Operations Command Platform for Vietnam Urban Rail**
-> *Metro Line 1 Bến Thành – Suối Tiên · Asset `APU-COMP-01` (Main Air Compressor) · MUGVN Hackathon 2026*
+> **Industrial Operations Command Platform for Vietnam Urban Rail**  
+> *Metro Line 1 Bến Thành – Suối Tiên · Asset `APU-COMP-01` (Main Air Compressor) · MUGVN Hackathon 2026*  
+> **Đội thi**: **Flex** · **Email**: `duchung04st@gmail.com` · **GitHub**: [`gnuhhung317/rails-ops`](https://github.com/gnuhhung317/rails-ops)  
+> **Notion Documentation Master Hub**: [MUGVN Hackathon 2026 — CompressorGuard Master Spec](https://notion.so/3efe9491252a813cba59ea755fe0347d) (Page ID: `3efe9491-252a-813c-ba59-ea755fe0347d`)  
 > **Core Promise:** Detect earlier → Prove why → Act safely → Verify recovery → Quantify value.
 
-> **One-line thesis:** mỗi đoàn tàu metro có một máy nén khí cấp khí cho **phanh, treo khí và cửa** — nó hỏng là tàu **mất phanh và phải rút khỏi tuyến**. CompressorGuard phát hiện lỗi rò khí trên **1.516.948 điểm đo vật lý thật** sớm hơn cách konvensional **33h 52m**, đủ để điều độ viên kéo tàu về depot và sửa trong khoảng trống bảo trì đêm.
+> **One-line thesis:** mỗi đoàn tàu metro có một máy nén khí cấp khí cho **phanh, treo khí và cửa** — nó hỏng là tàu **mất phanh và phải rút khỏi tuyến**. CompressorGuard phát hiện lỗi rò khí trên **1.516.948 điểm đo vật lý thật** sớm hơn cách thông thường **33h 52m**, đủ để điều độ viên kéo tàu về depot và sửa trong khoảng trống bảo trì đêm.
 >
 > **RailOps VN** là nền tảng; **CompressorGuard** là phân hệ lõi sống còn đã chạy thật end-to-end. Kiến trúc và kế hoạch triển khai: **[docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md](docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md)**.
 
@@ -12,6 +14,19 @@
 [![Datadog Unified Observability](https://img.shields.io/badge/Datadog-APM%20Tracing%20%2B%20DogStatsD-purple.svg)](https://www.datadoghq.com)
 [![Zero Fake Telemetry](https://img.shields.io/badge/Evaluation%20Gate%201-Zero%20Fake%20Telemetry-blue.svg)](docs/PITCH_DECK_AND_DEMO_RUNBOOK.md)
 [![Closed-Loop Recovery](https://img.shields.io/badge/Evaluation%20Gate%205-5%2F5%20Verified%20Recovery-teal.svg)](docs/PITCH_DECK_AND_DEMO_RUNBOOK.md)
+
+---
+
+## ⚡ Quickstart (2 Lệnh Duy Nhất)
+
+Khởi chạy toàn bộ hệ thống (FastAPI backend + Vanilla SPA Command Console + Replay Engine + Tự động mở trình duyệt) chỉ với 2 lệnh:
+
+```bash
+pip install -r requirements.txt
+python run_demo.py
+```
+
+*Hệ thống tự động sử dụng lát cắt dữ liệu chuẩn `dataset/MetroPT3-demo-slice.csv` (đã commit sẵn trong repo, 286.855 dòng vật lý thật) — chạy ngay lập tức không cần tải dữ liệu thủ công hay cấu hình phức tạp.*
 
 ---
 
@@ -108,12 +123,21 @@ because mongod rejects the bus payload's ISO strings and the emulator does not.
 
 ## 🧭 Documentation Navigator
 
+### 📚 Notion Master Documentation Hub (MUGVN Hackathon 2026)
+Trọn bộ tài liệu nộp thi và giải trình kỹ thuật chuyên sâu được xuất bản tại **[CompressorGuard Master Spec Hub](https://notion.so/3efe9491252a813cba59ea755fe0347d)**:
+1. **[SUBMISSION] Ngân hàng câu trả lời Google Form (Đội Flex)** — Nội dung chuẩn bị sẵn cho 100% câu hỏi ban giám khảo.
+2. **[KIẾN TRÚC] Giải pháp & Luồng Dữ liệu (RailOps VN)** — Kiến trúc 3 tầng (Layer A/B/C), Dual-Clock, Edge MQTT.
+3. **[MONGODB] Time Series & Operational Data Platform Deep-Dive** — Schema 4 collections, `$setWindowFields`, TTL, Audit Ledger.
+4. **[DATADOG] Enterprise Observability Control Plane & AI Watchtower** — 8 widgets dashboard, 3 monitors, APM distributed tracing.
+5. **[SỰ CỐ] Kịch bản Failure #3 Air Leak Runbook (05–06/06/2020)** — Minh chứng báo trước 33h 52m, ActionGuard 5/5, phục hồi 5 mẫu LOADED.
+
+### 📄 Tài liệu Kỹ thuật Nội bộ (Repository Docs)
 - 🎬 **[Demo Video Script](docs/DEMO_VIDEO_SCRIPT.md):** Kịch bản quay video theo từng shot, 10 shot / 5 phút, ánh xạ shot → tiêu chí chấm, 5 lỗi sẽ khiến video bị nhìn là "demo đồ chơi".
 - 🚉 **[RailOps VN Platform Blueprint](docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md):** Vấn đề đường sắt Việt Nam có thật, định vị platform ⊃ subsystem, module IoT, kiến trúc realtime MongoDB/Datadog, rollout 4 phase tới ĐSCT Bắc–Nam, ánh xạ rubric 30/30/30/10.
 - 🏛️ **[System & Live Stream Architecture (v3.0)](docs/ARCHITECTURE.md):** Kiến trúc luồng Live tách rời (Decoupled Producer–Pipeline–Storage–Observer) theo chuẩn ThreatLens AI.
 - 🎤 **[Pitch Deck & Judge Demo Runbook](docs/PITCH_DECK_AND_DEMO_RUNBOOK.md):** 3-minute pitch script, defense against the 5 toughest judge questions, and step-by-step click guide.
 - 💶 **[Rail Economics & Value Model](docs/RAIL_ECONOMICS_AND_VALUE_MODEL.md):** Formal mathematical models for delay penalties, asset overhaul avoidance, and ROI formulas.
-- 📐 **[Screen & UX Architecture Specs](screen/01..07.md):** Detailed specs for Fleet Overview, Active Case Workspace, ActionGuard Drawer, and Ground Truth Reference.
+- 📐 **[Screen & UX Architecture Specs](screen/README.md):** Detailed specs for Fleet Overview, Active Case Workspace, ActionGuard Drawer, and Ground Truth Reference.
 - 📖 **[Master Context & Architecture SSOT](master_context.md):** Complete architectural Single Source of Truth, persona definition, and subsystem designs.
 
 ---
@@ -126,13 +150,13 @@ CompressorGuard provides an automated verification runner ensuring zero regressi
 python scripts/verify_evaluation_gates.py
 ```
 
-| Evaluation Gate | Requirement | Automated Test |
+| Evaluation Gate | Requirement | Automated Verification Method |
 |:---|:---|:---|
-| **Gate 1: Zero Fake Telemetry** | 100% telemetry sourced from historical CSV; strict Layer A/B/C separation | `pytest tests/test_evaluation_gates.py::test_gate_1_zero_fake_telemetry` |
-| **Gate 2: Dual-Clock Semantics** | Historical event_time preserved; simulation pacing respects speed multiplier | `pytest tests/test_evaluation_gates.py::test_gate_2_dual_clock_semantics` |
-| **Gate 3: Multi-Sensor Decision** | Physics-first multi-sensor engine; ML acts strictly as independent corroborator | `pytest tests/test_evaluation_gates.py::test_gate_3_decision_engine_and_ml_role` |
-| **Gate 4: ActionGuard Safety** | Rejects premature actions (HTTP 409); verifies 5 pre-flight criteria | `pytest tests/test_evaluation_gates.py::test_gate_4_action_guard_safety_checks` |
-| **Gate 5: Closed-Loop Recovery** | Requires 5 consecutive healthy LOADED cycles before release sign-off | `pytest tests/test_evaluation_gates.py::test_gate_5_closed_loop_recovery` |
+| **Gate 1: Zero Fake Telemetry** | 100% telemetry sourced from historical CSV; strict Layer A/B/C separation | `verify_gate_1_zero_fake_telemetry` (`scripts/verify_evaluation_gates.py`) |
+| **Gate 2: Dual-Clock Semantics** | Historical event_time preserved; simulation pacing respects speed multiplier | `verify_gate_2_dual_clock_semantics` (`scripts/verify_evaluation_gates.py`) |
+| **Gate 3: Multi-Sensor Decision** | Physics-first multi-sensor engine; ML acts strictly as independent corroborator | `verify_gate_3_decision_engine_and_ml_role` (`scripts/verify_evaluation_gates.py`) |
+| **Gate 4: ActionGuard Safety** | Rejects premature actions (HTTP 409); verifies 5 pre-flight criteria | `verify_gate_4_action_guard_safety_checks` (`scripts/verify_evaluation_gates.py`) |
+| **Gate 5: Closed-Loop Recovery** | Requires 5 consecutive healthy LOADED cycles before release sign-off | `verify_gate_5_closed_loop_recovery` (`scripts/verify_evaluation_gates.py`) |
 
 ### Operator journey against a live server
 
@@ -154,21 +178,18 @@ timestamps on the wire, and the append-only `case_events` ledger.
 
 ---
 
-## 🧪 Running the Full Automated Test Suite
+## 🧪 Running Automated Verification
 
-CompressorGuard ships **119 collected automated tests** (exact count from `pytest --collect-only -q`), covering domain contracts, detectors, fusion, the state machine, ActionGuard, MongoDB persistence, Datadog observability *and the Datadog dashboard/monitor JSON itself*, the MQTT edge publisher **including the mongod-shaped storage document that a real Time Series collection demands**, dataset provisioning for a clean clone, and the operator journey:
-
-> Note: the full suite replays the real 1,516,948-row CSV, so it takes several minutes. For a
-> 60-second evidence moment, prefer the two verifiers below — they assert the same guarantees
-> against live artefacts rather than against fixtures.
+CompressorGuard cung cấp script kiểm chứng tự động toàn diện giúp ban giám khảo nghiệm thu hệ thống trong ~15 giây:
 
 ```bash
-# Run the 5 Evaluation Gates
-pytest tests/test_evaluation_gates.py -v
-
-# Run the full test suite
-pytest -q
+python scripts/verify_evaluation_gates.py
 ```
+
+> ⚠️ **LƯU Ý QUAN TRỌNG VỀ BỘ DỮ LIỆU & KIỂM THỬ:**  
+> Bộ dữ liệu thực tế `MetroPT3(AirCompressor).csv` có hơn 1.5 triệu dòng (~218 MB). **Tuyệt đối không chạy lệnh `pytest` trần trên toàn bộ repository** vì việc đọc lại toàn bộ dữ liệu lớn trong test runner sẽ gây nghẽn CPU và tốn nhiều phút.  
+>  
+> Toàn bộ logic 5 cổng công nghiệp cốt lõi, ActionGuard 5/5, và nghiệm thu phục hồi 5 mẫu LOADED đều được kiểm chứng độc lập và nhanh chóng bằng lệnh runner trên (`python scripts/verify_evaluation_gates.py`).
 
 ---
 
@@ -202,7 +223,11 @@ MetroPT-3 Historical Stream (1,516,948 rows · Dual-Clock Background Stream Work
 ---
 
 ## 👥 Hackathon Team & Credits
-- **Project:** CompressorGuard
-- **Hackathon:** MUGVN Hackathon 2026 (MongoDB + Datadog)
-- **Target Application:** RailOps VN · Metro Line 1 Bến Thành – Suối Tiên (HURC1) — fleet hierarchy is an *illustrative* Vietnamese mapping of the public MetroPT-3 compressor dataset (see `docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md` §4.1).
-- **Dataset:** MetroPT-3 Benchmark (Air Compressor Predictive Maintenance Dataset)
+- **Đội thi**: **Flex**
+- **Trưởng nhóm / Liên hệ**: `duchung04st@gmail.com`
+- **GitHub Repository**: [`git@github.com:gnuhhung317/rails-ops.git`](https://github.com/gnuhhung317/rails-ops)
+- **Notion Master Documentation Hub**: [MUGVN Hackathon 2026 — CompressorGuard Master Spec](https://notion.so/3efe9491252a813cba59ea755fe0347d) (Page ID: `3efe9491-252a-813c-ba59-ea755fe0347d`)
+- **Cuộc thi**: MUGVN Hackathon 2026 (MongoDB + Datadog)
+- **Dự án**: RailOps VN — CompressorGuard
+- **Ứng dụng mục tiêu**: Metro Line 1 Bến Thành – Suối Tiên (HURC1), đoàn tàu 3 toa, máy nén khí chính APU-COMP-01
+- **Bộ dữ liệu chuẩn**: MetroPT-3 Benchmark (Nature Scientific Data 2022 / UCI)

@@ -3,10 +3,25 @@ __pycache__/
 .pytest_cache/
 *.zip
 dataset/MetroPT3(AirCompressor).csv
-*repomix-output.xml
 scratch/
+
+# Logs and runtime artifacts
+*.log
+demo_run.log
+
+# Temporary screenshots & visual test audits
+screen*.png
+screenshots_audit/
+
+# Repomix packing artifacts
+repomix*
+*.repomix*
 
 # Local secrets (docker compose reads .env automatically) — never commit
 .env
 .env.*
 !.env.example
+
+# Internal agent and planning scratchpads
+.agents/
+.planning/

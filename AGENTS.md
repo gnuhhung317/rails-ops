@@ -36,6 +36,25 @@
    - Tuyệt đối không viết cứng số liệu cảm biến hoặc trạng thái `✓ PASS` trong HTML/template. Mọi dữ liệu phải render động từ API (`/api/telemetry/window`, `/api/action/guard-status`, `/api/case`, `/api/recovery`).
 7. **Tách Biệt UI Vận Hành và Demo Controls:**
    - Mọi nút bấm mô phỏng (`Play/Pause`, `Speed`, `Scenario Switcher`, `Bookmarks`) nằm trong **Replay Studio Drawer** (`Shift + S`), không đặt ở thanh Header vận hành chính.
+8. **Ngôn Ngữ Giao Diện: Tiếng Việt Chuẩn (Bắt Buộc):**
+   - **Mọi chuỗi hiển thị cho người dùng phải là tiếng Việt chuẩn, có dấu đầy đủ, câu cú tự nhiên, văn phong của một sản phẩm công nghiệp Việt Nam** — bao gồm: nhãn tab/panel/card, tiêu chí cột trong bảng, tên nút, label & placeholder của form, hint, trạng thái (`empty state`), toast, banner cảnh báo, nhãn tooltip, nhãn trục/legend biểu đồ, và mọi dòng mô phỏng (`simulation`) trên header.
+   - **Cấm** để sót nhãn tiếng Anh chưa dịch, cấm câu dịch máy vô nghĩa, cấm lẫn lộn hai ngôn ngữ trong cùng một nhãn (trừ trường hợp quy định dưới đây).
+   - **Được giữ nguyên (không dịch) vì đó là định danh kỹ thuật, không phải văn bản giao diện:** tên mã (`APU-COMP-01`, `DISPATCHER-0941`, `Failure #3 Air Leak`), acronym ngành (`APU`, `TCMS`, `HMI`, `SLA`, `APM`), tên tín hiệu vật lý gốc của MetroPT-3 (`DV_pressure`, `Oil_temp`), trạng thái máy sinh ra từ backend (`LOADED`/`UNLOADED`, mã HTTP `409`, `PASS`/`FAIL` trong bảng kiểm chứng), tên API/endpoint, và nhãn minh bạch bắt buộc `[ LIVE SIMULATION · HISTORICAL DATA ]`.
+   - **Thuật ngữ nhất quán một-một** toàn ứng dụng, không mỗi nơi một kiểu: `lead time` → **Thời gian báo trước**, `lead window` → **Cửa sổ can thiệp**, `anomaly` → **bất thường**, `fleet` → **hạm đội**, `consist` → **đoàn tàu**, `depot` → **xưởng depot / depot bảo trì**, `work order` → **lệnh công tác**, `air leak` → **rò khí**, `recovery` → **nghiệm thu phục hồi**, `guard` → **trực bảo vệ hành động (ActionGuard)**.
+   - Khi thêm màn hình/bảng/form mới: **không được tạo bản tiếng Anh "tạm thời"** — chuỗi tiếng Việt phải đi kèm ngay trong lần commit đó.
+   - **Bản địa hóa KHÔNG phải dịch nguyên văn.** Tiếng Việt dài hơn tiếng Anh; dịch word-by-word làm màn hình đặc hơn, đi ngược invariant #9. Chuỗi tiếng Việt bắt buộc **ngắn hơn hoặc bằng** bản gốc tiếng Anh về số chữ.
+   - Quy tắc này áp dụng cho `src/static/index.html`, `src/static/app.js` và mọi template/API string đổ ra UI; **không** đổi tên biến, hàm, key JSON hay field MongoDB.
+9. **Ngân Sách Chữ & Chống Quá Tải Nhận Thức (Anti Feature-Smog):**
+   - *Text thừa là quá tải nhận thức, không phải thông tin thêm.* Một màn hình chỉ được nói một điều; muốn nói nhiều điều thì phân cấp, không liệt kê.
+   - **Ngân sách chữ bắt buộc** cho mọi chuỗi giao diện:
+     - Tiêu đề panel / nhãn KPI / tiêu chí cột / chữ nút / tab: **tối đa 3 từ**.
+     - Microcopy (`kpi-note`, `empty-note`, `panel-meta`, hint): **tối đa 4 từ**, văn phong điện tín, **không viết câu đầy đủ, không dấu chấm cuối**.
+     - Toast / thông báo lỗi: **một mệnh đề, tối đa 10 từ** — nói cái gì vừa xảy ra và operator nên làm gì; cấm đoạn văn.
+     - `placeholder`: tối đa 5 từ. `title`/`aria-label`: tối đa 8 từ.
+   - **Một sự kiện chỉ xuất hiện MỘT nơi duy nhất trên màn hình.** Cấm lặp chỉ số giữa các panel. Các vi phạm đã ghi nhận cần xóa khi chạm vào file: **Cửa sổ can thiệp** hiện 3 lần (KPI strip, cột `Lead Window`, `wb-lead`), chart `DV_pressure`/`Oil_temp` nhân đôi giữa Fleet và Workbench, ledger xuất hiện 3 nơi (Workbench `ledger-mini`, Queue archive, Timeline).
+   - **Mặc định thu gọn, không mặc định bung hết:** Workbench mở **đúng STEP hiện hành**, không mở cả 5 block; drawer (Replay Studio, Validation Reference) mặc định đóng; chỉ số phụ nằm sau toggle, không nằm sẵn trên màn hình.
+   - Khi muốn thêm một widget: phải chỉ ra widget nào bị bớt đi để đổi chỗ, hoặc chứng minh nó ở một tầng chú ý khác. "Thêm cho đầy" là lý do không được chấp nhận.
+   - Áp dụng cho cả nội dung do backend sinh ra: chuỗi trạng thái/thông điệp API đổ vào UI cũng phải tuân ngân sách chữ.
 
 ---
 

@@ -1399,9 +1399,10 @@ class IncidentLifecycleManager:
         """Returns recent telemetry window with MongoDB $setWindowFields rolling statistics."""
         asset_id = self.scenario.asset_id
         rolling_points = []
+        max_ts = self.current_point.timestamp if self.current_point else None
         if self.repository is not None:
             rolling_points = self.repository.get_rolling_stats(
-                asset_id=asset_id, window_seconds=600, limit=limit
+                asset_id=asset_id, window_seconds=600, limit=limit, max_timestamp=max_ts
             )
 
         # Fallback to in-memory buffer if repository has no points yet

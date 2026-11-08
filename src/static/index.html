@@ -67,6 +67,9 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
       <button class="ghost-btn" id="btn-toggle-replay" title="Mở phòng phát lại (Shift + S)">
         <span aria-hidden="true">&#127899;</span> Phát lại
       </button>
+      <button class="ghost-btn dd-header-btn" id="btn-toggle-datadog" title="Đài quan sát Datadog SRE (Shift + D)">
+        <span class="dd-pulse-dot" id="dd-header-dot"></span> 🐶 Datadog
+      </button>
     </div>
   </div>
 
@@ -546,6 +549,101 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
   </div>
   <div class="vr-body" id="vr-body" data-dynamic="api/validation-reference"></div>
 </aside>
+
+<!-- ══════════════════════════════ DATADOG SRE WATCHTOWER DRAWER ══════════════════════════════ -->
+<aside class="dd-backdrop" id="dd-backdrop" hidden></aside>
+<aside class="dd-drawer" id="dd-drawer" aria-label="Đài quan sát Datadog SRE">
+  <div class="dd-head">
+    <div class="dd-title-group">
+      <span class="dd-badge-icon">🐶</span>
+      <div>
+        <h3 class="panel-title" style="margin: 0; font-size: 14px; letter-spacing: 0.5px;">DATADOG SRE WATCHTOWER</h3>
+        <span class="mono muted" id="dd-sub-status" style="font-size: 11px;">ap2.datadoghq.com · 15 Metrics Flushed</span>
+      </div>
+    </div>
+    <div class="dd-head-actions">
+      <a href="https://app.ap2.datadoghq.com/dashboard/lists" target="_blank" rel="noopener" class="dd-cloud-link" id="dd-cloud-link" title="Mở trang Datadog Cloud">Mở Cloud ↗</a>
+      <button class="ghost-btn" id="dd-close" aria-label="Đóng ngăn Datadog">✕</button>
+    </div>
+  </div>
+
+  <div class="dd-body">
+    <div class="dd-section">
+      <div class="dd-section-title">
+        <span>BỘ CẢNH BÁO TỰ ĐỘNG (3 MONITORS)</span>
+        <span class="mono dd-tag">24/7 PROACTIVE</span>
+      </div>
+      <div class="dd-monitors-list" id="dd-monitors-list">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </div>
+
+    <div class="dd-section">
+      <div class="dd-section-title">
+        <span>ĐỘ TRỄ PHÂN TÁN (APM SPANS WATERFALL)</span>
+        <span class="mono dd-sla-pass" id="dd-apm-sla">11.2 ms &lt; 15 ms SLA</span>
+      </div>
+      <div class="dd-apm-card" id="dd-apm-spans-container">
+        <div class="dd-apm-bar-row">
+          <span class="mono dd-span-name">stream.tick</span>
+          <div class="dd-bar-track"><div class="dd-bar-fill" style="width: 100%;"></div></div>
+          <span class="mono dd-span-time">11.2 ms</span>
+        </div>
+        <div class="dd-apm-bar-row dd-sub-span">
+          <span class="mono dd-span-name">├── regime.classify</span>
+          <div class="dd-bar-track"><div class="dd-bar-fill" style="width: 8%;"></div></div>
+          <span class="mono dd-span-time">0.8 ms</span>
+        </div>
+        <div class="dd-apm-bar-row dd-sub-span">
+          <span class="mono dd-span-name">├── detector.evaluate</span>
+          <div class="dd-bar-track"><div class="dd-bar-fill" style="width: 18%;"></div></div>
+          <span class="mono dd-span-time">2.1 ms</span>
+        </div>
+        <div class="dd-apm-bar-row dd-sub-span">
+          <span class="mono dd-span-name">├── ml.inference (IF)</span>
+          <div class="dd-bar-track"><div class="dd-bar-fill" style="width: 28%;"></div></div>
+          <span class="mono dd-span-time">3.1 ms</span>
+        </div>
+        <div class="dd-apm-bar-row dd-sub-span">
+          <span class="mono dd-span-name">├── action_guard.preflight</span>
+          <div class="dd-bar-track"><div class="dd-bar-fill" style="width: 4%;"></div></div>
+          <span class="mono dd-span-time">0.4 ms</span>
+        </div>
+        <div class="dd-apm-bar-row dd-sub-span">
+          <span class="mono dd-span-name">└── mongodb.persist</span>
+          <div class="dd-bar-track"><div class="dd-bar-fill" style="width: 21%;"></div></div>
+          <span class="mono dd-span-time">2.3 ms</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="dd-section">
+      <div class="dd-section-title">
+        <span>HỢP ĐỒNG TELEMETRY (DOGSTATSD)</span>
+        <span class="mono dd-tag">env:hackathon-2026</span>
+      </div>
+      <div class="dd-contract-grid">
+        <div class="dd-kpi-box">
+          <span class="dd-kpi-sub">GÓI TIN FLUSH</span>
+          <span class="mono dd-kpi-val" id="dd-packets-count">3,246</span>
+        </div>
+        <div class="dd-kpi-box">
+          <span class="dd-kpi-sub">CUSTOM METRICS</span>
+          <span class="mono dd-kpi-val">15 / 15</span>
+        </div>
+        <div class="dd-kpi-box">
+          <span class="dd-kpi-sub">DASHBOARD</span>
+          <span class="mono dd-kpi-val">8 WIDGETS</span>
+        </div>
+        <div class="dd-kpi-box">
+          <span class="dd-kpi-sub">ĐỒNG BỘ AI</span>
+          <span class="mono dd-kpi-val" style="color: #10b981;">0.94 / 1.0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
+
 
 <footer class="source-note mono">
   Cảm biến: MetroPT-3 (Metro Lisboa, 2020). Tên tuyến, đoàn tàu là bối cảnh mô phỏng.
