@@ -130,7 +130,7 @@ def get_operations(manager: IncidentLifecycleManager = Depends(get_manager)) -> 
         title="CẢNH BÁO P1 — RÒ RỈ KHÍ PHÂN HỆ APU",
         brake_margin="+2.19 bar",
         action_target="view-workbench",
-        action_label="Vào Phòng Điều Tra Sự Cố ➔",
+        action_label="Vào Phòng Điều Tra Sự Cố →",
         description=(
             "Phát hiện rò van xả cụm sấy khí LP49 trên đoàn tàu TRAIN-302. "
             "Áp suất phanh hiện tại 9.19 bar (vùng an toàn +2.19 bar)."
@@ -542,7 +542,7 @@ def submit_shift_handover(
     ev = manager.record_case_event(
         event_type=CaseEventType.ACTION,
         phase="SHIFT_HANDOVER",
-        title=f"Bàn giao ca trực: {outgoing_op} ➔ {incoming_op}",
+        title=f"Bàn giao ca trực: {outgoing_op} → {incoming_op}",
         detail=f"Ghi chú bàn giao ({doc['shift_name']}): {notes_text}",
         actor=outgoing_op,
         source="Quản lý Ca trực (Màn hình 4)",
@@ -800,7 +800,7 @@ def get_datadog_status(manager: IncidentLifecycleManager = Depends(get_manager))
         ),
         DatadogMonitorItem(
             id="mon-02",
-            name="[AI Observability] Model & Physics Agreement",
+            name="[ML Observability] Model & Physics Agreement",
             query="avg(last_5m):compressorguard.ml.physics_agreement{asset_id:APU-COMP-01} < 0.5",
             status=mon2_status,
             threshold="0.5 (Consensus)",

@@ -3,7 +3,7 @@
 > **Industrial Operations Command Platform for Vietnam Urban Rail**  
 > *Metro Line 1 Bến Thành – Suối Tiên · Asset `APU-COMP-01` (Main Air Compressor) · MUGVN Hackathon 2026*  
 > **Đội thi**: **Flex** · **Email**: `duchung04st@gmail.com` · **GitHub**: [`gnuhhung317/rails-ops`](https://github.com/gnuhhung317/rails-ops)  
-> **Notion Documentation Master Hub**: [MUGVN Hackathon 2026 — CompressorGuard Master Spec](https://notion.so/3efe9491252a813cba59ea755fe0347d) (Page ID: `3efe9491-252a-813c-ba59-ea755fe0347d`)  
+> **Notion Documentation Master Hub**: [MUGVN Hackathon 2026 — CompressorGuard Master Hub & Decision Log](https://app.notion.com/p/3efe9491252a813cba59ea755fe0347d?pvs=204) (Page ID: `3efe9491-252a-813c-ba59-ea755fe0347d`)  
 > **Core Promise:** Detect earlier → Prove why → Act safely → Verify recovery → Quantify value.
 
 > **One-line thesis:** mỗi đoàn tàu metro có một máy nén khí cấp khí cho **phanh, treo khí và cửa** — nó hỏng là tàu **mất phanh và phải rút khỏi tuyến**. CompressorGuard phát hiện lỗi rò khí trên **1.516.948 điểm đo vật lý thật** sớm hơn cách thông thường **33h 52m**, đủ để điều độ viên kéo tàu về depot và sửa trong khoảng trống bảo trì đêm.
@@ -17,7 +17,7 @@
 
 ---
 
-## ⚡ Quickstart (2 Lệnh Duy Nhất)
+## Quickstart (2 Lệnh Duy Nhất)
 
 Khởi chạy toàn bộ hệ thống (FastAPI backend + Vanilla SPA Command Console + Replay Engine + Tự động mở trình duyệt) chỉ với 2 lệnh:
 
@@ -30,7 +30,7 @@ python run_demo.py
 
 ---
 
-## 🚀 1-Click Turnkey Demo Launcher
+## Khởi Chạy Nhanh 1 Lệnh (Turnkey Launcher)
 
 Launch the complete full-stack platform (FastAPI backend + Vanilla SPA Command Console + Replay Engine + Browser Auto-Open) with a single command:
 
@@ -108,7 +108,7 @@ because mongod rejects the bus payload's ISO strings and the emulator does not.
 
 ---
 
-## 🏆 Key Achievements & Proven Impact
+## Key Achievements & Proven Impact
 
 | Metric | Measured Result | Operational Significance |
 |:---|:---|:---|
@@ -121,9 +121,9 @@ because mongod rejects the bus payload's ISO strings and the emulator does not.
 
 ---
 
-## 🧭 Documentation Navigator
+## Documentation Navigator
 
-### 📚 Notion Master Documentation Hub (MUGVN Hackathon 2026)
+### Notion Master Documentation Hub (MUGVN Hackathon 2026)
 Trọn bộ tài liệu nộp thi và giải trình kỹ thuật chuyên sâu được xuất bản tại **[CompressorGuard Master Spec Hub](https://notion.so/3efe9491252a813cba59ea755fe0347d)**:
 1. **[SUBMISSION] Ngân hàng câu trả lời Google Form (Đội Flex)** — Nội dung chuẩn bị sẵn cho 100% câu hỏi ban giám khảo.
 2. **[KIẾN TRÚC] Giải pháp & Luồng Dữ liệu (RailOps VN)** — Kiến trúc 3 tầng (Layer A/B/C), Dual-Clock, Edge MQTT.
@@ -131,18 +131,18 @@ Trọn bộ tài liệu nộp thi và giải trình kỹ thuật chuyên sâu đ
 4. **[DATADOG] Enterprise Observability Control Plane & AI Watchtower** — 8 widgets dashboard, 3 monitors, APM distributed tracing.
 5. **[SỰ CỐ] Kịch bản Failure #3 Air Leak Runbook (05–06/06/2020)** — Minh chứng báo trước 33h 52m, ActionGuard 5/5, phục hồi 5 mẫu LOADED.
 
-### 📄 Tài liệu Kỹ thuật Nội bộ (Repository Docs)
-- 🎬 **[Demo Video Script](docs/DEMO_VIDEO_SCRIPT.md):** Kịch bản quay video theo từng shot, 10 shot / 5 phút, ánh xạ shot → tiêu chí chấm, 5 lỗi sẽ khiến video bị nhìn là "demo đồ chơi".
-- 🚉 **[RailOps VN Platform Blueprint](docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md):** Vấn đề đường sắt Việt Nam có thật, định vị platform ⊃ subsystem, module IoT, kiến trúc realtime MongoDB/Datadog, rollout 4 phase tới ĐSCT Bắc–Nam, ánh xạ rubric 30/30/30/10.
-- 🏛️ **[System & Live Stream Architecture (v3.0)](docs/ARCHITECTURE.md):** Kiến trúc luồng Live tách rời (Decoupled Producer–Pipeline–Storage–Observer) theo chuẩn ThreatLens AI.
-- 🎤 **[Pitch Deck & Judge Demo Runbook](docs/PITCH_DECK_AND_DEMO_RUNBOOK.md):** 3-minute pitch script, defense against the 5 toughest judge questions, and step-by-step click guide.
-- 💶 **[Rail Economics & Value Model](docs/RAIL_ECONOMICS_AND_VALUE_MODEL.md):** Formal mathematical models for delay penalties, asset overhaul avoidance, and ROI formulas.
-- 📐 **[Screen & UX Architecture Specs](screen/README.md):** Detailed specs for Fleet Overview, Active Case Workspace, ActionGuard Drawer, and Ground Truth Reference.
-- 📖 **[Master Context & Architecture SSOT](master_context.md):** Complete architectural Single Source of Truth, persona definition, and subsystem designs.
+### Tài liệu Kỹ thuật Nội bộ (Repository Docs)
+- **[Demo Video Script](docs/DEMO_VIDEO_SCRIPT.md):** Kịch bản quay video theo từng shot, 10 shot / 5 phút, ánh xạ shot → tiêu chí chấm, 5 lỗi sẽ khiến video bị nhìn là "demo đồ chơi".
+- **[RailOps VN Platform Blueprint](docs/RAILOPS_VN_PLATFORM_BLUEPRINT.md):** Vấn đề đường sắt Việt Nam có thật, định vị platform ⊃ subsystem, module IoT, kiến trúc realtime MongoDB/Datadog, rollout 4 phase tới ĐSCT Bắc–Nam, ánh xạ rubric 30/30/30/10.
+- **[System & Live Stream Architecture (v3.0)](docs/ARCHITECTURE.md):** Kiến trúc luồng Live tách rời (Decoupled Producer–Pipeline–Storage–Observer) theo chuẩn ThreatLens AI.
+- **[Pitch Deck & Judge Demo Runbook](docs/PITCH_DECK_AND_DEMO_RUNBOOK.md):** 3-minute pitch script, defense against the 5 toughest judge questions, and step-by-step click guide.
+- **[Rail Economics & Value Model](docs/RAIL_ECONOMICS_AND_VALUE_MODEL.md):** Formal mathematical models for delay penalties, asset overhaul avoidance, and ROI formulas.
+- **[Screen & UX Architecture Specs](screen/README.md):** Detailed specs for Fleet Overview, Active Case Workspace, ActionGuard Drawer, and Ground Truth Reference.
+- **[Master Context & Architecture SSOT](master_context.md):** Complete architectural Single Source of Truth, persona definition, and subsystem designs.
 
 ---
 
-## 🛡️ The 5 Industrial Evaluation Gates
+## 5 Cổng Đánh Giá Công Nghiệp (Evaluation Gates)
 
 CompressorGuard provides an automated verification runner ensuring zero regression across the 5 core industrial gates:
 
@@ -178,7 +178,7 @@ timestamps on the wire, and the append-only `case_events` ledger.
 
 ---
 
-## 🧪 Running Automated Verification
+## Running Automated Verification
 
 CompressorGuard cung cấp script kiểm chứng tự động toàn diện giúp ban giám khảo nghiệm thu hệ thống trong ~15 giây:
 
@@ -186,14 +186,15 @@ CompressorGuard cung cấp script kiểm chứng tự động toàn diện giúp
 python scripts/verify_evaluation_gates.py
 ```
 
-> ⚠️ **LƯU Ý QUAN TRỌNG VỀ BỘ DỮ LIỆU & KIỂM THỬ:**  
+> [!IMPORTANT]
+> **LƯU Ý QUAN TRỌNG VỀ BỘ DỮ LIỆU & KIỂM THỬ:**  
 > Bộ dữ liệu thực tế `MetroPT3(AirCompressor).csv` có hơn 1.5 triệu dòng (~218 MB). **Tuyệt đối không chạy lệnh `pytest` trần trên toàn bộ repository** vì việc đọc lại toàn bộ dữ liệu lớn trong test runner sẽ gây nghẽn CPU và tốn nhiều phút.  
 >  
 > Toàn bộ logic 5 cổng công nghiệp cốt lõi, ActionGuard 5/5, và nghiệm thu phục hồi 5 mẫu LOADED đều được kiểm chứng độc lập và nhanh chóng bằng lệnh runner trên (`python scripts/verify_evaluation_gates.py`).
 
 ---
 
-## 🏛️ System Architecture (v3.0 Decoupled Live Stream)
+## System Architecture (v3.0 Decoupled Live Stream)
 
 ```text
 [1. INDEPENDENT PRODUCER]
@@ -222,7 +223,7 @@ MetroPT-3 Historical Stream (1,516,948 rows · Dual-Clock Background Stream Work
 
 ---
 
-## 👥 Hackathon Team & Credits
+## Hackathon Team & Credits
 - **Đội thi**: **Flex**
 - **Trưởng nhóm / Liên hệ**: `duchung04st@gmail.com`
 - **GitHub Repository**: [`git@github.com:gnuhhung317/rails-ops.git`](https://github.com/gnuhhung317/rails-ops)

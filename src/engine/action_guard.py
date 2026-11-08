@@ -58,7 +58,7 @@ class ActionGuard:
             },
             {
                 "id": "BRAKE_RESERVOIR_PRESSURE_SAFE",
-                "label": "Main brake reservoir safe for depot routing (TP3 >= 7.0 bar, LPS == 0)",
+                "label": "Pneumatic discharge pressure safe for depot routing (TP3 >= 7.0 bar, LPS == 0)",
                 "passed": reservoir_safe,
                 "current_value": f"TP3={tp3_bar:.2f} bar, LPS={int(lps_active)}",
             },

@@ -2370,6 +2370,27 @@ input:checked + .slider:before { transform: translateX(18px); }
   align-items: center;
   gap: 10px;
 }
+.btn-icon {
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 5px;
+  flex-shrink: 0;
+}
+.dd-icon {
+  color: #c084fc;
+}
+.dd-badge-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+  flex-shrink: 0;
+}
 .dd-badge-icon {
   font-size: 20px;
 }

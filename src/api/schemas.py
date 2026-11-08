@@ -174,7 +174,7 @@ class OperationsHeroBannerResponse(BaseModel):
     title: str = "CẢNH BÁO P1 — RÒ RỈ KHÍ PHÂN HỆ APU"
     brake_margin: str = "+2.19 bar"
     action_target: str = "view-workbench"
-    action_label: str = "Vào Phòng Điều Tra Sự Cố ➔"
+    action_label: str = "Vào Phòng Điều Tra Sự Cố →"
     description: str = (
         "Phát hiện rò van xả cụm sấy khí LP49 trên đoàn tàu TRAIN-302. "
         "Áp suất phanh hiện tại 9.19 bar (vùng an toàn +2.19 bar)."

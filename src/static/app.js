@@ -117,7 +117,7 @@ const GLOSSARY = {
   MEDIUM: 'Vừa',
   HIGH: 'Cao',
   DISPATCHED: 'Đã phát',
-  CORROBORATED: 'AI xác nhận',
+  CORROBORATED: 'Xác nhận ML',
   TRIGGERED: 'Kích hoạt',
   NORMAL: 'Trong ngưỡng',
   PASS: 'PASS',
@@ -145,7 +145,7 @@ const GLOSSARY = {
   'Brake reservoir pressure below safe threshold (< 7.0 bar or LPS tripped).': 'Áp phanh bình chứa dưới ngưỡng an toàn (< 7.0 bar hoặc LPS đã kích).',
   'Post-maintenance historical stream segment unavailable.': 'Chưa có phân đoạn luồng sau bảo trì.',
   'Case is active and confirmed (DETECTED / INVESTIGATING)': 'Sự cố đang mở và đã xác nhận (DETECTED / INVESTIGATING)',
-  'DecisionEngine recommends mitigation (Physics + ML Corroboration)': 'DecisionEngine khuyến nghị can thiệp (vật lý + AI)',
+  'DecisionEngine recommends mitigation (Physics + ML Corroboration)': 'DecisionEngine khuyến nghị can thiệp (vật lý + ML)',
   'No conflicting active cases on asset': 'Không có sự cố mở xung đột trên đoàn tàu',
   'Main brake reservoir safe for depot routing (TP3 >= 7.0 bar, LPS == 0)': 'Bình phanh chính an toàn cho điều độ (TP3 ≥ 7.0 bar, LPS = 0)',
   'Post-maintenance commissioning stream segment available': 'Có phân đoạn luồng chạy thử sau bảo trì',
@@ -168,7 +168,7 @@ const MESSAGE_VI = {
   'Multiple anomaly signals detected with ongoing persistence tracking.': 'Nhiều tín hiệu bất thường; đang theo dõi độ bền.',
   'Transient anomaly excursion(s) detected. Accumulating telemetry evidence.': 'Có nhiễu thoáng qua; đang gom bằng chứng.',
   'Confirmed severe step degradation in DV_pressure with thermal stress drift.': 'Suy giảm bước nhảy nghiêm trọng ở DV_pressure kèm trôi nhiệt.',
-  'Confirmed severe step degradation corroborated by Isolation Forest.': 'Suy giảm bước nhảy nghiêm trọng, AI xác nhận.',
+  'Confirmed severe step degradation corroborated by Isolation Forest.': 'Suy giảm bước nhảy nghiêm trọng, mô hình ML xác nhận.',
   'Physical step degradation corroborated by multivariate Isolation Forest (5 LOADED features). Safe Mode recommended.': 'Vật lý suy giảm bước nhảy, Isolation Forest xác nhận (5 đặc trưng LOADED). Khuyến nghị chế độ an toàn.',
   'Low Pressure Switch (LPS=1) reactive threshold breached. Line pressure < 7.0 bar.': 'Công tắc áp thấp (LPS=1) đã kích hoạt. Áp đường < 7.0 bar.',
   'Insufficient temporal persistence (1/3 LOADED cycles); suppressed to prevent alert fatigue.': 'Độ bền bước nhảy chưa đủ (1/3 kỳ LOADED) — đã chặn.',
@@ -176,7 +176,7 @@ const MESSAGE_VI = {
   'Severe step degradation in DV_pressure with thermal drift sustained across loaded observations. Case opened.': 'Suy giảm bước nhảy ở DV_pressure kéo qua các kỳ LOADED. Đã mở vụ việc.',
   'Operational Policy Evaluation: Open Case': 'Đánh giá chính sách: mở vụ việc',
   'DecisionEngine evaluated multi-sensor evidence. Confirmed persistent degradation; opened case and recommended elevated monitoring.': 'DecisionEngine đánh giá bằng chứng đa cảm biến, xác nhận suy giảm bền; mở vụ việc và giám sát chặt.',
-  'Multivariate Isolation Forest Corroboration': 'AI xác nhận (Isolation Forest)',
+  'Multivariate Isolation Forest Corroboration': 'Kiểm chứng mô hình (Isolation Forest)',
   'Isolation Forest exceeded threshold (score > 0.35) on 5 LOADED features. Mitigation recommended.': 'Isolation Forest vượt ngưỡng (điểm > 0.35) trên 5 đặc trưng LOADED. Khuyến nghị can thiệp.',
   'Operational Policy Evaluation: Mitigation Recommended': 'Đánh giá chính sách: khuyến nghị can thiệp',
   'DecisionEngine corroborated anomaly with Isolation Forest. Recommended EXECUTE_MITIGATION under ActionGuard.': 'DecisionEngine xác nhận bất thường bằng Isolation Forest; khuyến nghị can thiệp qua ActionGuard.',
@@ -695,7 +695,7 @@ function renderApuSchematic() {
   const isLeak = typeof p.dv_pressure_bar === 'number' && p.dv_pressure_bar > 0.15;
   if (dv && typeof p.dv_pressure_bar === 'number') dv.textContent = `${p.dv_pressure_bar.toFixed(3)} bar`;
   if (dvStatus) {
-    dvStatus.textContent = isLeak ? '⚠ HỞ VAN / RÒ KHÍ' : 'ĐÓNG KÍN';
+    dvStatus.textContent = isLeak ? 'HỞ VAN / RÒ KHÍ' : 'ĐÓNG KÍN';
     dvStatus.style.color = isLeak ? 'var(--crit)' : 'var(--ok)';
   }
   if (mod2Status) {
@@ -714,7 +714,7 @@ function renderApuSchematic() {
   if (res && typeof p.reservoirs_bar === 'number') res.textContent = `${p.reservoirs_bar.toFixed(2)} bar`;
   const isLpsTrip = Boolean(p.lps_active);
   if (lps) {
-    lps.textContent = isLpsTrip ? '⚠ ĐÃ KÍCH HOẠT' : 'BÌNH THƯỜNG';
+    lps.textContent = isLpsTrip ? 'ĐÃ KÍCH HOẠT' : 'BÌNH THƯỜNG';
     lps.style.color = isLpsTrip ? 'var(--crit)' : 'var(--ok)';
   }
   const tp3Val = typeof p.tp3_bar === 'number' ? p.tp3_bar : 9.19;
@@ -724,7 +724,7 @@ function renderApuSchematic() {
   if (mod3Note) {
     mod3Note.textContent = tp3Val >= 7.0
       ? `Áp suất TP3 ${tp3Val.toFixed(2)} bar (Bình thường ≥ 7.0 bar) — Tàu chưa bị phanh khẩn cấp`
-      : '⚠️ Áp suất phanh dưới 7.0 bar — Nguy cơ dừng khẩn cấp!';
+      : 'Áp suất phanh dưới 7.0 bar — Nguy cơ dừng khẩn cấp!';
     mod3Note.className = tp3Val >= 7.0 ? 'mod-note ok' : 'mod-note';
   }
 }
@@ -1304,7 +1304,7 @@ function chartLines() {
     ],
     current: [{ label: 'ngưỡng LOADED (12.0A)', value: 12.0, color: '#37c4f4', digits: 1 }],
     tp: [{ label: 'ngưỡng an toàn phanh (7.0 bar)', value: 7.0, color: '#EF4444', digits: 1 }],
-    ifScore: [{ label: 'ngưỡng AI xác nhận', value: (evidenceCardByCode('CORROBORAT') || {}).baseline_value, color: '#f5b544', digits: 3 }]
+    ifScore: [{ label: 'ngưỡng kiểm chứng ML', value: (evidenceCardByCode('CORROBORAT') || {}).baseline_value, color: '#f5b544', digits: 3 }]
   };
 }
 
@@ -1431,7 +1431,7 @@ function renderIfGauge() {
   if (mark) mark.style.left = `${Math.min(100, (thr / scaleMax) * 100)}%`;
   if (read) {
     const feats = (card.provenance && (card.provenance.feature_count || (card.provenance.feature_names || []).length)) || 5;
-    read.innerHTML = `<strong>Độ tin cậy AI: 92% — Đã xác nhận chéo qua ${feats} cảm biến có tải</strong> <span class="muted" style="display:block;font-size:9.5px;margin-top:2px;">(Điểm Isolation Forest: ${num(score, 4)} · Ngưỡng suy giảm: > ${num(thr, 3)})</span>`;
+    read.innerHTML = `<strong>Mô hình xác nhận: Khớp dữ liệu đa biến qua ${feats} cảm biến tải</strong> <span class="muted" style="display:block;font-size:9.5px;margin-top:2px;">(Điểm Isolation Forest: ${num(score, 4)} · Ngưỡng suy giảm: > ${num(thr, 3)})</span>`;
   }
 }
 
@@ -2007,7 +2007,7 @@ function renderDeltaTable() {
       obsStr = `${num(card.observed_value, 3)} bar (Áp suất dư)`;
       devStr = `Vượt ngưỡng 27 lần (${signed(card.sigma_deviation)}σ)`;
     } else if (String(card.code).includes('ML_CORROBORATED') || String(card.code).includes('CORROBORAT')) {
-      obsStr = `Độ tin cậy AI 92% (5 cảm biến)`;
+      obsStr = `Khớp mô hình ML (5 cảm biến)`;
       devStr = `score ${num(card.observed_value, 4)} (> 0.35)`;
     } else if (String(card.code).includes('THERMAL_STRESS')) {
       obsStr = `${num(card.observed_value, 1)} °C (Trôi nhiệt)`;
@@ -2335,7 +2335,7 @@ function renderSettingsView() {
           event_type: 'ACTION',
           phase: 'SHIFT_HANDOVER',
           actor: 'Hùng Bùi (NV-0941)',
-          title: `Bàn giao ca: Hùng Bùi (NV-0941) ➔ ${receiver}`,
+          title: `Bàn giao ca: Hùng Bùi (NV-0941) → ${receiver}`,
           detail: notes,
           source: 'Quản lý Ca trực (Màn hình 4)',
           provenance: { handover: res }
@@ -2489,7 +2489,7 @@ function renderReplayBar() {
 /* Chapter labels key off the milestone stem from /api/scenarios, never off its clock. */
 const CHAPTER_VI = [
   [/early_excursion/, 'Nhiễu thoáng qua'],
-  [/ml_corroborated/, 'AI xác nhận'],
+  [/ml_corroborated/, 'Mô hình xác nhận'],
   [/lps_reactive/, 'Rơ-le cũ kêu'],
   [/post_maintenance/, 'Nghiệm thu'],
   [/onset/, 'Phát hiện']

@@ -62,13 +62,15 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
       </div>
 
       <button class="ghost-btn" id="btn-toggle-vr" title="Mở ngăn đối chứng Layer C">
-        <span aria-hidden="true">&#128451;</span> Đối chứng
+        <svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Đối chứng
       </button>
       <button class="ghost-btn" id="btn-toggle-replay" title="Mở phòng phát lại (Shift + S)">
-        <span aria-hidden="true">&#127899;</span> Phát lại
+        <svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg> Phát lại
       </button>
       <button class="ghost-btn dd-header-btn" id="btn-toggle-datadog" title="Đài quan sát Datadog SRE (Shift + D)">
-        <span class="dd-pulse-dot" id="dd-header-dot"></span> 🐶 Datadog
+        <span class="dd-pulse-dot" id="dd-header-dot"></span>
+        <svg class="btn-icon dd-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.5 3h-15A1.5 1.5 0 0 0 3 4.5v15A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5v-15A1.5 1.5 0 0 0 19.5 3zM8.5 17.2h-2V6.8h2a3.8 3.8 0 0 1 3.8 3.8 3.8 3.8 0 0 1-3.8 3.8v2.8zm1-5.6a1.8 1.8 0 0 0 1.8-1.8 1.8 1.8 0 0 0-1.8-1.8h-1v3.6h1zm6 5.6h-2V6.8h2a3.8 3.8 0 0 1 3.8 3.8 3.8 3.8 0 0 1-3.8 3.8v2.8zm1-5.6a1.8 1.8 0 0 0 1.8-1.8 1.8 1.8 0 0 0-1.8-1.8h-1v3.6h1z"/></svg>
+        Datadog SRE
       </button>
     </div>
   </div>
@@ -131,7 +133,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
   <section class="boot-state" id="boot-state" hidden>
     <p class="boot-title">Luồng chưa phát mẫu nào</p>
     <p class="boot-note mono">worker ghi mẫu; console chỉ đọc.</p>
-    <button class="primary-btn" id="btn-boot-play">&#9654; Bắt đầu mô phỏng</button>
+    <button class="primary-btn" id="btn-boot-play"><svg class="btn-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Bắt đầu mô phỏng</button>
   </section>
 
   <!-- ══════════════════════ SCREEN 01 — FLEET & TELEMETRY MATRIX ══════════════════════ -->
@@ -348,7 +350,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
         <div class="block" data-block="evidence">
           <div class="block-head">LAYER C — ĐỐI CHỨNG</div>
           <p class="block-text">Ground truth nằm riêng trong ngăn đối chứng, <strong>không</strong> rò rỉ vào detector.</p>
-          <button class="ghost-btn wide" data-open-vr><span aria-hidden="true">&#128451;</span> Mở ngăn đối chứng</button>
+          <button class="ghost-btn wide" data-open-vr><svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Mở ngăn đối chứng</button>
         </div>
       </div>
 
@@ -509,9 +511,9 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
 <!-- REPLAY STUDIO BAR -->
 <footer class="replay-bar" id="replay-bar" aria-label="Điều khiển phát lại">
   <div class="rb-row">
-    <span class="rb-brand mono">PHÁT LẤI</span>
-    <button class="primary-btn rb-btn" id="btn-play" title="Phát luồn">&#9654; Phát</button>
-    <button class="ghost-btn rb-btn" id="btn-pause" title="Dừng luồn">&#10074;&#10074; Dừng</button>
+    <span class="rb-brand mono">PHÁT LẠI</span>
+    <button class="primary-btn rb-btn" id="btn-play" title="Phát luồng"><svg class="btn-icon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Phát</button>
+    <button class="ghost-btn rb-btn" id="btn-pause" title="Dừng luồng"><svg class="btn-icon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Dừng</button>
     <div class="seg-bar rb-speed" id="speed-seg" aria-label="Tốc độ phát">
       <button class="seg-btn" data-speed="1">1x</button>
       <button class="seg-btn" data-speed="10">10x</button>
@@ -541,7 +543,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
       <h3 class="panel-title">ĐỐI CHỨNG — LAYER C</h3>
       <span class="mono muted">api/validation-reference</span>
     </div>
-    <button class="ghost-btn" id="vr-close" aria-label="Đóng ngăn đối chứng">✕</button>
+    <button class="ghost-btn" id="vr-close" aria-label="Đóng ngăn đối chứng"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
   </div>
   <div class="vr-warn">
     <strong>Đối chứng lịch sử, không phải cảnh báo trực tiếp.</strong>
@@ -555,15 +557,15 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
 <aside class="dd-drawer" id="dd-drawer" aria-label="Đài quan sát Datadog SRE">
   <div class="dd-head">
     <div class="dd-title-group">
-      <span class="dd-badge-icon">🐶</span>
+      <div class="dd-badge-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.5 3h-15A1.5 1.5 0 0 0 3 4.5v15A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5v-15A1.5 1.5 0 0 0 19.5 3zM8.5 17.2h-2V6.8h2a3.8 3.8 0 0 1 3.8 3.8 3.8 3.8 0 0 1-3.8 3.8v2.8zm1-5.6a1.8 1.8 0 0 0 1.8-1.8 1.8 1.8 0 0 0-1.8-1.8h-1v3.6h1zm6 5.6h-2V6.8h2a3.8 3.8 0 0 1 3.8 3.8 3.8 3.8 0 0 1-3.8 3.8v2.8zm1-5.6a1.8 1.8 0 0 0 1.8-1.8 1.8 1.8 0 0 0-1.8-1.8h-1v3.6h1z"/></svg></div>
       <div>
         <h3 class="panel-title" style="margin: 0; font-size: 14px; letter-spacing: 0.5px;">DATADOG SRE WATCHTOWER</h3>
         <span class="mono muted" id="dd-sub-status" style="font-size: 11px;">ap2.datadoghq.com · 15 Metrics Flushed</span>
       </div>
     </div>
     <div class="dd-head-actions">
-      <a href="https://app.ap2.datadoghq.com/dashboard/lists" target="_blank" rel="noopener" class="dd-cloud-link" id="dd-cloud-link" title="Mở trang Datadog Cloud">Mở Cloud ↗</a>
-      <button class="ghost-btn" id="dd-close" aria-label="Đóng ngăn Datadog">✕</button>
+      <a href="https://app.ap2.datadoghq.com/dashboard/lists" target="_blank" rel="noopener" class="dd-cloud-link" id="dd-cloud-link" title="Mở trang Datadog Cloud">Mở Cloud <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 2px;" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a>
+      <button class="ghost-btn" id="dd-close" aria-label="Đóng ngăn Datadog"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
   </div>
 
@@ -636,7 +638,7 @@ if (!window.Chart) document.write('<script src="https://cdn.jsdelivr.net/npm/cha
           <span class="mono dd-kpi-val">8 WIDGETS</span>
         </div>
         <div class="dd-kpi-box">
-          <span class="dd-kpi-sub">ĐỒNG BỘ AI</span>
+          <span class="dd-kpi-sub">ĐỒNG BỘ MÔ HÌNH</span>
           <span class="mono dd-kpi-val" style="color: #10b981;">0.94 / 1.0</span>
         </div>
       </div>
